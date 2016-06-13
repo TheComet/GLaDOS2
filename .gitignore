@@ -1,0 +1,9 @@
+# python compiles files
+*.pyc
+
+# tex output
+tex/
+
+# secret settings file
+settings.json
+

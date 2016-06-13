@@ -1,0 +1,17 @@
+{
+	"login": {
+		"email": "user@domain.com",
+		"password": "pa$$w0rd",
+		"token": "token"
+	},
+	"channels": {
+		"whitelist": [],
+		"blacklist": []
+	},
+	"commands": {
+		"render": ["!tex"],
+		"help": ["!help", "!help tex"]
+	},
+	"renderer": "internal",
+	"verbose": true
+}
