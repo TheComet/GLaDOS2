@@ -7,15 +7,17 @@ burns = [
     "BUUUUUUUUURNN",
     "APPLY LIQUID NITROGEN TO AREA OF BURN",
     "DO YOU NEED ICE? CAUSE' YOU JUST GOT BUUURNEED",
-    "Is something burning? oh wait, it's you. YOU GOT BURNNNEED",
+    "Is something burning? oh wait, it's you.",
     "#BURN #APPLYWATER #GOHOMESON",
     "NEIN CAN HEAR YOU CAUSE JEWS GOT BURNED"
 ]
 counter = 0
 
+
 def configure(config):
     if config.option("Configure burns", False):
         config.interactive_add("burns", "burns_data_path", "Path to where you'd like to store the burn counts between users")
+
 
 def setup(willie):
     global burns_dict
@@ -29,6 +31,7 @@ def setup(willie):
             count = int(line.split(": ")[1])
             burns_dict[nick] = count
 
+
 def shutdown(willie):
     global burns_dict
     global burns_data_file
@@ -36,6 +39,7 @@ def shutdown(willie):
     with codecs.open(burns_data_file, 'a', encoding='utf-8') as f:
         for nick, count in burns_dict.iteritems():
             f.write(nick + ": " + count + "\n")
+
 
 @module.commands("burn")
 def burn_user(bot, trigger):
