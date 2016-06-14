@@ -1,9 +1,14 @@
 # python compiles files
 *.pyc
 
+# virtual env
+env/
+
 # tex output
 tex/
 
 # secret settings file
 settings.json
 
+# IDE files
+.idea/
