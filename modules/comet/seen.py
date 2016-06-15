@@ -20,11 +20,17 @@ def readable_timestamp(delta):
     ret = ""
     if not days == 0:
         ret += "{} days".format(days)
-    if not hours == 0:
+        ret += " {} hours".format(hours)
+        ret += " {} minutes".format(minutes)
+        ret += " {} seconds ago".format(seconds)
+    elif not hours == 0:
         ret += "{} hours".format(hours)
-    if not minutes == 0:
+        ret += " {} minutes".format(minutes)
+        ret += " {} seconds ago".format(seconds)
+    elif not minutes == 0:
         ret += "{} minutes".format(minutes)
-    if not seconds == 0:
+        ret += " {} seconds ago".format(seconds)
+    elif not seconds == 0:
         ret += "{} seconds ago".format(seconds)
     else:
         ret += "right now"
