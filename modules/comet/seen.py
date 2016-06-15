@@ -12,11 +12,23 @@ def get_time(dt_str):
     return dt + timedelta(microseconds=us)
 
 
-def strfdelta(tdelta, fmt):
-    d = {"days": tdelta.days}
-    d["hours"], rem = divmod(tdelta.seconds, 3600)
-    d["minutes"], d["seconds"] = divmod(rem, 60)
-    return fmt.format(**d)
+def readable_timestamp(delta):
+    days = delta.days
+    hours, rem = divmod(delta.seconds, 3600)
+    minutes, seconds = divmod(rem, 60)
+
+    ret = ""
+    if not days == 0:
+        ret += "{} days".format(days)
+    if not hours == 0:
+        ret += "{} hours".format(hours)
+    if not minutes == 0:
+        ret += "{} minutes".format(minutes)
+    if not seconds == 0:
+        ret += "{} seconds ago".format(seconds)
+    else:
+        ret += "right now"
+    return ret
 
 
 class Seen(glados.Module):
@@ -38,10 +50,15 @@ class Seen(glados.Module):
 
     @glados.Module.rules('^.*$')
     def on_message(self, client, message, match):
-        author = message.author.name.lower()
+        author = message.author.name
+        key = author.lower()
+        channel = message.channel.name
         msg = message.clean_content
         ts = datetime.now().isoformat()
-        self.__dict[author] = {'message': str(msg), 'timestamp': str(ts)}
+        self.__dict[key] = {'author': str(author),
+                            'message': str(msg),
+                            'channel': str(channel),
+                            'timestamp': str(ts)}
         self.__save_dict()
         return tuple()
 
@@ -51,15 +68,17 @@ class Seen(glados.Module):
             yield from client.send_message(message.channel, ".seen <user>")
             return
 
-        author = content.strip('@').lower()
-        if not author in self.__dict:
+        author = content.strip('@').split('#')[0]
+        key = author.lower()
+        if not key in self.__dict:
             yield from client.send_message(message.channel, '{0} has never been seen.'.format(author))
             return
 
-        stamp = get_time(self.__dict[author]['timestamp'])
+        stamp = get_time(self.__dict[key]['timestamp'])
         elapsed = datetime.now() - stamp
-        yield from client.send_message(message.channel, '{0} was last seen {1} ago saying: "{2}"'.format(
-            author,
-            strfdelta(elapsed, '{days} days {hours} hours {minutes} minutes {seconds} seconds'),
-            self.__dict[author]['message']
+        yield from client.send_message(message.channel, '{0} was last seen {1} in #{2} saying: "{3}"'.format(
+            self.__dict[key]['author'],
+            readable_timestamp(elapsed),
+            self.__dict[key]['channel'],
+            self.__dict[key]['message']
         ))
