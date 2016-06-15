@@ -1,9 +1,9 @@
+import re
+
+
 class Module(object):
 
     def __init__(self, settings):
-        pass
-
-    def on_message(self, client, message, content):
         pass
 
     @staticmethod
@@ -20,6 +20,7 @@ class Module(object):
         def add_attribute(func):
             if not hasattr(func, "rules"):
                 func.rules = list()
-            func.rules.extend(rule_list)
+            for rule in rule_list:
+                func.rules.append(re.compile(rule))
             return func
         return add_attribute

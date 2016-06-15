@@ -40,7 +40,7 @@ class Burn(glados.Module):
             self.burns_dict[user_being_burned] = {user_burning: 0}
         self.burns_dict[user_burning][user_being_burned] += 1
 
-        response = "@{0} {1}\n{2}: {3}\n{4}: {5}".format(user_being_burned, burn,
-                                                         user_burning, self.burns_dict[user_burning][user_being_burned],
-                                                         user_being_burned, self.burns_dict[user_being_burned][user_burning])
+        response = "{0} {1}\n{2}: {3}\n{4}: {5}".format(user_being_burned, burn,
+                                                        user_burning, self.burns_dict[user_burning][user_being_burned],
+                                                        user_being_burned, self.burns_dict[user_being_burned][user_burning])
         yield from client.send_message(message.channel, response)

@@ -33,14 +33,19 @@ class Bot(object):
             if message.author.bot:
                 return
 
-            commands = self.extract_commands_from_message(message.content)
-
             for callbacks in self.__on_message_callbacks:
                 for callback in callbacks:
+
                     if hasattr(callback, 'commands'):
-                        for command, content in commands:
+                        for command, content in self.extract_commands_from_message(message.content):
                             if command in callback.commands:
                                 yield from callback(self.client, message, content)
+                    if hasattr(callback, 'rules'):
+                        for rule in callback.rules:
+                            match = rule.match(message.content)
+                            if match is None:
+                                continue
+                            yield from callback(self.client, message, match)
 
         @self.client.event
         @asyncio.coroutine
@@ -66,11 +71,12 @@ class Bot(object):
                 m = __import__(modnamespace, fromlist=[classname])
                 m = getattr(m, classname)(self.settings)
             except ImportError:
-                print('Failed to import module {0}\n{1}'.format(modfullname, traceback.print_exc()))
+                print('Error: Failed to import module {0}\n{1}'.format(modfullname, traceback.print_exc()))
                 continue
 
             callbacks = self.__get_module_message_callbacks(m)
             if len(callbacks) == 0:
+                print('Error: Module {0} has no callbacks'.format(modfullname))
                 continue
 
             print('Loaded module {}'.format(modfullname))
@@ -79,7 +85,7 @@ class Bot(object):
     @staticmethod
     def __get_module_message_callbacks(m):
         return [member for name, member in inspect.getmembers(m, predicate=inspect.ismethod)
-                if hasattr(member, "commands")]
+                if hasattr(member, 'commands') or hasattr(member, 'rules')]
 
     @asyncio.coroutine
     def main_task(self):
