@@ -38,7 +38,7 @@ class Seen(glados.Module):
 
     @glados.Module.rules('^.*$')
     def on_message(self, client, message, match):
-        author = message.author.name
+        author = message.author.name.lower()
         msg = message.clean_content
         ts = datetime.now().isoformat()
         self.__dict[author] = {'message': str(msg), 'timestamp': str(ts)}
@@ -51,7 +51,7 @@ class Seen(glados.Module):
             yield from client.send_message(message.channel, ".seen <user>")
             return
 
-        author = content.strip('@')
+        author = content.strip('@').lower()
         if not author in self.__dict:
             yield from client.send_message(message.channel, '{0} has never been seen.'.format(author))
             return
