@@ -43,6 +43,10 @@ class Seen(glados.Module):
     def __load_dict(self):
         if os.path.isfile(self.__config_file):
             self.__dict = json.loads(open(self.__config_file).read())
+        # make sure all keys exists
+        for k, v in self.__dict.items():
+            if not 'author' in v: v['author'] = k
+            if not 'channel' in v: v['channel'] = 'unknown_channel'
 
     def __save_dict(self):
         with open(self.__config_file, 'w') as f:
