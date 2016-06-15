@@ -1,12 +1,6 @@
-# Discord LaTeX Bot
+# Discord Bot framework
 
-This is a bot for [Discord](https://discordapp.com/) that automatically renders LaTeX formulas.
-
-## Invocation
-
-By default, the bot can be invoked with `!tex [latex code]`. Using `!help` or `!help tex` will private message the help.
-
-Example: `!tex \sqrt{a^2 + b^2} = c`
+This is a bot for [Discord](https://discordapp.com/) that provides you with a framework to easily extend functionality.
 
 ## Running
 
@@ -18,23 +12,48 @@ Running the bot for the first time will produce the `settings.json` file. You sh
 
 ### Login
 
-The email and password used to login to the account. It is recommended that you create a separate account for running bots.
+The email and password used to login to the account. It is recommended that you create a separate account for running bots. Alternatively, you can provide an OAuth2 token, in which case the e-mail and password are not required.
 
-### Channels
+### Modules
 
-The list of servers and channels that the bot may access. The rules are as follows:
-	
-1. If the whitelist is empty, the bot may access all channels on all servers.
-2. If the whitelist is not empty, the bot may access only the *servers* on the whitelist.
-3. The bot may not access any *server* on the blacklist.
-4. The bot may access any *channel* on the whitelist.
-5. The bot may not access any *channel* on the blacklist.
+It is possible to add a list of paths, in which the bot modules will be searched for. 
 
-Rules with larger numbers overrule the smaller ones.
+### Writing modules
 
-### Renderer
+There are two ways to register yourself to messages being received. Either you can provide a command to react to, for example:
+```python
+import glados
 
-`remote` will use an external server to render the LaTeX. **I do not own or maintain this server.**
-Consider finding a different server. If too many people abuse it, it will be shut down.
+class MyModule(glados.Module):
+    
+    @glados.Module.command('test', 'foo')
+    def message_received(self, client, message, content):
+        yield from client.send_message(message.channel, "{0} wrote {1}".format(message.author.name, content))
+```
+In this example, sending ```.test hello``` or ```.foo hello``` will have the bot respond with "*<your name> wrote hello*".
 
-`local` will attempt to use the programs `latex` and `dvipng` to render the LaTeX locally.
+Or you can use a regex to match incoming messages. If any messages matches the regex, then your method will be invoked. Examples:
+```python
+import glados
+
+class MyModule(glados.Module):
+
+    @glados.Module.rules('^.*(I like books).*$')
+    def on_books_liked(self, client, message, match):
+        yield from client.send_message(message.channel, "{} likes books! Burn him!".format(message.author.name))
+```
+
+You can additionally provide a constructor to receive a dictionary containing the settings from ```settings.json```:
+```python
+import glados
+
+class MyModule(glados.Module):
+
+    def __init__(self, settings):
+        super(MyModule, self).__init__(settings)
+
+        path_to_save_things = settings['modules']['config path']
+```
+
+In this example we retrieve the path to a folder in which the bot is allowed to write whatever files it needs to write. Perhaps you want to save information between sessions? Write things and read things from there.
+
