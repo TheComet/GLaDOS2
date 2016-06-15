@@ -1,15 +1,15 @@
-from willie import module
+import glados
+import subprocess
 
-import commands
 
-@module.commands('fortune')
-def fortune(bot, trigger):
-	fortune = commands.getoutput('/usr/games/fortune')
-	for line in fortune.rsplit("\n"):
-		bot.say(line)
+class Fortune(glados.Module):
 
-@module.commands('bofh')
-def bastard_operator_from_hell_quote(bot, trigger):
-    excuse = commands.getoutput("/usr/games/fortune bofh-excuses | tr '\n' ' '")
-    for line in excuse.rsplit("\n"):
-        bot.say(line)
+    @glados.Module.commands('fortune')
+    def fortune(self, client, message, content):
+        fortune = subprocess.check_output(['/usr/games/fortune'])
+        yield from client.send_message(message.channel, '\n'.join(fortune.decode('UTF-8').split('\\n')))
+
+    @glados.Module.commands('bofh')
+    def bastard_operator_from_hell_quote(self, client, message, content):
+        excuse = subprocess.check_output(['/usr/games/fortune', 'bofh-excuses'])
+        yield from client.send_message(message.channel, '\n'.join(excuse.decode('UTF-8').split('\\n')))
