@@ -1,10 +1,13 @@
 import discord
 import sys
+import traceback
 import json
 import asyncio
 import inspect
+import re
 
 import_paths_were_added = False
+comment_pattern = re.compile('`(.*?)`')
 
 
 def add_import_paths(paths):
@@ -21,20 +24,36 @@ class Bot(object):
         self.settings = json.loads(open('settings.json').read())
         self.client = discord.Client()
 
-        self.__modules = list()
+        self.__on_message_callbacks = list()
         self.load_modules()
 
         @self.client.event
         @asyncio.coroutine
         def on_message(message):
-            for m, callbacks in self.__modules:
+            if message.author.bot:
+                return
+
+            commands = self.extract_commands_from_message(message.content)
+
+            for callbacks in self.__on_message_callbacks:
                 for callback in callbacks:
-                    yield from callback(self.client, message)
+                    if hasattr(callback, 'commands'):
+                        for command, content in commands:
+                            if command in callback.commands:
+                                yield from callback(self.client, message, content)
 
         @self.client.event
         @asyncio.coroutine
         def on_ready():
             print('Running as', self.client.user.name)
+
+    def extract_commands_from_message(self, msg):
+        cmd_prefix = self.settings['commands']['prefix']
+
+        if msg.startswith(cmd_prefix):
+            return [(msg[len(cmd_prefix):].split(' ', 1) + [''])[:2]]
+
+        return [(x[len(cmd_prefix):].split(' ', 1) + [''])[:2] for x in comment_pattern.findall(msg) if x.startswith(cmd_prefix)]
 
     def load_modules(self):
         add_import_paths(self.settings['modules']['paths'])
@@ -46,15 +65,16 @@ class Bot(object):
             try:
                 m = __import__(modnamespace, fromlist=[classname])
                 m = getattr(m, classname)(self.settings)
-            except ImportError as e:
+            except ImportError:
+                print('Failed to import module {0}\n{1}'.format(modfullname, traceback.print_exc()))
                 continue
 
             callbacks = self.__get_module_message_callbacks(m)
             if len(callbacks) == 0:
                 continue
 
-            print("Loaded module {}".format(modfullname))
-            self.__modules.append((m, callbacks))
+            print('Loaded module {}'.format(modfullname))
+            self.__on_message_callbacks.append(callbacks)
 
     @staticmethod
     def __get_module_message_callbacks(m):
@@ -65,9 +85,6 @@ class Bot(object):
     def main_task(self):
         yield from self.client.login(self.settings['login']['token'])
         yield from self.client.connect()
-
-    def say(self, msg):
-        yield from self.client.send_message(self)
 
     def run(self):
         loop = asyncio.get_event_loop()

@@ -1,12 +1,9 @@
-import discord
 import urllib
 import random
 import os
-import chanrestrict
-import json
-import shutil
 import asyncio
 import subprocess
+import glados
 
 
 LATEX_FRAMEWORK = r"""
@@ -23,6 +20,28 @@ LATEX_FRAMEWORK = r"""
 \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
 
+\newcommand{\rz}[1]{
+    \begin{pmatrix}
+        \cos{#1} & -\sin{#1} & 0 \\
+        \sin{#1} & \cos{#1} & 0 \\
+        0 & 0 & 1 \\
+    \end{pmatrix}
+}
+\newcommand{\ry}[1]{
+    \begin{pmatrix}
+        \cos{#1} & 0 & \sin{#1} \\
+        0 & 1 & 0 \\
+        -\sin{#1} & 0 & \cos{#1} \\
+    \end{pmatrix}
+}
+\newcommand{\rx}[1]{
+    \begin{pmatrix}
+        1 & 0 & 0 \\
+        0 & \cos{#1} & -\sin{#1} \\
+        0 & \sin{#1} & \cos{#1} \\
+    \end{pmatrix}
+}
+
 \begin{document}
 {\color{orange}
 \begin{align*}
@@ -31,87 +50,67 @@ __DATA__
 \end{document}
 """
 
-def get_latex(msg):
-    msg = [msg]
-    for c in settings['commands']['render']:
-        if not any(c in x for x in msg):
-            continue
-        msg = [x.strip() for item in msg for x in item.split("```" + c)]
-        msg = [x.strip() for item in msg for x in item.split("`" + c)]
-        msg = [x.strip() for item in msg for x in item.split(c)]
-        msg = [x.strip() for item in msg for x in item.split("```")]
-        msg = [x.strip() for item in msg for x in item.split("`")]
-    # every second item is latex
-    return msg[1::2]
 
+class LaTeX(glados.Module):
 
-# Generate LaTeX locally. Is there such things as rogue LaTeX code?
-def generate_image(latex, message):
-    num = str(random.randint(0, 2 ** 31))
-    latex_file = 'tex/' + num + '.tex'
-    dvi_file = 'tex/' + num + '.dvi'
-    png_file = 'tex/' + num + '1.png'
-    with open(latex_file, 'w') as tex:
-        latex = LATEX_FRAMEWORK.replace('__DATA__', latex)
-        tex.write(latex)
-        tex.flush()
-        tex.close()
-    try:
-        subprocess.check_output(['latex', '-no-shell-escape', '-interaction', 'nonstopmode', '-halt-on-error', '-file-line-error', '-output-directory=tex', latex_file])
-    except subprocess.CalledProcessError as e:
-        vprint('\n'.join(str(e.output).split('\\n')))
-        errors = [x.strip() for x in str(e.output).split('\\n') if x.startswith('!') or '.tex:' in x]
-        lines = [int(x) - 2 for error in errors for x in error.split(':') if x.isdigit()]
-        latexlines = [x for n, x in enumerate(latex.split('\n')) if n in lines]
-        errormsg = "Error: {0}\n{1}".format('\n'.join([x.strip() for x in str(e.output).split('\\n') if x.startswith('!') or '.tex:' in x]),
-                                     '\n'.join(latexlines))
-        return (False, errormsg)
-    subprocess.call(['dvipng', '-q*', '-D', '200', '-T', 'tight', '-bg', 'Transparent', '-o', png_file, dvi_file])
-    #subprocess.check_call(['dvipng', '-q*', '-D', '300', '-T', 'tight', dvi_file])
+    def __init__(self, settings):
+        super(LaTeX, self).__init__(settings)
 
-    return (True, png_file)
+        self.__out_folder = 'tex'
+        self.__latex_blacklist = ("\\write18",
+                                  "\\input",
+                                  "\\include",
+                                  "{align*}",
+                                  "\\loop",
+                                  "\\repeat",
+                                  "\\csname",
+                                  "\\endcsname")
 
-# More unpredictable, but probably safer for my computer.
-def generate_image_online(latex, message):
-    url = 'http://frog.isima.fr/cgi-bin/bruno/tex2png--10.cgi?'
-    url += urllib.parse.quote(latex, safe='')
-    fn = str(random.randint(0, 2 ** 31)) + '.png'
-    urllib.request.urlretrieve(url, fn)
-    return fn
+    def generate_image(self, latex):
+        num = str(random.randint(0, 2 ** 31))
+        latex_file = os.path.join(self.__out_folder, num + '.tex')
+        dvi_file   = os.path.join(self.__out_folder, num + '.dvi')
+        png_file   = os.path.join(self.__out_folder, num + '1.png')
+        with open(latex_file, 'w') as tex:
+            latex = LATEX_FRAMEWORK.replace('__DATA__', latex)
+            tex.write(latex)
+            tex.flush()
+            tex.close()
+        try:
+            subprocess.check_output(['latex',
+                                     '-no-shell-escape',
+                                     '-interaction', 'nonstopmode',
+                                     '-halt-on-error',
+                                     '-file-line-error',
+                                     '-output-directory=' + self.__out_folder,
+                                     latex_file])
+        except subprocess.CalledProcessError as e:
+            print('\n'.join(str(e.output).split('\\n')))
+            errors = [x.strip() for x in str(e.output).split('\\n') if x.startswith('!') or '.tex:' in x]
+            lines = [int(x) - 2 for error in errors for x in error.split(':') if x.isdigit()]
+            latexlines = [x for n, x in enumerate(latex.split('\n')) if n in lines]
+            errormsg = "Error: {0}\n{1}".format('\n'.join([x.strip() for x in str(e.output).split('\\n') if x.startswith('!') or '.tex:' in x]),
+                                         '\n'.join(latexlines))
+            return False, errormsg
 
-@client.event
-@asyncio.coroutine
-#@chanrestrict.apply
-def on_message(message):
-    if message.author.bot:
-        return
+        subprocess.call(['dvipng', '-q*', '-D', '200', '-T', 'tight', '-bg', 'Transparent', '-o', png_file, dvi_file])
 
-    msg = message.content
-    if not any(x in msg for x in ("!tex", "!fortune", "!bofh")):
-        return
+        return True, png_file
 
-    if any(x in msg for x in ("\\write18", "\\input", "\\include", "{align*}", "\\loop", "\\repeat", "\\csname", "\\endcsname")):
-        yield from client.send_message(message.channel, "Error: Trying to be naughty, are we?")
-        return
-
-    # troll dsm
-    #if message.author.name == "dsm":
-    #    msg = "!tex \\color{pink} \\text {dsm loves dongers}"
-
-    for latex in get_latex(msg):
-        vprint('Latex:', latex)
-
-        if settings['renderer'] == 'external':
-            fn = generate_image_online(latex, message)
-        if settings['renderer'] == 'local':
-            fn = generate_image(latex, message)
-
-        if fn[0] == False:
-            yield from client.send_message(message.channel, fn[1])
+    @glados.Module.commands('math')
+    def on_message(self, client, message, content):
+        if any(x in content for x in self.__latex_blacklist):
+            yield from client.send_message(message.channel, "Error: Trying to be naughty, are we?")
             return
 
-        if fn[0] == True and os.path.getsize(fn[1]) > 0:
+        # troll dsm
+        #if message.author.name == "dsm":
+        #    content = "!tex \\color{pink} \\text {dsm loves dongers}"
+
+        fn = self.generate_image(content)
+
+        if not fn[0]:
+            yield from client.send_message(message.channel, fn[1])
+            return
+        if os.path.getsize(fn[1]) > 0:
             yield from client.send_file(message.channel, fn[1])
-            vprint('Success!')
-        else:
-            vprint('Failure.')
