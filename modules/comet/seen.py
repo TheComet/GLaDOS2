@@ -39,7 +39,7 @@ class Seen(glados.Module):
     @glados.Module.rules('^.*$')
     def on_message(self, client, message, match):
         author = message.author.name
-        msg = message.content
+        msg = message.clean_content
         ts = datetime.now().isoformat()
         self.__dict[author] = {'message': str(msg), 'timestamp': str(ts)}
         self.__save_dict()

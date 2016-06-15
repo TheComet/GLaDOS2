@@ -37,7 +37,7 @@ class Bot(object):
                 for callback in callbacks:
 
                     if hasattr(callback, 'commands'):
-                        for command, content in self.extract_commands_from_message(message.content):
+                        for command, content in self.extract_commands_from_message(message.clean_content):
                             if command in callback.commands:
                                 yield from callback(self.client, message, content)
                     if hasattr(callback, 'rules'):
@@ -53,6 +53,7 @@ class Bot(object):
             print('Running as', self.client.user.name)
 
     def extract_commands_from_message(self, msg):
+        msg = str(msg)
         cmd_prefix = self.settings['commands']['prefix']
 
         if msg.startswith(cmd_prefix):
