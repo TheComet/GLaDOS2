@@ -1,4 +1,4 @@
-from willie import module
+import glados
 import random
 
 # Take from http://lolsnaps.com/funny/147275/probably-my-favorite-insult-generator-you-twat-gobbling-douc
@@ -93,20 +93,23 @@ C = [
     'bologna'
 ]
 
-def gen_insult():
-    words = list()
-    while True:
-        words.append(random.choice(A))
-        if random.randint(0, 1):
-            break
-        words.append(random.choice(B))
-    words.append(random.choice(C))
-    return ' '.join(words)
 
-@module.commands("insult")
-def insult(bot, trigger):
-    if trigger.group(2):
-        bot.say('{0}: You {1}!'.format(trigger.group(2), gen_insult()))
-    else:
-        bot.say('You {}!'.format(gen_insult()))
+class Insult(glados.Module):
 
+    @staticmethod
+    def gen_insult():
+        words = list()
+        while True:
+            words.append(random.choice(A))
+            if random.randint(0, 1):
+                break
+            words.append(random.choice(B))
+        words.append(random.choice(C))
+        return ' '.join(words)
+
+    @glados.Module.commands("insult")
+    def insult(self, client, message, content):
+        if content == "":
+            yield from client.send_message(message.channel, 'You {}!'.format(self.gen_insult()))
+        else:
+            yield from client.send_message(message.channel, '{0}: You {1}!'.format(content, self.gen_insult()))
