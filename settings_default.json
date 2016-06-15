@@ -1,17 +1,23 @@
 {
-	"login": {
-		"email": "user@domain.com",
-		"password": "pa$$w0rd",
-		"token": "token"
-	},
-	"channels": {
-		"whitelist": [],
-		"blacklist": []
-	},
-	"commands": {
-		"render": ["!tex"],
-		"help": ["!help", "!help tex"]
-	},
-	"renderer": "internal",
-	"verbose": true
+  "login": {
+    "email": "email",
+    "password": "pa$$word",
+    "token": "token"
+  },
+  "modules": {
+    "paths": [
+      "modules"
+    ],
+    "names": [
+      "comet.burn.Burn",
+      "comet.seen.Seen",
+      "comet.8ball.EightBall"
+    ],
+    "config path": "module_config"
+  },
+  "commands": {
+    "prefix": ".",
+    "reload": "reload",
+    "help": "help"
+  }
 }
