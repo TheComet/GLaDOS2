@@ -32,7 +32,7 @@ messages = ["It is certain",
 
 class EightBall(glados.Module):
 
-    @glados.Module.commands('8')
+    @glados.Module.commands('8', '8ball')
     def ball(self, client, message, content):
         """Ask the magic 8ball a question! Usage: .8 <question>"""
         yield from client.send_message(message.channel, random.choice(messages))
