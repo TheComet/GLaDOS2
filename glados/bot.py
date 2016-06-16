@@ -37,6 +37,8 @@ class Bot(object):
 
             core_commands_response = self.__get_core_commands_response(message)
             if core_commands_response:
+                yield from self.client.send_message(message.channel,
+                                                    'I\'m sending you a direct message with a list of commands!')
                 yield from self.client.send_message(message.author, core_commands_response)
                 return
 
