@@ -80,7 +80,7 @@ class Seen(glados.Module):
     @glados.Module.commands('seen')
     def on_seen(self, client, message, content):
         if content == "":
-            yield from client.send_message(message.channel, ".seen <user>")
+            yield from self.provide_help('seen', client, message)
             return
 
         author = content.strip('@').split('#')[0]
