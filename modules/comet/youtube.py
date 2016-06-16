@@ -15,8 +15,12 @@ class Youtube(glados.Module):
                                                             '.youtube <search phrase> searches for a video on youtube.')
             return
 
-        if content == 'comment': yield from client.send_message(message.channel, self.get_random_comment())
-        if content == 'video'  : yield from client.send_message(message.channel, self.get_random_video())
+        if content == 'comment':
+            yield from client.send_message(message.channel, self.get_random_comment())
+            return
+        if content == 'video':
+            yield from client.send_message(message.channel, self.get_random_video())
+            return
         yield from client.send_message(message.channel, self.search_for_video(content))
 
     @staticmethod
@@ -46,15 +50,9 @@ class Youtube(glados.Module):
     def search_for_video(text_to_search):
         query = urllib.parse.quote(text_to_search)
         url = 'https://www.youtube.com/results?search_query={}'.format(query)
-        print('opening url {}'.format(url))
-        response = urllib.request.urlopen(url)
-        print('reading response')
-        html = response.read().decode('utf-8')
-        print('parsing')
+        html = urllib.request.urlopen(url).read().decode('utf-8')
         soup = BeautifulSoup(html, 'lxml')
-        print('reading results')
         vid = soup.find(attrs={'class':'yt-uix-tile-link'})
-        print('done')
         if vid:
             return 'https://www.youtube.com' + vid['href']
         else:
