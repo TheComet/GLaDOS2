@@ -66,6 +66,11 @@ class LaTeX(glados.Module):
                                   "\\csname",
                                   "\\endcsname")
 
+    def get_help_list(self):
+        return [
+            glados.Help('math', '<latex code>', 'Render latex math code')
+        ]
+
     def generate_image(self, latex):
         num = str(random.randint(0, 2 ** 31))
         latex_file = os.path.join(self.__out_folder, num + '.tex')
@@ -99,6 +104,11 @@ class LaTeX(glados.Module):
 
     @glados.Module.commands('math')
     def on_message(self, client, message, content):
+
+        if content == '':
+            yield from self.provide_help('math', client, message)
+            return
+
         if any(x in content for x in self.__latex_blacklist):
             yield from client.send_message(message.channel, "Error: Trying to be naughty, are we?")
             return

@@ -96,6 +96,12 @@ C = [
 
 class Insult(glados.Module):
 
+    def get_help_list(self):
+        return [
+            glados.Help('insult', '', 'Generate a random insult.'),
+            glados.Help('insult', '<user>', 'Generate a random insult and direct it at a user.')
+        ]
+
     @staticmethod
     def gen_insult():
         words = list()

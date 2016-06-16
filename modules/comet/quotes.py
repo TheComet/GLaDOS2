@@ -11,22 +11,29 @@ class Quotes(glados.Module):
         if not os.path.exists(self.quotes_data_path):
             os.makedirs(self.quotes_data_path)
 
-    def check_nickname_valid(self, nickname):
+    def get_help_list(self):
+        return [
+            glados.Help('quote', '<user>', 'Dig up a quote the user once said in the past.'),
+            glados.Help('quotestats', '<user>', 'Provide statistics on how many quotes a user has and how'
+                                                ' intelligent he is')
+        ]
+
+    def check_nickname_valid(self, author):
         """
         Returns True if the nickname is valid. Returns a string describing the error if an error occurs.
-        :param nickname: The nickname to check
+        :param author: The nickname to check
         :return: True or an error string
         """
-        if nickname is None:
+        if author is None:
             return 'Must pass a nickname as an argument'
 
-        if not os.path.isfile(self.quotes_file_name(nickname)):
-            return 'I don\'t know any quotes from {}'.format(nickname)
+        if not os.path.isfile(self.quotes_file_name(author)):
+            return 'I don\'t know any quotes from {}'.format(author)
 
-        return True
+        return None
 
-    def quotes_file_name(self, nickname):
-        return os.path.join(self.quotes_data_path, nickname) + '.txt'
+    def quotes_file_name(self, author):
+        return os.path.join(self.quotes_data_path, author) + '.txt'
 
     @glados.Module.rules('^(.*)$')
     def record(self, client, message, match):
@@ -37,9 +44,14 @@ class Quotes(glados.Module):
 
     @glados.Module.commands('quote')
     def quote(self, client, message, content):
-        author = content.strip('@').split('#')[0]
+        if content == '':
+            yield from self.provide_help('quote', client, message)
+            return
 
-        if not self.check_nickname_valid(author.lower()):
+        author = content.strip('@').split('#')[0]
+        error = self.check_nickname_valid(author.lower())
+        if not error is None:
+            yield from client.send_message(message.channel, error)
             return tuple()
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
@@ -57,9 +69,14 @@ class Quotes(glados.Module):
 
     @glados.Module.commands('quotestats')
     def quotestats(self, client, message, content):
-        author = content.strip('@').split('#')[0]
+        if content == '':
+            yield from self.provide_help('quotestats', client, message)
+            return
 
-        if not self.check_nickname_valid(author.lower()):
+        author = content.strip('@').split('#')[0]
+        error = self.check_nickname_valid(author.lower())
+        if not error is None:
+            yield from client.send_message(message.channel, error)
             return tuple()
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')

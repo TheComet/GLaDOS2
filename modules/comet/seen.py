@@ -58,6 +58,11 @@ class Seen(glados.Module):
         with open(self.__config_file, 'w') as f:
             f.write(json.dumps(self.__dict))
 
+    def get_help_list(self):
+        return [
+            glados.Help('seen', '<user>', 'Find the last message a user wrote, where he wrote it, and what it said')
+        ]
+
     @glados.Module.rules('^.*$')
     def on_message(self, client, message, match):
         author = message.author.name

@@ -15,6 +15,9 @@ class Log(glados.Module):
         self.__date = datetime.now().strftime('%Y-%m-%d')
         self.__log = open(os.path.join(self.__log_path, 'chanlog-{}'.format(self.__date)), 'a')
 
+    def get_help_list(self):
+        return list()
+
     def __open_new_log_if_necessary(self):
         date = datetime.now().strftime('%Y-%m-%d')
         if not self.__date == date:

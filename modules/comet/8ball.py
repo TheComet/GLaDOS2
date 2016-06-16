@@ -9,7 +9,7 @@ import glados
 import random
 
 messages = ["It is certain",
-            " It is decidedly so",
+            "It is decidedly so",
             "Without a doubt",
             "Yes definitely",
             "You may rely on it",
@@ -32,7 +32,16 @@ messages = ["It is certain",
 
 class EightBall(glados.Module):
 
+    def get_help_list(self):
+        return [
+            glados.Help('8', '<question>', 'Ask the magical 8-ball a yes/no question'),
+            glados.Help('8ball', '<question>', 'Ask the magical 8-ball a yes/no question')
+        ]
+
     @glados.Module.commands('8', '8ball')
     def ball(self, client, message, content):
-        """Ask the magic 8ball a question! Usage: .8 <question>"""
+        if content == '':
+            yield from self.provide_help('8', client, message)
+            return
+
         yield from client.send_message(message.channel, random.choice(messages))

@@ -7,6 +7,13 @@ from bs4 import BeautifulSoup
 
 class Youtube(glados.Module):
 
+    def get_help_list(self):
+        return [
+            glados.Help('youtube', 'comment', 'Look for a random youtube comment and return it.'),
+            glados.Help('youtube', 'video', 'Look for a random youtube video and return its URL.'),
+            glados.Help('youtube', '<search term>', 'Look for a youtube video and return its URL.')
+        ]
+
     @glados.Module.commands('youtube', 'yt')
     def random_youtube(self, client, message, content):
         # no arguments

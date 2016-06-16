@@ -18,12 +18,17 @@ class Burn(glados.Module):
         self.counter = 0
         self.burns_dict = dict()
 
+    def get_help_list(self):
+        return [
+            glados.Help('burn', '<user>', 'Burn a user when you feel like he just got pwned')
+        ]
+
     @glados.Module.commands("burn")
     def burn_user(self, client, message, content):
         global burns
 
         if content == "":
-            yield from client.send_message(message.channel, ".burn <user>")
+            yield from self.provide_help('burn', client, message)
             return
 
         user_being_burned = content.strip('@')

@@ -4,6 +4,12 @@ import subprocess
 
 class Fortune(glados.Module):
 
+    def get_help_list(self):
+        return [
+            glados.Help('fortune', '', 'Generate a fortune to start off your day.'),
+            glados.Help('bofh', '', 'Generate a Bastard Operator From Hell excuse')
+        ]
+
     @glados.Module.commands('fortune')
     def fortune(self, client, message, content):
         fortune = subprocess.check_output(['/usr/games/fortune'])

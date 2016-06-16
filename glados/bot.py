@@ -24,13 +24,20 @@ class Bot(object):
         self.settings = json.loads(open('settings.json').read())
         self.client = discord.Client()
 
+        self.__command_prefix = self.settings['commands']['prefix']
         self.__on_message_callbacks = list()
+        self.__help_list = list()
         self.load_modules()
 
         @self.client.event
         @asyncio.coroutine
         def on_message(message):
             if message.author.bot:
+                return
+
+            core_commands_response = self.__get_core_commands_response(message)
+            if core_commands_response:
+                yield from self.client.send_message(message.author, core_commands_response)
                 return
 
             for callbacks in self.__on_message_callbacks:
@@ -63,6 +70,8 @@ class Bot(object):
 
     def load_modules(self):
         add_import_paths(self.settings['modules']['paths'])
+        delayed_successes = list()
+        delayed_errors = list()
         for modfullname in self.settings['modules']['names']:
             modnamespace = modfullname.split('.')
             classname = modnamespace[-1]
@@ -72,16 +81,35 @@ class Bot(object):
                 m = __import__(modnamespace, fromlist=[classname])
                 m = getattr(m, classname)(self.settings)
             except ImportError:
-                print('Error: Failed to import module {0}\n{1}'.format(modfullname, traceback.print_exc()))
+                delayed_errors.append('Error: Failed to import module {0}\n{1}'.format(modfullname,
+                                                                                       traceback.print_exc()))
+                continue
+
+            try:
+                modhelp = [self.__command_prefix + x.get() for x in m.get_help_list()]
+            except RuntimeError:
+                delayed_errors.append('Error: Module {0} doesn\'t provide any help.'.format(modfullname))
                 continue
 
             callbacks = self.__get_module_message_callbacks(m)
             if len(callbacks) == 0:
-                print('Error: Module {0} has no callbacks'.format(modfullname))
+                delayed_errors.append('Error: Module {0} has no callbacks'.format(modfullname))
                 continue
 
-            print('Loaded module {}'.format(modfullname))
+            delayed_successes.append('Loaded module {}'.format(modfullname))
             self.__on_message_callbacks.append(callbacks)
+            self.__help_list.append('\n'.join(modhelp))
+
+        if delayed_successes:
+            print('---------Loaded Modules----------\n' + '\n'.join(delayed_successes))
+        if delayed_errors:
+            print('---------FAILED Modules----------\n' + '\n'.join(delayed_errors))
+
+    def __get_core_commands_response(self, message):
+        if message.content.startswith(self.__command_prefix + 'help'):
+            return '==== Loaded modules ====\n' + '\n'.join(self.__help_list)
+
+        return False
 
     @staticmethod
     def __get_module_message_callbacks(m):

@@ -4,7 +4,18 @@ import re
 class Module(object):
 
     def __init__(self, settings):
-        pass
+        self.__command_prefix = settings['commands']['prefix']
+
+    def provide_help(self, command, client, message):
+        help = next(x for x in self.get_help_list() if x.command == command)
+        yield from client.send_message(message.channel, self.__command_prefix + help.get())
+
+    def get_help_list(self):
+        """
+        The inheriting modules should return a list of strings describing what each command does.
+        :return:
+        """
+        raise RuntimeError('Module doesn\'t provide any command descriptions.')
 
     @staticmethod
     def commands(*command_list):
