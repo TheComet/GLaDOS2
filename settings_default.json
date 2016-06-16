@@ -9,15 +9,23 @@
       "modules"
     ],
     "names": [
-      "comet.burn.Burn",
       "comet.seen.Seen",
-      "comet.8ball.EightBall"
+      "comet.8ball.EightBall",
+      "comet.youtube.Youtube",
+      "comet.quotes.Quotes"
     ],
+    "server specific": {
+      "Server 1": [
+        "comet.insult.Insult"
+      ],
+      "Server 2": [
+        "comet.showip.ShowIP"
+      ]
+    },
     "config path": "module_config"
   },
   "commands": {
     "prefix": ".",
-    "reload": "reload",
     "help": "help"
   }
 }

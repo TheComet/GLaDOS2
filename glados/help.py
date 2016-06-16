@@ -5,4 +5,6 @@ class Help(object):
         self.description = description
 
     def get(self):
-        return '{0} {1} -- {2}'.format(self.command, self.argument_list, self.description)
+        if not self.argument_list == '':
+            return '{0} **{1}** -- *{2}*'.format(self.command, self.argument_list, self.description)
+        return '{0} -- *{1}*'.format(self.command, self.description)
