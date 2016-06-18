@@ -34,12 +34,15 @@ class Bot(object):
             if message.author.bot:
                 return
 
-            core_commands_response = self.__get_core_commands_response(message)
-            if core_commands_response:
-                yield from self.client.send_message(message.channel,
-                                                    'I\'m sending you a direct message with a list of commands!')
-                yield from self.client.send_message(message.author, core_commands_response)
-                return
+            commands = self.extract_commands_from_message(message.clean_content)
+
+            for command, content in commands:
+                core_commands_response = self.__get_core_commands_response(message, command, content)
+                if core_commands_response:
+                    yield from self.client.send_message(message.channel,
+                                                        'I\'m sending you a direct message with a list of commands!')
+                    yield from self.client.send_message(message.author, core_commands_response)
+                    return
 
             for callback, module in self.__callback_tuples:
 
@@ -49,7 +52,7 @@ class Bot(object):
                         continue
 
                 if hasattr(callback, 'commands'):
-                    for command, content in self.extract_commands_from_message(message.clean_content):
+                    for command, content in commands:
                         if command in callback.commands:
                             yield from callback(self.client, message, content)
                 if hasattr(callback, 'rules'):
@@ -146,8 +149,11 @@ class Bot(object):
 
         self.__callback_tuples += callback_tuples
 
-    def __get_core_commands_response(self, message):
-        if message.content.startswith(self.__command_prefix + self.settings['commands']['help']):
+    def __get_core_commands_response(self, message, command, content):
+        if content == '':
+            return False
+
+        if command == self.__command_prefix + self.settings['commands']['help']:
             # creates a list of relevant modules
             relevant_modules = set(module for c, module in self.__callback_tuples
                                    if len(module.server_whitelist) == 0
