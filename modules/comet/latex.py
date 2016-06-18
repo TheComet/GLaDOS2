@@ -1,9 +1,8 @@
-import urllib
 import random
 import os
-import asyncio
 import subprocess
 import glados
+import discord
 
 
 LATEX_FRAMEWORK = r"""
@@ -123,4 +122,9 @@ class LaTeX(glados.Module):
             yield from client.send_message(message.channel, fn[1])
             return
         if os.path.getsize(fn[1]) > 0:
-            yield from client.send_file(message.channel, fn[1])
+            try:
+                yield from client.send_file(message.channel, fn[1])
+            except discord.errors.Forbidden:
+                yield from client.send_message(
+                    message.channel,
+                    'Error: Insufficient permissions to send file files to channel #{}'.format(message.channel.name))
