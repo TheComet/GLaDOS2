@@ -150,10 +150,10 @@ class Bot(object):
         self.__callback_tuples += callback_tuples
 
     def __get_core_commands_response(self, message, command, content):
-        if content == '':
+        if not content == '':
             return False
 
-        if command == self.__command_prefix + self.settings['commands']['help']:
+        if command == self.settings['commands']['help']:
             # creates a list of relevant modules
             relevant_modules = set(module for c, module in self.__callback_tuples
                                    if len(module.server_whitelist) == 0
@@ -171,7 +171,10 @@ class Bot(object):
 
     @asyncio.coroutine
     def main_task(self):
-        yield from self.client.login(self.settings['login']['token'])
+        if self.settings['login']['method'] == 'token':
+            yield from self.client.login(self.settings['login']['token'])
+        else:
+            yield from self.client.login(self.settings['login']['email'], self.settings['login']['password'])
         yield from self.client.connect()
 
     def run(self):
