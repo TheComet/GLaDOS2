@@ -7,6 +7,9 @@ env/
 # tex output
 tex/
 
+# generated files
+*log
+
 # secret settings file
 settings.json
 

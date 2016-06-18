@@ -5,6 +5,7 @@ import json
 import asyncio
 import inspect
 import re
+from .Log import log
 
 import_paths_were_added = False
 comment_pattern = re.compile('`(.*?)`')
@@ -96,9 +97,9 @@ class Bot(object):
                     delayed_successes.append('Loaded whitelisted module {0} for server {1}'.format(modfullname, server))
 
         if delayed_successes:
-            print('---------Loaded Modules----------\n' + '\n'.join(delayed_successes))
+            log('---------Loaded Modules----------\n' + '\n'.join(delayed_successes))
         if delayed_errors:
-            print('---------FAILED Modules----------\n' + '\n'.join(delayed_errors))
+            log('---------FAILED Modules----------\n' + '\n'.join(delayed_errors))
 
     def __import_module(self, modfullname, server=None):
         # was this module name already loaded? This checks if "modfullname" is in any of the loaded modules
