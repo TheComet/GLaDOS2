@@ -2,7 +2,8 @@
   "login": {
     "email": "email",
     "password": "pa$$word",
-    "token": "token"
+    "token": "token",
+    "method": "email"
   },
   "modules": {
     "paths": [
