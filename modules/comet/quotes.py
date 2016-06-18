@@ -35,7 +35,8 @@ class Quotes(glados.Module):
     def quotes_file_name(self, author):
         return os.path.join(self.quotes_data_path, author) + '.txt'
 
-    @glados.Module.rules('^(.*)$')
+    # matches everything except strings beginning with a ".xxx" to ignore commands
+    @glados.Module.rules('^((?!\.\w+).*)$')
     def record(self, client, message, match):
         author = message.author.name
         with codecs.open(self.quotes_file_name(author.lower()), 'a', encoding='utf-8') as f:
