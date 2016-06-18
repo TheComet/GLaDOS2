@@ -20,6 +20,36 @@ It is possible to add a list of paths, in which the bot modules will be searched
 
 ### Writing modules
 
+You can use this as a framework for your module.
+```python
+import glados
+
+class MyModule(glados.Module):
+    def __init__(self, settings):
+        pass  # you can retrieve data from the settings.json file using settings
+
+    def get_help_list(self):
+        return [
+            glados.Help('hello', '<name>', 'Says hello to the specified name')
+        ]
+
+    @glados.Module.commands('hello')
+    def respond_to_hello(self, client, message, arg):
+        
+        # User forgot to supply the command with an argument
+        if arg == '':
+            yield from self.provide_help('hello', client, message)
+            return
+
+        yield from client.send_message(message.channel, 'Hello, {}!'.format(arg))
+
+    @glados.Module.rules('^.*(hello).*$')
+    @glados.Module.rules('^.*(hi).*$')
+    def someone_said_hello_or_hi(self, client, message, match)
+        yield from client.send_message(message.channel, 'Hello, {}!'.format(message.author.name))
+```
+
+
 There are two ways to register yourself to messages being received. Either you can provide a command to react to, for example:
 ```python
 import glados
