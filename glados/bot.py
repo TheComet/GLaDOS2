@@ -65,7 +65,7 @@ class Bot(object):
         @self.client.event
         @asyncio.coroutine
         def on_ready():
-            print('Running as', self.client.user.name)
+            log('Running as {}'.format(self.client.user.name))
 
     def extract_commands_from_message(self, msg):
         msg = str(msg)
@@ -170,7 +170,8 @@ class Bot(object):
                 if hasattr(member, 'commands') or hasattr(member, 'rules')]
 
     @asyncio.coroutine
-    def main_task(self):
+    def login(self):
+        log('Connecting...')
         if self.settings['login']['method'] == 'token':
             yield from self.client.login(self.settings['login']['token'])
         else:
@@ -180,7 +181,7 @@ class Bot(object):
     def run(self):
         loop = asyncio.get_event_loop()
         try:
-            loop.run_until_complete(self.main_task())
+            loop.run_until_complete(self.login())
         except:
             loop.run_until_complete(self.client.logout())
             raise

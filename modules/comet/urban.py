@@ -18,7 +18,7 @@ class Urban(glados.Module):
         url = UD_URL + word
         resp = json.loads(urllib.request.urlopen(url).read().decode("utf-8"))
         if resp['result_type'] == 'no_results':
-            definition = 'Definition %s not found!' % (word)
+            definition = 'Definition {} not found!'.format(word)
         else:
             try:
                 item = resp['list'][0]['definition']
