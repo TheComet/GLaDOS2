@@ -8,7 +8,16 @@ class Hello(glados.Module):
 
     def get_help_list(self): return []
 
-    @glados.Module.rules(r'(?i)(hi|hello|hey),? $nickname[ \t]*$')
+    @glados.Module.rules(r'(?i)(hi|hello|hey),? texbot[ \t]*$')
+    def respond_hello(self, client, message, match):
+        greeting = random.choice(('Hi', 'Hey', 'Hello'))
+        greeting += message.author.name + random.choice(('', '!'))
+        greeting += random.choice((' No one ever says hi to me... Are you a bot?',
+                                   'I\'m flattered you think I\'m human',
+                                   'Do you always say hi to robots or are you just lonely?'))
+        yield from client.send_message(message.channel, greeting)
+
+    @glados.Module.rules('^(hi|hello|hey)$')
     def hello(self, client, message, match):
         greeting = random.choice(('Hi', 'Hey', 'Hello'))
         punctuation = random.choice(('', '!'))
@@ -19,7 +28,7 @@ class Rude(glados.Module):
 
     def get_help_list(self): return []
 
-    @glados.Module.rules(r'(?i)(Fuck|Screw) you,? $nickname[ \t]*$')
+    @glados.Module.rules(r'(?i)(Fuck|Screw) you,? texbot[ \t]*$')
     def rude(self, client, message, match):
         yield from client.send_message(message.channel,
                                        'Watch your mouth, ' +
