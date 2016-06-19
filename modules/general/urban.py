@@ -9,8 +9,7 @@ class Urban(glados.Module):
 
     def get_help_list(self):
         return [
-            glados.Help('urban', '<term>', 'Look up a term on urban dictionary.'),
-            glados.Help('ud', '<term>', 'Look up a term on urban dictionary.')
+            glados.Help('urban', '<term>', 'Look up a term on urban dictionary.')
         ]
 
     @staticmethod
@@ -34,7 +33,6 @@ class Urban(glados.Module):
     @glados.Module.commands('urban', 'ud')
     def urban(self, client, message, content):
         if content == '':
-                yield from client.send_message(message.channel, '.urban <term>')
-                return
+            yield from self.provide_help('urban', client, message)
         definition = self.get_def(content)
         yield from client.send_message(message.channel, definition)

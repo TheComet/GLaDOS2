@@ -34,8 +34,7 @@ class EightBall(glados.Module):
 
     def get_help_list(self):
         return [
-            glados.Help('8', '<question>', 'Ask the magical 8-ball a yes/no question'),
-            glados.Help('8ball', '<question>', 'Ask the magical 8-ball a yes/no question')
+            glados.Help('8/8ball', '<question>', 'Ask the magical 8-ball a yes/no question')
         ]
 
     @glados.Module.commands('8', '8ball')
