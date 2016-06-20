@@ -8,6 +8,11 @@ class Cooldown(object):
         self.__timestamps = dict()
 
     def check(self, author_name):
+        """
+        Checks if the author is off of cooldown or not.
+        :param author_name: Name of the author to check.
+        :return: Returns False if the author is still on cooldown. True if not.
+        """
         if not author_name in self.__timestamps:
             self.__timestamps[author_name] = [datetime.now()]
             return True

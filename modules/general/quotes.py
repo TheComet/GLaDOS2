@@ -3,6 +3,7 @@ import codecs
 import os.path
 import random
 
+
 class Quotes(glados.Module):
     def __init__(self, settings):
         super(Quotes, self).__init__(settings)
@@ -10,7 +11,7 @@ class Quotes(glados.Module):
         if not os.path.exists(self.quotes_data_path):
             os.makedirs(self.quotes_data_path)
 
-        self.__cooldown = glados.Cooldown(4)
+        self.__cooldown = glados.Cooldown(5)
 
     def get_help_list(self):
         return [
@@ -57,7 +58,7 @@ class Quotes(glados.Module):
             return
 
         if not self.__cooldown.check(author.lower()):
-            yield from client.send_message(message.author, 'You can only use .quote 4 times in an hour')
+            yield from client.send_message(message.author, 'You can only use .quote 5 times in an hour')
             return
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
