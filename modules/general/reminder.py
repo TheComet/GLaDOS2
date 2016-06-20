@@ -67,21 +67,19 @@ class Reminder(glados.Module):
 
     def __init__(self, settings):
         super().__init__(settings)
+        self.reminder_file = os.path.join(settings['modules']['config path'], 'reminders.db')
+
+        self.rdb = self.load_database()
 
     def get_help_list(self):
         return [
             glados.Help('in', '<offset> <reminder>', 'Creates a reminder. Example: ".in 3h45m Go to class"')
         ]
 
-    def filename(self):
-        name = self.nick + '-' + self.config.core.host + '.reminders.db'
-        return os.path.join(self.config.core.homedir, name)
-
-
-    def load_database(self, name):
+    def load_database(self):
         data = {}
-        if os.path.isfile(name):
-            f = codecs.open(name, 'r', encoding='utf-8')
+        if os.path.isfile(self.reminder_file):
+            f = codecs.open(self.reminder_file, 'r', encoding='utf-8')
             for line in f:
                 unixtime, channel, nick, message = line.split('\t')
                 message = message.rstrip('\n')
@@ -94,18 +92,14 @@ class Reminder(glados.Module):
             f.close()
         return data
 
-
-    def dump_database(name, data):
-        f = codecs.open(name, 'w', encoding='utf-8')
-        for unixtime, reminders in data.items():
+    def dump_database(self):
+        f = codecs.open(self.reminder_file, 'w', encoding='utf-8')
+        for unixtime, reminders in self.rdb.items():
             for channel, nick, message in reminders:
                 f.write('%s\t%s\t%s\t%s\n' % (unixtime, channel, nick, message))
         f.close()
 
-
-    def setup(bot):
-        bot.rfn = filename(bot)
-        bot.rdb = load_database(bot.rfn)
+    def setup(self):
 
         def monitor(bot):
             time.sleep(5)
@@ -115,13 +109,13 @@ class Reminder(glados.Module):
                 oldtimes = [t for t in unixtimes if t <= now]
                 if oldtimes:
                     for oldtime in oldtimes:
-                        for (channel, nick, message) in bot.rdb[oldtime]:
+                        for (channel, author, message) in bot.rdb[oldtime]:
                             if message:
-                                bot.msg(channel, nick + ': ' + message)
+                                bot.msg(channel, author + ': ' + message)
                             else:
-                                bot.msg(channel, nick + '!')
+                                bot.msg(channel, author + '!')
                         del bot.rdb[oldtime]
-                    dump_database(bot.rfn, bot.rdb)
+                    self.dump_database()
                 time.sleep(2.5)
 
         targs = (bot,)
@@ -131,15 +125,12 @@ class Reminder(glados.Module):
     @glados.Module.commands('in')
     def remind(self, client, message, args):
         """Gives you a reminder in the given amount of time."""
-        if args == '':
+
+        args = args.split(' ', 1)
+        if len(args) < 2:
             yield from self.provide_help('in', client, message)
             return
 
-
-
-        if trigger.group(3) and not trigger.group(4):
-            bot.say("No message given for reminder.")
-            return NOLIMIT
         duration = 0
         message = filter(None, re.split('(\d+(?:\.\d+)? ?(?:(?i)' + periods + ')) ?',
                                         trigger.group(2))[1:])
