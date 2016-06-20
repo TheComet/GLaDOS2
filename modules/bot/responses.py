@@ -10,11 +10,11 @@ class Hello(glados.Module):
 
     @glados.Module.rules(r'(?i)(hi|hello|hey),? texbot[ \t]*$')
     def respond_hello(self, client, message, match):
-        greeting = random.choice(('Hi', 'Hey', 'Hello'))
+        greeting = random.choice(('Hi ', 'Hey ', 'Hello '))
         greeting += message.author.name + random.choice(('', '!'))
         greeting += random.choice((' No one ever says hi to me... Are you a bot?',
-                                   'I\'m flattered you think I\'m human',
-                                   'Do you always say hi to robots or are you just lonely?'))
+                                   ' I\'m flattered you think I\'m human',
+                                   ' Do you always say hi to robots or are you just lonely?'))
         yield from client.send_message(message.channel, greeting)
 
     @glados.Module.rules('^(hi|hello|hey)$')
