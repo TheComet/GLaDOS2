@@ -1,6 +1,7 @@
 import json
 import glados
 import urllib.request
+import urllib.parse
 
 UD_URL = 'http://api.urbandictionary.com/v0/define?term='
 
@@ -14,7 +15,7 @@ class Urban(glados.Module):
 
     @staticmethod
     def get_def(word):
-        url = UD_URL + word
+        url = UD_URL + urllib.parse.quote(word)
         resp = json.loads(urllib.request.urlopen(url).read().decode("utf-8"))
         if resp['result_type'] == 'no_results':
             definition = 'Definition {} not found!'.format(word)
