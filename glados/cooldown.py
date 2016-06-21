@@ -38,9 +38,9 @@ class Tracker(object):
         return self.margin <= 0
 
     def __decrease_punishment(self):
-        if (datetime.now() - self.last_punished).seconds > 180:
-            self.punishment_factor = max(1, self.punishment_factor - 1)
-            self.last_punished = datetime.now()
+        decrease_by, rem = divmod((datetime.now() - self.last_punished).seconds, 180)
+        self.punishment_factor = max(1, self.punishment_factor - decrease_by)
+        self.last_punished = datetime.now()
 
 
 class Cooldown(object):
