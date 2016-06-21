@@ -57,7 +57,7 @@ class Bot(object):
                         message.author,
                         ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'
                          'You have reached punishment level {}.\n'
-                         'Your punishment level decreases by 1 every 30 seconds.')
+                         'Your punishment level decreases by 1 every 180 seconds.')
                         .format(self.__cooldown.expires_in(author), self.__cooldown.punishment(author)))
                     return tuple()
 

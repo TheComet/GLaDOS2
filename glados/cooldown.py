@@ -43,7 +43,7 @@ class Tracker(object):
         return ret
 
     def __decrease_punishment(self):
-        if (datetime.now() - self.last_punished).seconds > 30:
+        if (datetime.now() - self.last_punished).seconds > 180:
             self.punishment_factor = max(1, self.punishment_factor - 1)
             self.last_punished = datetime.now()
 
