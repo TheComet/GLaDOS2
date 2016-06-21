@@ -52,7 +52,6 @@ class Bot(object):
             if self.settings['modules']['cooldown']:
                 author = message.author.name
                 if not self.__cooldown.punish(author, dont_punish=True):
-                    self.__cooldown.punish(author)  # punish for trying
                     yield from self.client.send_message(
                         message.author,
                         ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'
