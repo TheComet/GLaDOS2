@@ -6,6 +6,7 @@
     "method": "email"
   },
   "modules": {
+    "cooldown": true,
     "paths": [
       "modules"
     ],
