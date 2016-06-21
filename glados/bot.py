@@ -48,19 +48,6 @@ class Bot(object):
                     yield from self.client.send_message(message.author, core_commands_response)
                     return
 
-            # modules have a cooldown (if enabled)
-            if self.settings['modules']['cooldown']:
-                author = message.author.name
-                if not self.__cooldown.punish(author, dont_punish=True):
-                    yield from self.client.send_message(
-                        message.author,
-                        ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'
-                         'You have reached punishment level {}.\n'
-                         'Your punishment level decreases by 1 every 180 seconds.')
-                        .format(self.__cooldown.expires_in(author), self.__cooldown.punishment(author)))
-                    return tuple()
-
-            command_was_successful = False
             for callback, module in self.__callback_tuples:
 
                 # Does the module have a server whitelist? If so, make sure this module is allowed.
@@ -71,8 +58,11 @@ class Bot(object):
                 if hasattr(callback, 'commands'):
                     for command, content in commands:
                         if command in callback.commands:
-                            yield from callback(self.client, message, content)
-                            command_was_successful = True
+                            cooldown = self.__apply_cooldown(message)
+                            if not cooldown:
+                                yield from callback(self.client, message, content)
+                            else:
+                                yield from self.client.send_message(message.author, cooldown)
 
                 if hasattr(callback, 'rules'):
                     for rule in callback.rules:
@@ -80,16 +70,23 @@ class Bot(object):
                         if match is None:
                             continue
                         yield from callback(self.client, message, match)
-                        command_was_successful = True
-
-            if command_was_successful and self.settings['modules']['cooldown']:
-                author = message.author.name
-                self.__cooldown.punish(author)
 
         @self.client.event
         @asyncio.coroutine
         def on_ready():
             log('Running as {}'.format(self.client.user.name))
+
+    def __apply_cooldown(self, message):
+
+        # modules have a cooldown (if enabled)
+        if self.settings['modules']['cooldown']:
+            author = message.author.name
+            if not self.__cooldown.punish(author):
+                return ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'
+                        'You have reached punishment level {}.\n'
+                        'Your punishment level decreases by 1 every 180 seconds.').\
+                        format(self.__cooldown.expires_in(author), self.__cooldown.punishment(author))
+        return False
 
     def extract_commands_from_message(self, msg):
         msg = str(msg)
