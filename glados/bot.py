@@ -6,6 +6,7 @@ import asyncio
 import inspect
 import re
 from .Log import log
+from .cooldown import Cooldown
 
 import_paths_were_added = False
 comment_pattern = re.compile('`(.*?)`')
@@ -26,16 +27,19 @@ class Bot(object):
 
         self.__command_prefix = self.settings['commands']['prefix']
         self.__callback_tuples = list()  # list of tuples. (module, command_callback)
+        self.__cooldown = Cooldown()
         self.load_modules()
 
         @self.client.event
         @asyncio.coroutine
         def on_message(message):
+            # ignore bots
             if message.author.bot:
-                return
+                return tuple()
 
             commands = self.extract_commands_from_message(message.clean_content)
 
+            # process core commands first
             for command, content in commands:
                 core_commands_response = self.__get_core_commands_response(message, command, content)
                 if core_commands_response:
@@ -44,6 +48,20 @@ class Bot(object):
                     yield from self.client.send_message(message.author, core_commands_response)
                     return
 
+            # modules have a cooldown (if enabled)
+            if self.settings['modules']['cooldown']:
+                author = message.author.name
+                if not self.__cooldown.punish(author, dont_punish=True):
+                    self.__cooldown.punish(author)  # punish for trying
+                    yield from self.client.send_message(
+                        message.author,
+                        ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'
+                         'You have reached punishment level {}.\n'
+                         'Your punishment level decreases by 1 every 30 seconds.')
+                        .format(self.__cooldown.expires_in(author), self.__cooldown.punishment(author)))
+                    return tuple()
+
+            command_was_successful = False
             for callback, module in self.__callback_tuples:
 
                 # Does the module have a server whitelist? If so, make sure this module is allowed.
@@ -55,12 +73,19 @@ class Bot(object):
                     for command, content in commands:
                         if command in callback.commands:
                             yield from callback(self.client, message, content)
+                            command_was_successful = True
+
                 if hasattr(callback, 'rules'):
                     for rule in callback.rules:
                         match = rule.match(message.content)
                         if match is None:
                             continue
                         yield from callback(self.client, message, match)
+                        command_was_successful = True
+
+            if command_was_successful and self.settings['modules']['cooldown']:
+                author = message.author.name
+                self.__cooldown.punish(author)
 
         @self.client.event
         @asyncio.coroutine

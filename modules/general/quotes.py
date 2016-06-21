@@ -11,8 +11,6 @@ class Quotes(glados.Module):
         if not os.path.exists(self.quotes_data_path):
             os.makedirs(self.quotes_data_path)
 
-        self.__cooldown = glados.Cooldown(12)
-
     def get_help_list(self):
         return [
             glados.Help('quote', '<user>', 'Dig up a quote the user once said in the past.'),
@@ -55,10 +53,6 @@ class Quotes(glados.Module):
         error = self.check_nickname_valid(author.lower())
         if not error is None:
             yield from client.send_message(message.channel, error)
-            return
-
-        if not self.__cooldown.check(author.lower()):
-            yield from client.send_message(message.author, 'You can only use .quote 12 times in an hour')
             return
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
