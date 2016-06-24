@@ -90,6 +90,6 @@ class Module(object):
             if not hasattr(func, "rules"):
                 func.rules = list()
             for rule in rule_list:
-                func.rules.append(re.compile(rule))
+                func.rules.append(re.compile(rule, re.IGNORECASE))
             return func
         return add_attribute
