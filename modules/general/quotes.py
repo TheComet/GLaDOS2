@@ -10,7 +10,7 @@ import dateutil.parser
 def strip_timestamp_and_name(msg):
     try:
         dateutil.parser.parse(msg[:19])
-    except TypeError:
+    except TypeError or ValueError:
         return msg
 
     return msg[19:].split(':', 1)[1].strip()
@@ -19,7 +19,7 @@ def strip_timestamp_and_name(msg):
 def get_timestamp(msg):
     try:
         stamp = dateutil.parser.parse(msg[:19])
-    except TypeError:
+    except TypeError or ValueError:
         return None
 
     return stamp
