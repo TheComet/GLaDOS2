@@ -43,9 +43,13 @@ class Mentions(glados.Module):
     def __init__(self, settings):
         super().__init__(settings)
 
-        self.__mention_log_file = os.path.join(settings['modules']['config path'], 'mentions', 'mentions.txt')
+        mentions_data_path = os.path.join(settings['modules']['config path'], 'mentions')
+        if not os.path.exists(mentions_data_path):
+            os.makedirs(mentions_data_path)
 
-        self.__seen_file = os.path.join(settings['modules']['config path'], 'mentions', 'seen_timestamps.json')
+        self.__mention_log_file = os.path.join(mentions_data_path, 'mentions.txt')
+        self.__seen_file = os.path.join(mentions_data_path, 'seen_timestamps.json')
+
         self.__last_seen = dict()
         self.__load_seen_timestamps()
 
