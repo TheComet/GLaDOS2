@@ -100,7 +100,7 @@ class Quotes(glados.Module):
             f.write(match.group(1))
 
         with codecs.open(self.__mention_log_file, 'a', encoding='utf-8') as f:
-            f.write(datetime.now().isoformat()[:19] + "  " + message.author.name + ": " + match.group(1) + "\n")
+            f.write(datetime.now().isoformat()[:19] + "  " + message.author.name + ": " + message.clean_content + "\n")
 
         key = author.lower()
         self.__last_seen[key] = datetime.now().isoformat()[:19]  # don't need microseconds
