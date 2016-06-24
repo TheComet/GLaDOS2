@@ -2,7 +2,7 @@ from datetime import datetime
 
 
 def log(msg):
-    msg = get_timestamp() + msg + '\n'
+    msg = get_timestamp() + msg
     __log.write(msg)
     __log.flush()
     print(msg)
