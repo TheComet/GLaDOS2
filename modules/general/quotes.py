@@ -99,7 +99,7 @@ class Quotes(glados.Module):
         with codecs.open(self.quotes_file_name(author.lower()), 'a', encoding='utf-8') as f:
             f.write(match.group(1))
 
-        with codecs.open(self.__mention_log_file, 'r', encoding='utf-8') as f:
+        with codecs.open(self.__mention_log_file, 'a', encoding='utf-8') as f:
             f.write(datetime.now().isoformat()[:19] + "  " + message.author.name + ": " + match.group(1) + "\n")
 
         key = author.lower()
