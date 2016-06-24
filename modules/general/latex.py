@@ -15,9 +15,13 @@ LATEX_FRAMEWORK = r"""
 \usepackage{esint}
 \usepackage{listings}
 \usepackage{mathtools}
+\usepackage{trfsigns}
+\usepackage{mathrsfs}
 
 \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\newcommand{\knochen}[0]{\fourier}
 
 \newcommand{\rz}[1]{
     \begin{pmatrix}
