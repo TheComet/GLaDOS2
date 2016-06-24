@@ -10,7 +10,9 @@ import dateutil.parser
 def strip_timestamp_and_name(msg):
     try:
         dateutil.parser.parse(msg[:19])
-    except TypeError or ValueError:
+    except TypeError:
+        return msg
+    except ValueError:
         return msg
 
     return msg[19:].split(':', 1)[1].strip()
@@ -19,7 +21,9 @@ def strip_timestamp_and_name(msg):
 def get_timestamp(msg):
     try:
         stamp = dateutil.parser.parse(msg[:19])
-    except TypeError or ValueError:
+    except TypeError:
+        return None
+    except ValueError:
         return None
 
     return stamp
@@ -29,6 +33,8 @@ def get_author(msg):
     try:
         dateutil.parser.parse(msg[:19])
     except TypeError:
+        return None
+    except ValueError:
         return None
 
     return msg[19:].split(':', 1)[0]
@@ -41,6 +47,8 @@ class Quotes(glados.Module):
         self.quotes_data_path = os.path.join(settings['modules']['config path'], 'quotes')
         if not os.path.exists(self.quotes_data_path):
             os.makedirs(self.quotes_data_path)
+
+        self.__mention_log_file = os.path.join(settings['modules']['config path'], 'quotes', 'mentions.txt')
 
         self.__seen_file = os.path.join(settings['modules']['config path'], 'quotes', 'seen_timestamps.json')
         self.__last_seen = dict()
@@ -89,6 +97,9 @@ class Quotes(glados.Module):
 
         author = message.author.name
         with codecs.open(self.quotes_file_name(author.lower()), 'a', encoding='utf-8') as f:
+            f.write(match.group(1))
+
+        with codecs.open(self.__mention_log_file, 'r', encoding='utf-8') as f:
             f.write(datetime.now().isoformat()[:19] + "  " + message.author.name + ": " + match.group(1) + "\n")
 
         key = author.lower()
@@ -110,7 +121,7 @@ class Quotes(glados.Module):
             return
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
-        lines = [strip_timestamp_and_name(x) for x in quotes_file.readlines()]
+        lines = quotes_file.readlines()
         quotes_file.close()
 
         lines = [x for x in lines if len(x) >= 20]
@@ -135,7 +146,7 @@ class Quotes(glados.Module):
             return tuple()
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
-        lines = [strip_timestamp_and_name(x) for x in quotes_file.readlines()]
+        lines = quotes_file.readlines()
         quotes_file.close()
 
         number_of_quotes = len(lines)
@@ -167,13 +178,13 @@ class Quotes(glados.Module):
         author = message.author.name
         key = author.lower()
 
-        quotes_file = codecs.open(self.quotes_file_name(key), 'r', encoding='utf-8')
-        lines = quotes_file.readlines()
-        quotes_file.close()
-
         if num > max_num:
             yield from client.send_message(message.channel, 'Please, don\'t be an idiot')
             return
+
+        mentions_file = codecs.open(self.__mention_log_file, 'r', encoding='utf-8')
+        lines = mentions_file.readlines()
+        mentions_file.close()
 
         if num == 0:
 
