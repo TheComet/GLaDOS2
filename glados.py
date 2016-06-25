@@ -1,3 +1,5 @@
+#!/home/cometbot/discord/GLaDOS2/env/bin/python
+
 import os
 import shutil
 import glados
@@ -16,3 +18,5 @@ if not os.path.isfile('settings.json'):
 if __name__ == '__main__':
     b = glados.Bot()
     b.run()
+    glados.log('Stopped -- this shouldn\'t happen')
+
