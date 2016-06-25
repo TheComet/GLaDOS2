@@ -160,8 +160,9 @@ class Bot(object):
         if not server is None:
             m.server_whitelist.append(server)
 
-        # set full name
+        # set module properties
         m.full_name = modfullname
+        m.client = self.client
 
         # get a list of tuples containing (callback function, module) pairs.
         callback_tuples = self.__get_callback_tuples(m)

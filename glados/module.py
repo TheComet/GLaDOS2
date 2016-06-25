@@ -10,6 +10,8 @@ class Module(object):
         self.server_whitelist = list()
         # this is set externally when the module is loaded. It will be something like "test.foo.Hello".
         self.full_name = str()
+        # set externally to the discord client object
+        self.client = None
 
     def provide_help(self, command, client, message):
         """
