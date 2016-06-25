@@ -34,7 +34,7 @@ class Bot(object):
         @asyncio.coroutine
         def on_message(message):
             # ignore bots
-            if message.author.bot:
+            if message.author.bot and not message.author.name == 'Saatchi':
                 return tuple()
 
             commands = self.extract_commands_from_message(message.clean_content)
