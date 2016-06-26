@@ -45,7 +45,8 @@ class Bot(object):
                 if core_commands_response:
                     yield from self.client.send_message(message.channel,
                                                         'I\'m sending you a direct message with a list of commands!')
-                    yield from self.client.send_message(message.author, core_commands_response)
+                    for msg in core_commands_response:
+                        yield from self.client.send_message(message.author, msg)
                     return
 
             for callback, module in self.__callback_tuples:
@@ -181,10 +182,35 @@ class Bot(object):
                                    if len(module.server_whitelist) == 0
                                    or message.server.name in module.server_whitelist)
             # generates a list of help strings from the modules
-            relevant_help = [self.__command_prefix + hlp.get() for mod in relevant_modules for hlp in mod.get_help_list()]
-            return '==== Loaded modules ====\n' + '\n'.join(sorted(relevant_help))
+            relevant_help = sorted([self.__command_prefix + hlp.get() for mod in relevant_modules
+                                    for hlp in mod.get_help_list()])
+
+            relevant_help = ['==== Loaded modules ====\n'] + relevant_help
+            return self.__concat_into_valid_message(relevant_help)
 
         return False
+
+    @staticmethod
+    def __concat_into_valid_message(list_of_strings):
+        """
+        Takes a list of strings and cats them such that the maximum discord limit is not exceeded. Strings are joined
+        with a newline.
+        :param list_of_strings:
+        :return: Returns a list of strings. Each string will be small enough to be sent in a discord message.
+        """
+        ret = list()
+        temp = list()
+        l = 0
+        max_length = 1000
+        for s in list_of_strings:
+            l += len(s)
+            if l >= max_length:
+                ret.append('\n'.join(temp))
+                l = 0
+                temp = list()
+            temp.append(s)
+        ret.append('\n'.join(temp))
+        return ret
 
     @staticmethod
     def __get_callback_tuples(m):
