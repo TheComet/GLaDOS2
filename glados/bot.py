@@ -59,7 +59,7 @@ class Bot(object):
                 if hasattr(callback, 'commands'):
                     for command, content in commands:
                         if command in callback.commands:
-                            cooldown = self.__apply_cooldown(message)
+                            cooldown = self.__apply_cooldown(message, command)
                             if not cooldown:
                                 yield from callback(self.client, message, content)
                             else:
@@ -77,10 +77,10 @@ class Bot(object):
         def on_ready():
             log('Running as {}'.format(self.client.user.name))
 
-    def __apply_cooldown(self, message):
+    def __apply_cooldown(self, message, command):
 
         # modules have a cooldown (if enabled)
-        if self.settings['modules']['cooldown']:
+        if command in self.settings['modules']['cooldown']:
             author = message.author.name
             if not self.__cooldown.punish(author):
                 return ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'
