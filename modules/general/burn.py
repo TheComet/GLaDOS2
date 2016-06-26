@@ -24,11 +24,11 @@ class Burn(glados.Module):
         ]
 
     @glados.Module.commands("burn")
-    def burn_user(self, client, message, content):
+    def burn_user(self, message, content):
         global burns
 
         if content == "":
-            yield from self.provide_help('burn', client, message)
+            yield from self.provide_help('burn', message)
             return
 
         user_being_burned = content.strip('@')
@@ -48,4 +48,4 @@ class Burn(glados.Module):
         response = "@{0} {1}\n{2}: {3}\n{4}: {5}".format(user_being_burned, burn,
                                                          user_burning, self.burns_dict[user_burning][user_being_burned],
                                                          user_being_burned, self.burns_dict[user_being_burned][user_burning])
-        yield from client.send_message(message.channel, response)
+        yield from self.client.send_message(message.channel, response)

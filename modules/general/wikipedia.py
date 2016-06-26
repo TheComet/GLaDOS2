@@ -22,10 +22,10 @@ class Wikipedia(glados.Module):
         ]
 
     @glados.Module.commands('w', 'wiki', 'wik')
-    def wikipedia(self, client, message, query):
+    def wikipedia(self, message, query):
 
         if query == '':
-            yield from self.provide_help('w', client, message)
+            yield from self.provide_help('w', message)
             return
 
         args = re.search(r'^-([a-z]{2,12})\s(.*)', query)
@@ -34,17 +34,17 @@ class Wikipedia(glados.Module):
             query = args.group(2)
 
         if not query:
-            yield from client.send_message(message.channel, 'What do you want me to look up?')
+            yield from self.client.send_message(message.channel, 'What do you want me to look up?')
             return
 
         server = self.__lang + '.wikipedia.org'
         query = mw_search(server, query, 1)
         if not query:
-            yield from client.send_message(message.channel, 'I can\'t find any results for that.')
+            yield from self.client.send_message(message.channel, 'I can\'t find any results for that.')
             return
         else:
             query = query[0]
-        yield from say_snippet(client, message, server, query)
+        yield from say_snippet(self.client, message, server, query)
 
 
 def mw_search(server, query, num):

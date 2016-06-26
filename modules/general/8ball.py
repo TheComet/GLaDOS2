@@ -38,9 +38,9 @@ class EightBall(glados.Module):
         ]
 
     @glados.Module.commands('8', '8ball')
-    def ball(self, client, message, content):
+    def ball(self, message, content):
         if content == '':
-            yield from self.provide_help('8', client, message)
+            yield from self.provide_help('8', message)
             return
 
-        yield from client.send_message(message.channel, random.choice(messages))
+        yield from self.client.send_message(message.channel, random.choice(messages))

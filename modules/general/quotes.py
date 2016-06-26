@@ -40,7 +40,7 @@ class Quotes(glados.Module):
 
     # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Module.rules('^((?!\.\w+).*)$')
-    def record(self, client, message, match):
+    def record(self, message, match):
         glados.log('Recording quote')
 
         author = message.author.name
@@ -50,15 +50,15 @@ class Quotes(glados.Module):
         return tuple()
 
     @glados.Module.commands('quote')
-    def quote(self, client, message, content):
+    def quote(self, message, content):
         if content == '':
-            yield from self.provide_help('quote', client, message)
+            yield from self.provide_help('quote', message)
             return
 
         author = content.strip('@').split('#')[0]
         error = self.check_nickname_valid(author.lower())
         if not error is None:
-            yield from client.send_message(message.channel, error)
+            yield from self.client.send_message(message.channel, error)
             return
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
@@ -69,21 +69,21 @@ class Quotes(glados.Module):
 
         if len(lines) > 0:
             line = random.choice(lines).strip('\n')
-            yield from client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
+            yield from self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
         else:
-            yield from client.send_message(message.channel,
+            yield from self.client.send_message(message.channel,
                                            '{} hasn\'t delivered any quotes worth mentioning yet'.format(author))
 
     @glados.Module.commands('quotestats')
-    def quotestats(self, client, message, content):
+    def quotestats(self, message, content):
         if content == '':
-            yield from self.provide_help('quotestats', client, message)
+            yield from self.provide_help('quotestats', message)
             return
 
         author = content.strip('@').split('#')[0]
         error = self.check_nickname_valid(author.lower())
         if not error is None:
-            yield from client.send_message(message.channel, error)
+            yield from self.client.send_message(message.channel, error)
             return tuple()
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
@@ -103,4 +103,4 @@ class Quotes(glados.Module):
             number_of_quotes, author,
             average_quote_length,
             author, number_of_words, average_word_length)
-        yield from client.send_message(message.channel, response)
+        yield from self.client.send_message(message.channel, response)

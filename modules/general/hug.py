@@ -9,14 +9,22 @@ class Hug(glados.Module):
         ]
 
     @glados.Module.commands('hug')
-    def hug(self, client, message, intensity):
+    def hug(self, message, intensity):
         """Because everyone likes hugs
         Up to 10 intensity levels."""
         name = " *" + message.author.name + "*"
 
         if intensity == '':
             intensity = 0
-        intensity = int(intensity)
+        try:
+            intensity = int(intensity)
+        except ValueError:
+            name = intensity.split(' ', 1)[0]
+            intensity = intensity.split(' ', 1)[-1]
+            try:
+                intensity = int(intensity)
+            except ValueError:
+                intensity = 0
 
         if intensity <= 0:
             msg = "(っ˘̩╭╮˘̩)っ" + name
@@ -28,4 +36,4 @@ class Hug(glados.Module):
             msg = "(つ≧▽≦)つ" + name
         else:
             msg = "(づ￣ ³￣)づ" + name + " ⊂(´・ω・｀⊂)"
-        yield from client.send_message(message.channel, msg)
+        yield from self.client.send_message(message.channel, msg)

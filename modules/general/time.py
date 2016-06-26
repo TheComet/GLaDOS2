@@ -1,6 +1,7 @@
 import glados
 from time import gmtime, strftime
 
+
 class Time(glados.Module):
 
     def get_help_list(self):
@@ -9,5 +10,5 @@ class Time(glados.Module):
         ]
 
     @glados.Module.commands('time')
-    def time(self, client, message, arg):
-        yield from client.send_message(message.channel, 'It is currently {}'.format(strftime('%H:%M:%S', gmtime())))
+    def time(self, message, arg):
+        yield from self.client.send_message(message.channel, 'It is currently {}'.format(strftime('%H:%M:%S', gmtime())))

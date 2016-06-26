@@ -9,9 +9,9 @@ class TwentyPercentCooler(glados.Module):
         ]
 
     @glados.Module.commands('20')
-    def on_twenty_percent_cooler(self, client, message, arg):
+    def on_twenty_percent_cooler(self, message, arg):
         if arg == '':
             target = message.author.name
         else:
             target = arg
-        yield from client.send_message(message.channel, target + ' is now 20% cooler')
+        yield from self.client.send_message(message.channel, target + ' is now 20% cooler')

@@ -15,20 +15,19 @@ class Youtube(glados.Module):
         ]
 
     @glados.Module.commands('youtube', 'yt')
-    def random_youtube(self, client, message, content):
+    def random_youtube(self, message, content):
         # no arguments
         if content == '':
-            yield from client.send_message(message.channel, '.youtube <comment/video> selects a random comment/video\n'
-                                                            '.youtube <search phrase> searches for a video on youtube.')
+            yield from self.provide_help('youtube', message)
             return
 
         if content == 'comment':
-            yield from client.send_message(message.channel, self.get_random_comment())
+            yield from self.client.send_message(message.channel, self.get_random_comment())
             return
         if content == 'video':
-            yield from client.send_message(message.channel, self.get_random_video())
+            yield from self.client.send_message(message.channel, self.get_random_video())
             return
-        yield from client.send_message(message.channel, self.search_for_video(content))
+        yield from self.client.send_message(message.channel, self.search_for_video(content))
 
     @staticmethod
     def get_random_comment():

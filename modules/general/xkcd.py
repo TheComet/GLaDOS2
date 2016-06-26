@@ -76,7 +76,7 @@ class XKCD(glados.Module):
         ]
 
     @glados.Module.commands('xkcd')
-    def xkcd(self, client, message, query):
+    def xkcd(self, message, query):
         """
         .xkcd - Finds an xkcd comic strip. Takes one of 3 inputs:
         If no input is provided it will return a random comic
@@ -101,17 +101,17 @@ class XKCD(glados.Module):
                 if numbered.group(1) == "-":
                     query = -query
                 if query > max_int:
-                    yield from client.send_message(message.channel, ("Sorry, comic #{} hasn't been posted yet. "
+                    yield from self.client.send_message(message.channel, ("Sorry, comic #{} hasn't been posted yet. "
                                                                      "The last comic was #{}").format(query, max_int))
                     return
                 elif query <= -max_int:
-                    yield from client.send_message(message.channel, ("Sorry, but there were only {} comics "
+                    yield from self.client.send_message(message.channel, ("Sorry, but there were only {} comics "
                                                                      "released yet so far").format(max_int))
                     return
                 elif abs(query) == 0:
                     requested = latest
                 elif query == 404 or max_int + query == 404:
-                    yield from client.send_message(message.channel, "404 - Not Found")  # don't error on that one
+                    yield from self.client.send_message(message.channel, "404 - Not Found")  # don't error on that one
                     return
                 elif query > 0:
                     requested = get_info(query)
@@ -125,7 +125,7 @@ class XKCD(glados.Module):
                 else:
                     number = google(query)
                     if not number:
-                        yield from client.send_message(message.channel, 'Could not find any comics for that query.')
+                        yield from self.client.send_message(message.channel, 'Could not find any comics for that query.')
                         return
                     requested = get_info(number)
 
@@ -136,7 +136,7 @@ class XKCD(glados.Module):
 
         response = '{} [{}]'.format(requested['url'], requested['title'])
         try:
-            yield from client.send_file(message.channel, img_file)
+            yield from self.client.send_file(message.channel, img_file)
         except discord.errors.Forbidden:
             pass
-        yield from client.send_message(message.channel, response)
+        yield from self.client.send_message(message.channel, response)

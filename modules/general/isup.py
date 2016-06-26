@@ -15,17 +15,17 @@ class IsUp(glados.Module):
         ]
 
     @glados.Module.commands('isup')
-    def isup(self, client, message, site):
+    def isup(self, message, site):
         """isup.me website status checker"""
 
         if not site:
-            yield from self.provide_help('isup', client, message)
+            yield from self.provide_help('isup', message)
             return
 
         if site[:7] != 'http://' and site[:8] != 'https://':
             if '://' in site:
                 protocol = site.split('://')[0] + '://'
-                yield from client.send_message(message.channel, "Try it again without the {}".format(protocol))
+                yield from self.client.send_message(message.channel, "Try it again without the {}".format(protocol))
                 return
             else:
                 site = 'http://' + site
@@ -36,10 +36,10 @@ class IsUp(glados.Module):
         try:
             response = urllib.request.urlopen(site).read()
         except Exception:
-            yield from client.send_message(message.channel, site + ' looks down from here.')
+            yield from self.client.send_message(message.channel, site + ' looks down from here.')
             return
 
         if response:
-            yield from client.send_message(message.channel, site + ' looks fine to me.')
+            yield from self.client.send_message(message.channel, site + ' looks fine to me.')
         else:
-            yield from client.send_message(message.channel, site + ' is down from here.')
+            yield from self.client.send_message(message.channel, site + ' is down from here.')

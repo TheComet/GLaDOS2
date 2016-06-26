@@ -114,8 +114,8 @@ class Insult(glados.Module):
         return ' '.join(words)
 
     @glados.Module.commands("insult")
-    def insult(self, client, message, content):
+    def insult(self, message, content):
         if content == "":
-            yield from client.send_message(message.channel, 'You {}!'.format(self.gen_insult()))
+            yield from self.client.send_message(message.channel, 'You {}!'.format(self.gen_insult()))
         else:
-            yield from client.send_message(message.channel, '{0}: You {1}!'.format(content, self.gen_insult()))
+            yield from self.client.send_message(message.channel, '{0}: You {1}!'.format(content, self.gen_insult()))

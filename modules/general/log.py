@@ -26,7 +26,7 @@ class Log(glados.Module):
             self.__log = open(os.path.join(self.__log_path, 'chanlog-{}'.format(self.__date)), 'a')
 
     @glados.Module.rules('^.*$')
-    def on_message(self, client, message, match):
+    def on_message(self, message, match):
         self.__open_new_log_if_necessary()
         info = '[{0}] {1}: #{2}: {3}: {4}\n'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                     message.server.name,

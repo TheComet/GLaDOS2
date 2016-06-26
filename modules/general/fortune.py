@@ -10,6 +10,6 @@ class Fortune(glados.Module):
         ]
 
     @glados.Module.commands('fortune')
-    def fortune(self, client, message, content):
+    def fortune(self, message, content):
         fortune = subprocess.check_output(['/usr/games/fortune', '-a'])
-        yield from client.send_message(message.channel, '\n'.join(fortune.decode('UTF-8').split('\\n')))
+        yield from self.client.send_message(message.channel, '\n'.join(fortune.decode('UTF-8').split('\\n')))

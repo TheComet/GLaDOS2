@@ -1,12 +1,14 @@
-from willie import module
+import glados
 
-@module.commands("gas")
-def gas(bot, trigger):
-    if not trigger.group(2):
-        bot.say("Ab ins gas du Jude!")
-    else:
-        if not trigger.group(2).lower().find("glados") == -1:
-            bot.say("Nice try. Get comfortable while I warm up the neurotoxin emitters.")
+
+class Gas(glados.Module):
+
+    @glados.Module.commands("gas")
+    def gas(self, message, user):
+        if not user:
+            self.client.send_message(message.channel, "Ab ins gas du Jude!")
         else:
-            bot.say(trigger.group(2) + ": Ab ins gas du Jude!")
-
+            if not user.lower().find("texbot") == -1:
+                self.client.send_message(message.channel, "Nice try. Get comfortable while I warm up the neurotoxin emitters.")
+            else:
+                self.client.send_message(user + ": Ab ins gas du Jude!")

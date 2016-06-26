@@ -13,7 +13,7 @@ class Module(object):
         # set externally to the discord client object
         self.client = None
 
-    def provide_help(self, command, client, message):
+    def provide_help(self, command, message):
         """
         If the user has entered an invalid command, you can call this function to send help to the user.
         Example:
@@ -26,7 +26,7 @@ class Module(object):
         :return: Returns a generator, must be yielded (asyncio coroutine).
         """
         hlp = next(x for x in self.get_help_list() if x.command == command)
-        yield from client.send_message(message.channel, self.__command_prefix + hlp.get())
+        yield from self.client.send_message(message.channel, self.__command_prefix + hlp.get())
 
     def get_help_list(self):
         """

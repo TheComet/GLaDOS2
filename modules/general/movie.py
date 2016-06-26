@@ -18,12 +18,12 @@ class Movie(glados.Module):
         ]
 
     @glados.Module.commands('movie', 'imdb')
-    def movie(self, client, message, movie):
+    def movie(self, message, movie):
         """
         Returns some information about a movie, like Title, Year, Rating, Genre and IMDB Link.
         """
         if movie == '':
-            yield from self.provide_help('imdb', client, message)
+            yield from self.provide_help('imdb', message)
             return
 
         movie = movie.rstrip()
@@ -42,4 +42,4 @@ class Movie(glados.Module):
                       ' | Rating: ' + data['imdbRating'] + \
                       ' | Genre: ' + data['Genre'] + \
                       ' | IMDB Link: http://imdb.com/title/' + data['imdbID']
-        yield from client.send_message(message.channel, response)
+        yield from self.client.send_message(message.channel, response)

@@ -39,14 +39,14 @@ class Units(glados.Module):
         ]
 
     @glados.Module.commands('temp')
-    def temperature(self, client, message, arg):
+    def temperature(self, message, arg):
         """
         Convert temperatures
         """
         try:
             source = find_temp.match(arg).groups()
         except (AttributeError, TypeError):
-            yield from client.send_message(message.channel, "That's not a valid temperature.")
+            yield from self.client.send_message(message.channel, "That's not a valid temperature.")
             return
         unit = source[1].upper()
         numeric = float(source[0])
@@ -60,18 +60,18 @@ class Units(glados.Module):
 
         kelvin = c_to_k(celsius)
         fahrenheit = c_to_f(celsius)
-        yield from client.send_message(message.channel, "{:.2f}°C = {:.2f}°F = {:.2f}K".format(celsius, fahrenheit, kelvin))
+        yield from self.client.send_message(message.channel, "{:.2f}°C = {:.2f}°F = {:.2f}K".format(celsius, fahrenheit, kelvin))
 
 
     @glados.Module.commands('length', 'distance')
-    def distance(self, client, message, arg):
+    def distance(self, message, arg):
         """
         Convert distances
         """
         try:
             source = find_length.match(arg).groups()
         except (AttributeError, TypeError):
-            yield from client.send_message(message.channel, "That's not a valid length unit.")
+            yield from self.client.send_message(message.channel, "That's not a valid length unit.")
             return
         unit = source[1].lower()
         numeric = float(source[0])
@@ -132,17 +132,21 @@ class Units(glados.Module):
 
             stupid_part = ', '.join(parts)
 
-        yield from client.send_message(message.channel, '{} = {}'.format(metric_part, stupid_part))
+        yield from self.client.send_message(message.channel, '{} = {}'.format(metric_part, stupid_part))
 
     @glados.Module.commands('weight', 'mass')
-    def mass(self, client, message, arg):
+    def mass(self, message, arg):
         """
         Convert mass
         """
+        if 'your' in arg and 'mom' in arg:
+            yield from self.client.send_message(message.channel, 'Too large to weigh')
+            return
+
         try:
             source = find_mass.match(arg).groups()
         except (AttributeError, TypeError):
-            yield from client.send_message(message.channel, "That's not a valid mass unit.")
+            yield from self.client.send_message(message.channel, "That's not a valid mass unit.")
             return
         unit = source[1].lower()
         numeric = float(source[0])
@@ -172,4 +176,4 @@ class Units(glados.Module):
         else:
             stupid_part = '{:.2f} oz'.format(ounce)
 
-        yield from client.send_message(message.channel, '{} = {}'.format(metric_part, stupid_part))
+        yield from self.client.send_message(message.channel, '{} = {}'.format(metric_part, stupid_part))

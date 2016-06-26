@@ -64,7 +64,7 @@ class Seen(glados.Module):
         ]
 
     @glados.Module.rules('^.*$')
-    def on_message(self, client, message, match):
+    def on_message(self, message, match):
         author = message.author.name
         key = author.lower()
         channel = message.channel.name
@@ -78,20 +78,20 @@ class Seen(glados.Module):
         return tuple()
 
     @glados.Module.commands('seen')
-    def on_seen(self, client, message, content):
+    def on_seen(self, message, content):
         if content == "":
-            yield from self.provide_help('seen', client, message)
+            yield from self.provide_help('seen', message)
             return
 
         author = content.strip('@').split('#')[0]
         key = author.lower()
         if not key in self.__dict:
-            yield from client.send_message(message.channel, '{0} has never been seen.'.format(author))
+            yield from self.client.send_message(message.channel, '{0} has never been seen.'.format(author))
             return
 
         stamp = get_time(self.__dict[key]['timestamp'])
         elapsed = datetime.now() - stamp
-        yield from client.send_message(message.channel, '{0} was last seen {1} in #{2} saying: "{3}"'.format(
+        yield from self.client.send_message(message.channel, '{0} was last seen {1} in #{2} saying: "{3}"'.format(
             self.__dict[key]['author'],
             readable_timestamp(elapsed),
             self.__dict[key]['channel'],

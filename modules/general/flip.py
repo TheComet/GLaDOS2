@@ -10,12 +10,12 @@ class Flip(glados.Module):
         ]
 
     @glados.Module.commands('flip')
-    def flip(self, client, message, user):
+    def flip(self, message, user):
         """Flips a coin... or a user.
         Defaults to coin.
         """
         if user == '':
-            yield from client.send_message(message.channel, "*flips a coin and... " + random.choice(["HEADS!*", "TAILS!*"]))
+            yield from self.client.send_message(message.channel, "*flips a coin and... " + random.choice(["HEADS!*", "TAILS!*"]))
         else:
             msg = ""
             user = user.split('#', 1)[0].strip('@')
@@ -30,4 +30,4 @@ class Flip(glados.Module):
             tran = "∀qƆpƎℲפHIſʞ˥WNOԀQᴚS┴∩ΛMX⅄Z"
             table = str.maketrans(char, tran)
             name = name.translate(table)
-            yield from client.send_message(message.channel, msg + "(╯°□°）╯︵ " + name[::-1])
+            yield from self.client.send_message(message.channel, msg + "(╯°□°）╯︵ " + name[::-1])

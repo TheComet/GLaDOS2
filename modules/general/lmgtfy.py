@@ -18,12 +18,12 @@ class LMGTFY(glados.Module):
         ]
 
     @glados.Module.commands('lmgtfy', 'lmgify', 'gify', 'gtfy')
-    def googleit(self, client, message, arg):
+    def googleit(self, message, arg):
         """Let me just... google that for you."""
         #No input
         if arg == '':
-            yield from client.send_message(message.channel, 'http://google.com/')
+            yield from self.client.send_message(message.channel, 'http://google.com/')
             return
 
         arg = urllib.parse.quote(arg)
-        yield from client.send_message(message.channel, 'http://lmgtfy.com/?q=' + arg)
+        yield from self.client.send_message(message.channel, 'http://lmgtfy.com/?q=' + arg)

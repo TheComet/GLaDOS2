@@ -32,9 +32,9 @@ class Urban(glados.Module):
         return definition
 
     @glados.Module.commands('urban', 'ud')
-    def urban(self, client, message, content):
+    def urban(self, message, content):
         if content == '':
-            yield from self.provide_help('urban', client, message)
+            yield from self.provide_help('urban', message)
             return
         definition = self.get_def(content)
-        yield from client.send_message(message.channel, definition)
+        yield from self.client.send_message(message.channel, definition)

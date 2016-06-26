@@ -61,7 +61,7 @@ class Bot(object):
                         if command in callback.commands:
                             cooldown = self.__apply_cooldown(message, command)
                             if not cooldown:
-                                yield from callback(self.client, message, content)
+                                yield from callback(message, content)
                             else:
                                 yield from self.client.send_message(message.author, cooldown)
 
@@ -70,7 +70,7 @@ class Bot(object):
                         match = rule.match(message.content)
                         if match is None:
                             continue
-                        yield from callback(self.client, message, match)
+                        yield from callback(message, match)
 
         @self.client.event
         @asyncio.coroutine

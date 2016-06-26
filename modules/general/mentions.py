@@ -70,7 +70,7 @@ class Mentions(glados.Module):
             f.write(json.dumps(self.__last_seen))
 
     @glados.Module.rules('^((?!\.\w+).*)$')
-    def record(self, client, message, match):
+    def record(self, message, match):
         with codecs.open(self.__mention_log_file, 'a', encoding='utf-8') as f:
             f.write(datetime.now().isoformat()[:19] + "  " + message.author.name + ": " + message.clean_content + "\n")
 
@@ -82,7 +82,7 @@ class Mentions(glados.Module):
         return tuple()
 
     @glados.Module.commands('mentions')
-    def on_seen(self, client, message, arg):
+    def on_seen(self, message, arg):
         glados.log('Looking for mentions for author {}'.format(message.author.name))
 
         try:
@@ -96,7 +96,7 @@ class Mentions(glados.Module):
         key = author.lower()
 
         if num > max_num:
-            yield from client.send_message(message.channel, 'Please, don\'t be an idiot')
+            yield from self.client.send_message(message.channel, 'Please, don\'t be an idiot')
             return
 
         mentions_file = codecs.open(self.__mention_log_file, 'r', encoding='utf-8')
@@ -106,7 +106,7 @@ class Mentions(glados.Module):
         if num == 0:
 
             if key not in self.__last_seen:
-                yield from client.send_message(message.channel, '{0} has never been mentioned.'.format(author))
+                yield from self.client.send_message(message.channel, '{0} has never been mentioned.'.format(author))
                 return
 
             last_seen = dateutil.parser.parse(self.__last_seen[key])
@@ -128,7 +128,7 @@ class Mentions(glados.Module):
                     break
 
         if len(mentions) == 0:
-            yield from client.send_message(message.channel, 'No one mentioned you.')
+            yield from self.client.send_message(message.channel, 'No one mentioned you.')
             return
 
         response = list()
@@ -141,4 +141,4 @@ class Mentions(glados.Module):
 
             response.append(author + strip_timestamp_and_name(msg))
 
-        yield from client.send_message(message.channel, '\n'.join(response))
+        yield from self.client.send_message(message.channel, '\n'.join(response))
