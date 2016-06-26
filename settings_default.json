@@ -2,26 +2,55 @@
   "login": {
     "email": "email",
     "password": "pa$$word",
-    "token": "token",
-    "method": "email"
+    "token": "OAuth2 token",
+    "method": "token"
   },
   "modules": {
-    "cooldown": true,
-    "paths": [
+       "paths": [
       "modules"
     ],
+    "cooldown": [
+      "8",
+      "burn",
+      "fortune",
+      "flip",
+      "quote"
+    ],
     "names": [
-      "comet.seen.Seen",
-      "comet.8ball.EightBall",
-      "comet.youtube.Youtube",
-      "comet.quotes.Quotes"
+      "general.8ball.EightBall",
+      "general.burn.Burn",
+      "general.etymology.Etymology",
+      "general.flip.Flip",
+      "general.fortune.Fortune",
+      "general.hug.Hug",
+      "general.isup.IsUp",
+      "general.log.Log",
+      "general.latex.LaTeX",
+      "general.lmgtfy.LMGTFY",
+      "general.mentions.Mentions",
+      "general.movie.Movie",
+      "general.quotes.Quotes",
+      "general.seen.Seen",
+      "general.showip.ShowIP",
+      "general.spellcheck.SpellCheck",
+      "general.time.Time",
+      "general.units.Units",
+      "general.urban.Urban",
+      "general.wikipedia.Wikipedia",
+      "general.wiktionary.Wiktionary",
+      "general.xkcd.XKCD",
+      "general.youtube.Youtube",
+      "bot.responses.Hello",
+      "bot.responses.Rude",
+      "bot.responses.Insult",
+      "bot.uptime.UpTime"
     ],
     "server specific": {
       "Server 1": [
         "comet.insult.Insult"
       ],
       "Server 2": [
-        "comet.showip.ShowIP"
+        "comet.insult.Insult"
       ]
     },
     "config path": "module_config"
