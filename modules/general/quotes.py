@@ -52,8 +52,7 @@ class Quotes(glados.Module):
     @glados.Module.commands('quote')
     def quote(self, message, content):
         if content == '':
-            yield from self.provide_help('quote', message)
-            return
+            content = message.author.name
 
         author = content.strip('@').split('#')[0]
         error = self.check_nickname_valid(author.lower())
