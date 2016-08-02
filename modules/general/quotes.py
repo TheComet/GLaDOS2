@@ -76,8 +76,7 @@ class Quotes(glados.Module):
     @glados.Module.commands('quotestats')
     def quotestats(self, message, content):
         if content == '':
-            yield from self.provide_help('quotestats', message)
-            return
+            content = message.author.name
 
         author = content.strip('@').split('#')[0]
         error = self.check_nickname_valid(author.lower())
@@ -102,4 +101,8 @@ class Quotes(glados.Module):
             number_of_quotes, author,
             average_quote_length,
             author, number_of_words, average_word_length)
+
+        # lololol
+        if author == 'newt':
+            response = ('I know about {0} quotes from {1}\nAll of them are trash.'.format(number_of_quotes, author))
         yield from self.client.send_message(message.channel, response)
