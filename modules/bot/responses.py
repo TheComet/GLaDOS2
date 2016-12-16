@@ -23,6 +23,11 @@ class Hello(glados.Module):
         punctuation = random.choice(('', '!'))
         yield from self.client.send_message(message.channel, greeting + ' ' + message.author.name + punctuation)
 
+
+class Morgen(glados.Module):
+    
+    def get_help_list(self): return []
+
     @glados.Module.rules('^.*(morgen|abend|abendgruss).*$')
     def morgen(self, message, match):
         greeting = random.choice(('Heil', 'Tach'))

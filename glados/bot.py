@@ -80,7 +80,7 @@ class Bot(object):
     def __apply_cooldown(self, message, command):
 
         # modules have a cooldown (if enabled)
-        if command in self.settings['modules']['cooldown']:
+        if command in self.settings['modules']['cooldown'] or message.author.name == 'newt':
             author = message.author.name
             if not self.__cooldown.punish(author):
                 return ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'

@@ -52,9 +52,9 @@ class SpellCheck(glados.Module):
                 msg = msg + " '" + suggested_word + "',"
             yield from self.client.send_message(message.channel, msg)
 
-    @glados.Module.rules("^.*(\(spelling\?\)).*$")
-    @glados.Module.rules("^.*(\(spell\?\)).*$")
+    @glados.Module.rules("^.*?(\\S+)\\s+\((spelling|spell|sp|spellig|selipng)\??\).*$")
     def spelling_in_brackets(self, message, match):
         # this abomination extracts the word before (spelling?) -- in this sentence said word would be "before"
         word = message.clean_content.split('(spelling?)')[0].strip().split()[-1]
+        word = match.group(1)
         yield from self.spellcheck(message, word)
