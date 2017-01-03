@@ -72,7 +72,7 @@ class Quotes(glados.Module):
                                            '{} hasn\'t delivered any quotes worth mentioning yet'.format(author))
             return
 
-        # Remove any mentions from the quote
+        # Remove any mentions from the quote and replace them with actual member names
         line = random.choice(lines).strip('\n')
         mentioned_ids = [x.strip('<@>') for x in re.findall('<@[0-9]+>', line)]
         for id in mentioned_ids:
@@ -80,6 +80,7 @@ class Quotes(glados.Module):
                 if member.id == id:
                     line = line.replace('<@{}>'.format(id), member.name)
                     break
+        line = line.strip('<@>')
 
         yield from self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
 
