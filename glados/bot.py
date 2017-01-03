@@ -337,7 +337,7 @@ class Bot(object):
             hours = 24
         else:
             try:
-                hours = float(args[1])
+                hours = float(args[-1])
             except ValueError:
                 hours = 24
 
@@ -352,7 +352,7 @@ class Bot(object):
         self.__save_settings()
 
         users_banned = ', '.join([x.name for x in results])
-        yield from self.client.send_message(message.channel, 'User "{}" is banned from using this bot until {}'.format(users_banned, expiry_date))
+        yield from self.client.send_message(message.channel, 'User(s) "{}" is banned from using this bot until {}'.format(users_banned, expiry_date))
 
     def __process_unban_command(self, message, content):
         if content == '':

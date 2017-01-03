@@ -1,4 +1,6 @@
 import glados
+from datetime import datetime, timedelta
+import dateutil.parser
 
 
 class BotModTools(glados.Module):
@@ -35,10 +37,12 @@ class BotModTools(glados.Module):
         banned = list()
         for member in self.client.get_all_members():
             if member.id in self.__settings['banned']:
-                banned.append(member)
+                expiry_date = dateutil.parser.parse(self.__settings['banned'][member.id])
+                time_to_expiry = expiry_date - datetime.now()
+                banned.append((member, time_to_expiry.seconds / 3600.0))
 
         if len(banned) > 0:
-            text = '**Banned Users**\n{}'.format('\n'.join(['  + ' + x.name for x in banned]))
+            text = '**Banned Users**\n{}'.format('\n'.join(['  + ' + x[0].name + ' for {0:.1f} hour(s)'.format(x[1]) for x in banned]))
         else:
             text = 'No one is banned.'
         yield from self.client.send_message(message.channel, text)
