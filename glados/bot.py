@@ -300,7 +300,9 @@ class Bot(object):
                 yield from self.client.send_message(message.channel, 'Unknown command {}'.format(content))
 
     def __process_modhelp_command(self, message, content):
-        yield from self.client.send_message(message.channel, "I just PM'd you the help list!")
+        # If the user was banned, don't announce the help sending
+        if not message.author.id in self.settings['banned']:
+            yield from self.client.send_message(message.channel, "I just PM'd you the help list!")
         yield from self.client.send_message(message.author,
                 "{0}{1} **<user> [hours]** -- Blacklist the specified user from using the bot for the "
                 "specified number of hours. The default number of hours is 24. Specifying a value"
