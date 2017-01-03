@@ -97,7 +97,7 @@ class Quotes(glados.Module):
         average_word_length = float(sum([len(quote) for quote in words])) / float(number_of_words)
 
         frequencies = collections.Counter(words)
-        common = "the be to of and a in that have I it for not on with he as you do at this but his by from".split()
+        common = "the be to of and a in that have I it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me when make can like time no just him know take people into year your good some could them see other than then now look only come its over think also back after use two how our work first well way even new want because any these give day most us".split()
         most_common = ', '.join(['"{}" ({})'.format(w, i) for w, i in frequencies.most_common() if w not in common][:5])
         least_common = ', '.join(['"{}"'.format(w) for w, i in frequencies.most_common() if w.find('http') == -1][-5:])
 
@@ -105,7 +105,7 @@ class Quotes(glados.Module):
                     'The average quote length is {2:.2f} characters\n'
                     '{3} spoke {4} words with an average length of {5:.2f} characters\n'
                     'Your most common words are {6}\nYour least common words are {7}\n'
-                    'NOTE: Top 25 most common words were filtered out').format(
+                    'NOTE: Top 100 most common words were filtered out').format(
             number_of_quotes, author,
             average_quote_length,
             author, number_of_words, average_word_length,
