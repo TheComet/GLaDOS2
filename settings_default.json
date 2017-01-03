@@ -6,15 +6,8 @@
     "method": "token"
   },
   "modules": {
-       "paths": [
+    "paths": [
       "modules"
-    ],
-    "cooldown": [
-      "8",
-      "burn",
-      "fortune",
-      "flip",
-      "quote"
     ],
     "names": [
       "general.8ball.EightBall",
@@ -45,11 +38,11 @@
       "bot.responses.Insult",
       "bot.uptime.UpTime"
     ],
-    "server specific": {
+    "server_id_1": {
       "Server 1": [
         "comet.insult.Insult"
       ],
-      "Server 2": [
+      "server_id_2": [
         "comet.insult.Insult"
       ]
     },
@@ -57,6 +50,26 @@
   },
   "commands": {
     "prefix": ".",
-    "help": "help"
+    "help": "help",
+    "modhelp": "modhelp",
+    "ban": "ban",
+    "unban": "unban",
+    "bless": "bless",
+    "unbless": "unbless",
+    "mod": "mod",
+    "unmod": "unmod",
+    "reload": "reload"
+  },
+  "admins": {
+    "IDs": [],
+    "roles": []
+  },
+  "moderators": {
+    "IDs": [],
+    "roles": []
+  },
+  "blessed": [
+  ],
+  "banned": {
   }
 }

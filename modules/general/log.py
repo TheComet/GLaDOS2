@@ -27,9 +27,10 @@ class Log(glados.Module):
 
     @glados.Module.rules('^.*$')
     def on_message(self, message, match):
+        server_name = message.server.name if message.server else ''
         self.__open_new_log_if_necessary()
         info = '[{0}] {1}: #{2}: {3}: {4}\n'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                                    message.server.name,
+                                                    server_name,
                                                     message.channel.name,
                                                     message.author.name,
                                                     message.clean_content)

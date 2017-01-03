@@ -1,23 +1,16 @@
 import discord
-import sys
 import traceback
 import json
 import asyncio
 import inspect
 import re
+import dateutil.parser
+from datetime import datetime, timedelta
 from .Log import log
 from .cooldown import Cooldown
+from .tools.path import add_import_paths
 
-import_paths_were_added = False
 comment_pattern = re.compile('`(.*?)`')
-
-
-def add_import_paths(paths):
-    global import_paths_were_added
-    if not import_paths_were_added:
-        for path in paths:
-            sys.path.append(path)
-        import_paths_were_added = True
 
 
 class Bot(object):
@@ -33,60 +26,106 @@ class Bot(object):
         @self.client.event
         @asyncio.coroutine
         def on_message(message):
-            # ignore bots
-            if message.author.bot and not message.author.name == 'Saatchi':
-                return tuple()
+
+            # disallow direct messages
+            if not message.server:
+                return ()
 
             commands = self.extract_commands_from_message(message.clean_content)
 
-            # process core commands first
             for command, content in commands:
-                core_commands_response = self.__get_core_commands_response(message, command, content)
-                if core_commands_response:
-                    yield from self.client.send_message(message.channel,
-                                                        'I\'m sending you a direct message with a list of commands!')
-                    for msg in core_commands_response:
-                        yield from self.client.send_message(message.author, msg)
+                yield from self.__process_core_commands(message, command, content)
+
+            commands_to_process = self.__get_commands_that_will_be_executed(message, commands)
+            matches_to_process = self.__get_matches_that_will_be_executed(message)
+            if len(commands_to_process) == 0 and len(matches_to_process) == 0:
+                return ()
+
+            if message.author.id in self.settings['banned']:
+                if not self.__try_unban_user(message.author):
+                    expiry = self.settings['banned'][message.author.id]
+                    yield from self.client.send_message(message.author,
+                            'You have been banned from using the bot. Your ban expires: {}'.format(expiry))
                     return
 
-            for callback, module in self.__callback_tuples:
+            if not message.author.id in self.settings['blessed'] \
+                    and not message.author.id in self.settings['moderators']['IDs'] \
+                    and not message.author.id in self.settings['admins']['IDs']:
+                cooldown = self.__apply_cooldown(message)
+                if cooldown:
+                    yield from self.client.send_message(message.author, cooldown)
+                    return
 
-                # Does the module have a server whitelist? If so, make sure this module is allowed.
-                if len(module.server_whitelist) > 0:
-                    if not message.server.name in module.server_whitelist:
-                        continue
+            for callback, content in commands_to_process:
+                yield from callback(message, content)
 
-                if hasattr(callback, 'commands'):
-                    for command, content in commands:
-                        if command in callback.commands:
-                            cooldown = self.__apply_cooldown(message, command)
-                            if not cooldown:
-                                yield from callback(message, content)
-                            else:
-                                yield from self.client.send_message(message.author, cooldown)
-
-                if hasattr(callback, 'rules'):
-                    for rule in callback.rules:
-                        match = rule.match(message.content)
-                        if match is None:
-                            continue
-                        yield from callback(message, match)
+            for callback, match in matches_to_process:
+                yield from callback(message, match)
 
         @self.client.event
         @asyncio.coroutine
         def on_ready():
             log('Running as {}'.format(self.client.user.name))
 
-    def __apply_cooldown(self, message, command):
+    def __get_commands_that_will_be_executed(self, message, commands):
+        ret = list()
 
-        # modules have a cooldown (if enabled)
-        if command in self.settings['modules']['cooldown'] or message.author.name == 'newt':
-            author = message.author.name
-            if not self.__cooldown.punish(author):
-                return ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'
-                        'You have reached punishment level {}.\n'
-                        'Your punishment level decreases by 1 every 180 seconds.').\
-                        format(self.__cooldown.expires_in(author), self.__cooldown.punishment(author))
+        # Skip processing normal commands and rules if this message came from a bot
+        if message.author.bot:
+            return ret
+
+        for callback, module in self.__callback_tuples:
+
+            # Does the module have a server whitelist? If so, make sure this module is allowed.
+            if len(module.server_whitelist) > 0:
+                if message.server and not message.server.id in module.server_whitelist:
+                    continue
+
+            # check if any issued commands match anything in the loaded callbacks
+            if hasattr(callback, 'commands'):
+                for command, content in commands:
+                    if command in callback.commands:
+                        ret.append((callback, content))
+        return ret
+
+    def __get_matches_that_will_be_executed(self, message):
+        ret = list()
+        for callback, module in self.__callback_tuples:
+
+            # Does the module have a server whitelist? If so, make sure this module is allowed.
+            if len(module.server_whitelist) > 0:
+                if message.server and not message.server.id in module.server_whitelist:
+                    continue
+
+            # process bot messages
+            if message.author.bot and hasattr(callback, 'bot_rules'):
+                for rule in callback.bot_rules:
+                    match = rule.match(message.content)
+                    if match is None:
+                        continue
+                    ret.append((callback, match))
+
+            # Skip processing normal commands and rules if this message came from a bot
+            if message.author.bot:
+                continue
+
+            # process message responses
+            if hasattr(callback, 'rules'):
+                for rule in callback.rules:
+                    match = rule.match(message.content)
+                    if match is None:
+                        continue
+                    ret.append((callback, match))
+
+        return ret
+
+    def __apply_cooldown(self, message):
+        author = message.author.name
+        if not self.__cooldown.punish(author):
+            return ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'
+                    'You have reached punishment level {}.\n'
+                    'Your punishment level decreases by 1 every 180 seconds.'). \
+                format(self.__cooldown.expires_in(author), self.__cooldown.punishment(author))
         return False
 
     def extract_commands_from_message(self, msg):
@@ -172,23 +211,252 @@ class Bot(object):
 
         self.__callback_tuples += callback_tuples
 
-    def __get_core_commands_response(self, message, command, content):
-        if not content == '':
-            return False
+    def __process_core_commands(self, message, command, content):
+        # Ignore bots
+        if message.author.bot:
+            return
 
         if command == self.settings['commands']['help']:
-            # creates a list of relevant modules
-            relevant_modules = set(module for c, module in self.__callback_tuples
-                                   if len(module.server_whitelist) == 0
-                                   or message.server.name in module.server_whitelist)
-            # generates a list of help strings from the modules
-            relevant_help = sorted([self.__command_prefix + hlp.get() for mod in relevant_modules
-                                    for hlp in mod.get_help_list()])
+            yield from self.__process_help_command(message, content)
+        elif command == self.settings['commands']['modhelp']:
+            yield from self.__process_modhelp_command(message, content)
+        else:
+            # Remaining commands require moderator privileges
+            if not message.author.id in self.settings['moderators']['IDs'] and \
+                    not message.author.id in self.settings['admins']['IDs'] and \
+                    not set(x.name for x in message.author.roles).intersection(set(self.settings['moderators']['roles'])) and \
+                    not set(x.name for x in message.author.roles).intersection(set(self.settings['admins']['roles'])):
+                yield from self.client.send_message(message.author, 'You must be a moderator to use this command')
+            elif command == self.settings['commands']['ban']:
+                yield from self.__process_ban_command(message, content)
+            elif command == self.settings['commands']['unban']:
+                yield from self.__process_unban_command(message, content)
+            elif command == self.settings['commands']['bless']:
+                yield from self.__process_bless_command(message, content)
+            elif command == self.settings['commands']['unbless']:
+                yield from self.__process_unbless_command(message, content)
+            else:
+                # Remaining commands require admin privileges
+                if not message.author.id in self.settings['admins']['IDs']:
+                    yield from self.client.send_message(message.author, 'You must be an administrator to use this command')
+                elif command == self.settings['commands']['mod']:
+                    yield from self.__process_mod_command(message, content)
+                elif command == self.settings['commands']['unmod']:
+                    yield from self.__process_unmod_command(message, content)
+                elif command == self.settings['commands']['reload']:
+                    yield from self.__process_reload_command(message, content)
+                else:
+                    return None
 
-            relevant_help = ['==== Loaded modules ====\n'] + relevant_help
-            return self.__concat_into_valid_message(relevant_help)
+    def __process_help_command(self, message, content):
+        # creates a list of relevant modules
+        relevant_modules = set(module for c, module in self.__callback_tuples
+                               if len(module.server_whitelist) == 0
+                               or message.server and message.server.name in module.server_whitelist)
+        # generates a list of help strings from the modules
+        relevant_help = sorted([self.__command_prefix + hlp.get()
+                                for mod in relevant_modules
+                                for hlp in mod.get_help_list()
+                                if content == hlp.command or content == ''])
+
+        # If sending all help, PM it to the user
+        if content == '':
+            relevant_help = ['==== Loaded modules ===='] + relevant_help
+
+            yield from self.client.send_message(message.channel,
+                                                'I\'m sending you a direct message with a list of commands!')
+            for msg in self.__concat_into_valid_message(relevant_help):
+                yield from self.client.send_message(message.author, msg)
+        # If sending help for a single command, send it to the channel
+        else:
+            if len(relevant_help) > 0:
+                yield from self.client.send_message(message.channel, relevant_help[0])
+            else:
+                yield from self.client.send_message(message.channel, 'Unknown command {}'.format(content))
+
+    def __process_modhelp_command(self, message, content):
+        yield from self.client.send_message(message.channel, "I just PM'd you the help list!")
+        yield from self.client.send_message(message.author,
+                "{0}ban **<user> [hours]** -- Blacklist the specified user from using the bot for the "
+                "specified number of hours. The default number of hours is 24. Specifying a value"
+                " of 0 will cause the user to be perma-banned. The ban is based on user ID.\n"
+                "{0}unban **<user>** -- Allow a banned user to use the bot again.\n"
+                "{0}bless **<user>** -- Allow the specified user to evade the punishment system. "
+                "This allows the user to excessively use the bot without consequences.\n"
+                "{0}unbless **<user>** -- Prevents spam from this user by putting him through the punishment system.\n".format(self.__command_prefix)
+        )
+
+    def __process_ban_command(self, message, content):
+        if content == '':
+            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            return
+
+        args = content.split(' ', 1)
+        author = args[0]
+
+        # If result is a string, then it is an error message.
+        result = self.__get_members_from_string(author)
+        if isinstance(result, str):
+            yield from self.client.send_message(message.channel, result)
+            return
+
+        # Default ban length is 24 hours
+        if len(args) < 2:
+            hours = 24
+        else:
+            try:
+                hours = int(args[1])
+            except ValueError:
+                hours = 24
+
+        expiry_date = datetime.now() + timedelta(hours / 24.0)
+
+        self.settings['banned'][result.id] = expiry_date.isoformat()
+        self.__save_settings()
+
+        yield from self.client.send_message(message.channel, 'User "{}" is banned from using this bot until {}'.format(result, expiry_date))
+
+    def __process_unban_command(self, message, content):
+        if content == '':
+            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            return
+
+        # If result is a string, then it is an error message.
+        author = content.split()[0]
+        result = self.__get_members_from_string(author)
+        if isinstance(result, str):
+            yield from self.client.send_message(message.channel, result)
+            return
+
+        if not result.id in self.settings['banned']:
+            yield from self.client.send_message(message.channel, 'User "{}" isn\'t banned'.format(author))
+            return
+
+        self.__unban_user(result)
+
+        yield from self.client.send_message(message.channel, 'Unbanned user "{}"'.format(result))
+
+    def __try_unban_user(self, member):
+        if not member.id in self.settings['banned']:
+            return True
+
+        expiry_date = self.settings['banned'][member.id]
+        if datetime.now().isoformat() > expiry_date:
+            self.__unban_user(member)
+            return True
 
         return False
+
+    def __unban_user(self, member):
+        del self.settings['banned'][member.id]
+        self.__save_settings()
+
+    def __process_bless_command(self, message, content):
+        if content == '':
+            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            return
+
+        args = content.split(' ', 1)
+        author = args[0]
+
+        # If result is a string, then it is an error message.
+        result = self.__get_members_from_string(author)
+        if isinstance(result, str):
+            yield from self.client.send_message(message.channel, result)
+            return
+
+        if result.id in self.settings['blessed']:
+            yield from self.client.send_message(message.channel, 'User "{}" is already blessed'.format(result))
+            return
+
+        self.settings['blessed'].append(result.id)
+        self.__save_settings()
+
+        yield from self.client.send_message(message.channel, 'User "{}" has been blessed'.format(result))
+
+    def __process_unbless_command(self, message, content):
+        if content == '':
+            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            return
+
+        # If result is a string, then it is an error message.
+        author = content.split()[0]
+        result = self.__get_members_from_string(author)
+        if isinstance(result, str):
+            yield from self.client.send_message(message.channel, result)
+            return
+
+        if not result.id in self.settings['blessed']:
+            yield from self.client.send_message(message.channel, 'User "{}" isn\'t blessed'.format(author))
+            return
+
+        self.settings['blessed'].remove(result.id)
+        self.__save_settings()
+
+        yield from self.client.send_message(message.channel, 'User "{}" has been unblessed'.format(result))
+
+    def __process_mod_command(self, message, content):
+        if content == '':
+            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            return
+
+        args = content.split(' ', 1)
+        author = args[0]
+
+        # If result is a string, then it is an error message.
+        result = self.__get_members_from_string(author)
+        if isinstance(result, str):
+            yield from self.client.send_message(message.channel, result)
+            return
+
+        if result.id in self.settings['moderators']['IDs']:
+            yield from self.client.send_message(message.channel, 'User "{}" is already a moderator'.format(result))
+            return
+
+        self.settings['moderators']['IDs'].append(result.id)
+        self.__save_settings()
+
+        yield from self.client.send_message(message.channel, 'User "{}" is now a bot moderator. Type `.modhelp` to learn about your new powers!'.format(result))
+
+    def __process_unmod_command(self, message, content):
+        if content == '':
+            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            return
+
+        # If result is a string, then it is an error message.
+        author = content.split()[0]
+        result = self.__get_members_from_string(author)
+        if isinstance(result, str):
+            yield from self.client.send_message(message.channel, result)
+            return
+
+        if not result.id in self.settings['moderators']['IDs']:
+            yield from self.client.send_message(message.channel, 'User "{}" isn\'t a moderator!'.format(author))
+            return
+
+        self.settings['moderators']['IDs'].remove(result.id)
+        self.__save_settings()
+
+        yield from self.client.send_message(message.channel, 'User "{}" is no longer a moderator'.format(result))
+
+    def __process_reload_command(self, message, content):
+        self.settings = json.loads(open('settings.json').read())
+        yield from self.client.send_message(message.channel, 'Reloaded settings')
+
+    def __save_settings(self):
+        open('settings.json', 'w').write(json.dumps(self.settings, indent=2, sort_keys=True))
+
+    def __get_members_from_string(self, user_name):
+        user_name = user_name.strip('@').split('#')[0]
+        members = list()
+        for member in self.client.get_all_members():
+            if member.nick == user_name or member.name == user_name:
+                members.append(member)
+        if len(members) == 0:
+            return 'Error: No member found with the name "{}"'.format(user_name)
+        if len(members) > 1:
+            return 'Error: Multiple members share the name "{}". Try again by mentioning the user.'.format(user_name)
+        return members[0]
 
     @staticmethod
     def __concat_into_valid_message(list_of_strings):
@@ -215,7 +483,7 @@ class Bot(object):
     @staticmethod
     def __get_callback_tuples(m):
         return [(member, m) for name, member in inspect.getmembers(m, predicate=inspect.ismethod)
-                if hasattr(member, 'commands') or hasattr(member, 'rules')]
+                if hasattr(member, 'commands') or hasattr(member, 'rules') or hasattr(member, 'bot_rules')]
 
     @asyncio.coroutine
     def login(self):

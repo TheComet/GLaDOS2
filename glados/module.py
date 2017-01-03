@@ -95,3 +95,17 @@ class Module(object):
                 func.rules.append(re.compile(rule, re.IGNORECASE))
             return func
         return add_attribute
+
+    @staticmethod
+    def bot_rules(*rule_list):
+        """
+        Same as rules(), except only messages that originate from bots (that aren't our own) are passed.
+        :param rule_list: A list of strings of regular expression to match messages sent on Discord with.
+        """
+        def add_attribute(func):
+            if not hasattr(func, "bot_rules"):
+                func.bot_rules = list()
+            for rule in rule_list:
+                func.bot_rules.append(re.compile(rule, re.IGNORECASE))
+            return func
+        return add_attribute

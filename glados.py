@@ -19,4 +19,3 @@ if __name__ == '__main__':
     b = glados.Bot()
     b.run()
     glados.log('Stopped -- this shouldn\'t happen')
-

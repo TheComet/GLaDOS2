@@ -3,6 +3,7 @@
 
 # virtual env
 env/
+env2/
 
 # tex output
 tex/
