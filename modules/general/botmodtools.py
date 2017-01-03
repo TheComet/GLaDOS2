@@ -21,9 +21,11 @@ class BotModTools(glados.Module):
         admin_list = list()
         for member in self.client.get_all_members():
             if member.id in self.__settings['moderators']['IDs']:
-                mod_list.append(member)
+                if not member in mod_list:
+                    mod_list.append(member)
             if member.id in self.__settings['admins']['IDs']:
-                admin_list.append(member)
+                if not member in admin_list:
+                    admin_list.append(member)
 
         text = '**Moderators:**\n{}\n**Administrators:**\n{}'.format(
             '\n'.join(['  + ' + x.name for x in mod_list]),
@@ -52,7 +54,8 @@ class BotModTools(glados.Module):
         blessed = list()
         for member in self.client.get_all_members():
             if member.id in self.__settings['blessed']:
-                blessed.append(member)
+                if not member in blessed:
+                    blessed.append(member)
 
         if len(blessed) > 0:
             text = '**Blessed Users**\n{}'.format('\n'.join(['  + ' + x.name for x in blessed]))
