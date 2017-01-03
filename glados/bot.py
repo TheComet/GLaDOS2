@@ -260,7 +260,7 @@ class Bot(object):
             if not is_admin:
                 yield from self.client.send_message(message.author, 'You must be an administrator to use this command')
                 return
-        elif command == self.settings['commands']['mod']:
+        if command == self.settings['commands']['mod']:
             yield from self.__process_mod_command(message, content)
         elif command == self.settings['commands']['unmod']:
             yield from self.__process_unmod_command(message, content)
