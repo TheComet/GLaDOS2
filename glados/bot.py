@@ -298,13 +298,18 @@ class Bot(object):
     def __process_modhelp_command(self, message, content):
         yield from self.client.send_message(message.channel, "I just PM'd you the help list!")
         yield from self.client.send_message(message.author,
-                "{0}ban **<user> [hours]** -- Blacklist the specified user from using the bot for the "
+                "{0}{1} **<user> [hours]** -- Blacklist the specified user from using the bot for the "
                 "specified number of hours. The default number of hours is 24. Specifying a value"
                 " of 0 will cause the user to be perma-banned. The ban is based on user ID.\n"
-                "{0}unban **<user>** -- Allow a banned user to use the bot again.\n"
-                "{0}bless **<user>** -- Allow the specified user to evade the punishment system. "
+                "{0}{2} **<user>** -- Allow a banned user to use the bot again.\n"
+                "{0}{3} **<user>** -- Allow the specified user to evade the punishment system. "
                 "This allows the user to excessively use the bot without consequences.\n"
-                "{0}unbless **<user>** -- Prevents spam from this user by putting him through the punishment system.\n".format(self.__command_prefix)
+                "{0}{4} **<user>** -- Prevents spam from this user by putting him through the punishment system.\n".format(
+                    self.__command_prefix,
+                    self.settings['commands']['ban'],
+                    self.settings['commands']['unban'],
+                    self.settings['commands']['bless'],
+                    self.settings['commands']['unbless'])
         )
 
     def __process_ban_command(self, message, content):
