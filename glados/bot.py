@@ -4,7 +4,6 @@ import json
 import asyncio
 import inspect
 import re
-import dateutil.parser
 from datetime import datetime, timedelta
 from .Log import log
 from .cooldown import Cooldown
@@ -42,11 +41,14 @@ class Bot(object):
                 return ()
 
             if message.author.id in self.settings['banned']:
-                if not self.__try_unban_user(message.author):
-                    expiry = self.settings['banned'][message.author.id]
-                    yield from self.client.send_message(message.author,
-                            'You have been banned from using the bot. Your ban expires: {}'.format(expiry))
-                    return
+                # See if any of the modules are blessed. If not, punish
+                if not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in commands_to_process) or \
+                   not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in matches_to_process):
+                    if not self.__try_unban_user(message.author):
+                        expiry = self.settings['banned'][message.author.id]
+                        yield from self.client.send_message(message.author,
+                                'You have been banned from using the bot. Your ban expires: {}'.format(expiry))
+                        return
 
             if not message.author.id in self.settings['blessed'] \
                     and not message.author.id in self.settings['moderators']['IDs'] \

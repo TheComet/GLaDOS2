@@ -7,11 +7,11 @@
   },
   "modules": {
     "blessed": [
-      "general.log.Log",
-      "general.mentions.Mentions",
-      "general.quotes.Quotes",
-      "general.seen.Seen"
-     ],
+      "general.log.Log.on_message",
+      "general.mentions.Mentions.record",
+      "general.quotes.Quotes.record",
+      "general.seen.Seen.on_message"
+    ],
     "paths": [
       "modules"
     ],
