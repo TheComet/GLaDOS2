@@ -286,8 +286,10 @@ class Bot(object):
         if content == '':
             relevant_help = ['==== Loaded modules ===='] + relevant_help
 
-            yield from self.client.send_message(message.channel,
-                                                'I\'m sending you a direct message with a list of commands!')
+            # If the user was banned, don't announce the help sending
+            if not message.author.id in self.settings['banned']:
+                yield from self.client.send_message(message.channel,
+                                                    'I\'m sending you a direct message with a list of commands!')
             for msg in self.__concat_into_valid_message(relevant_help):
                 yield from self.client.send_message(message.author, msg)
         # If sending help for a single command, send it to the channel
@@ -405,7 +407,7 @@ class Bot(object):
                 yield from self.client.send_message(message.channel, 'User "{}" is already blessed'.format(member))
             else:
                 self.settings['blessed'].append(member.id)
-                yield from self.client.send_message(message.channel, 'User "{}" has been blessed. You may spam to your heart\'s content. Or until you get banned.'.format(member))
+                yield from self.client.send_message(message.channel, 'User "{}" has been blessed.'.format(member))
         self.__save_settings()
 
     def __process_unbless_command(self, message, content):
