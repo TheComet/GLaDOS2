@@ -31,15 +31,10 @@ class Bot(object):
                 return ()
 
             commands = self.extract_commands_from_message(message.clean_content)
-
-            for command, content in commands:
-                yield from self.__process_core_commands(message, command, content)
-
             commands_to_process = self.__get_commands_that_will_be_executed(message, commands)
             matches_to_process = self.__get_matches_that_will_be_executed(message)
-            if len(commands_to_process) == 0 and len(matches_to_process) == 0:
-                return ()
 
+            # Ignore banned users
             if message.author.id in self.settings['banned']:
                 # See if any of the modules are blessed. If not, punish
                 if not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in commands_to_process) or \
@@ -49,6 +44,12 @@ class Bot(object):
                         yield from self.client.send_message(message.author,
                                 'You have been banned from using the bot. Your ban expires: {}'.format(expiry))
                         return
+            else:
+                for command, content in commands:
+                    yield from self.__process_core_commands(message, command, content)
+
+            if len(commands_to_process) == 0 and len(matches_to_process) == 0:
+                return ()
 
             if not message.author.id in self.settings['blessed'] \
                     and not message.author.id in self.settings['moderators']['IDs'] \
