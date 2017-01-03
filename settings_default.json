@@ -6,6 +6,12 @@
     "method": "token"
   },
   "modules": {
+    "blessed": [
+      "general.log.Log",
+      "general.mentions.Mentions",
+      "general.quotes.Quotes",
+      "general.seen.Seen"
+     ],
     "paths": [
       "modules"
     ],

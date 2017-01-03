@@ -51,15 +51,18 @@ class Bot(object):
             if not message.author.id in self.settings['blessed'] \
                     and not message.author.id in self.settings['moderators']['IDs'] \
                     and not message.author.id in self.settings['admins']['IDs']:
-                cooldown = self.__apply_cooldown(message)
-                if cooldown:
-                    yield from self.client.send_message(message.author, cooldown)
-                    return
+                # See if any of the modules are blessed. If not, punish
+                if not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in commands_to_process) or \
+                   not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in matches_to_process):
+                    cooldown = self.__apply_cooldown(message)
+                    if cooldown:
+                        yield from self.client.send_message(message.author, cooldown)
+                        return
 
-            for callback, content in commands_to_process:
+            for callback, module, content in commands_to_process:
                 yield from callback(message, content)
 
-            for callback, match in matches_to_process:
+            for callback, module, match in matches_to_process:
                 yield from callback(message, match)
 
         @self.client.event
@@ -85,7 +88,7 @@ class Bot(object):
             if hasattr(callback, 'commands'):
                 for command, content in commands:
                     if command in callback.commands:
-                        ret.append((callback, content))
+                        ret.append((callback, module, content))
         return ret
 
     def __get_matches_that_will_be_executed(self, message):
@@ -103,7 +106,7 @@ class Bot(object):
                     match = rule.match(message.content)
                     if match is None:
                         continue
-                    ret.append((callback, match))
+                    ret.append((callback, module, match))
 
             # Skip processing normal commands and rules if this message came from a bot
             if message.author.bot:
@@ -115,7 +118,7 @@ class Bot(object):
                     match = rule.match(message.content)
                     if match is None:
                         continue
-                    ret.append((callback, match))
+                    ret.append((callback, module, match))
 
         return ret
 
@@ -216,8 +219,13 @@ class Bot(object):
         if message.author.bot:
             return
 
+        if command == self.settings['commands']['help']:
+            yield from self.__process_help_command(message, content)
+        elif command == self.settings['commands']['modhelp']:
+            yield from self.__process_modhelp_command(message, content)
+
         is_mod = message.author.id in self.settings['moderators']['IDs'] or \
-                 set(x.name for x in message.author.roles).intersection(set(self.settings['moderators']['roles']))
+                 len(set(x.name for x in message.author.roles).intersection(set(self.settings['moderators']['roles']))) > 0
         is_admin = message.author.id in self.settings['admins']['IDs']
 
         mod_commands = {
@@ -233,21 +241,12 @@ class Bot(object):
             self.settings['commands']['reload']: self.__process_reload_command
         }
 
+        # commands that require moderator privileges
         if command in mod_commands:
             if not is_mod and not is_admin:
                 yield from self.client.send_message(message.author, 'You must be a moderator to use this command')
                 return
-
-        if command in admin_commands:
-            if not is_admin:
-                yield from self.client.send_message(message.author, 'You must be an administrator to use this command')
-
-        if command == self.settings['commands']['help']:
-            yield from self.__process_help_command(message, content)
-        elif command == self.settings['commands']['modhelp']:
-            yield from self.__process_modhelp_command(message, content)
-        # Remaining commands require moderator privileges
-        elif command == self.settings['commands']['ban']:
+        if command == self.settings['commands']['ban']:
             yield from self.__process_ban_command(message, content)
         elif command == self.settings['commands']['unban']:
             yield from self.__process_unban_command(message, content)
@@ -255,7 +254,12 @@ class Bot(object):
             yield from self.__process_bless_command(message, content)
         elif command == self.settings['commands']['unbless']:
             yield from self.__process_unbless_command(message, content)
+
         # Remaining commands require admin privileges
+        if command in admin_commands:
+            if not is_admin:
+                yield from self.client.send_message(message.author, 'You must be an administrator to use this command')
+                return
         elif command == self.settings['commands']['mod']:
             yield from self.__process_mod_command(message, content)
         elif command == self.settings['commands']['unmod']:

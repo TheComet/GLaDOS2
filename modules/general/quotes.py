@@ -39,8 +39,6 @@ class Quotes(glados.Module):
     def quotes_file_name(self, author):
         return os.path.join(self.quotes_data_path, author) + '.txt'
 
-
-
     # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Module.rules('^((?!\.\w+).*)$')
     def record(self, message, match):
