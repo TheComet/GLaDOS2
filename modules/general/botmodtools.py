@@ -39,12 +39,17 @@ class BotModTools(glados.Module):
         banned = list()
         for member in self.client.get_all_members():
             if member.id in self.__settings['banned']:
-                expiry_date = dateutil.parser.parse(self.__settings['banned'][member.id])
-                time_to_expiry = expiry_date - datetime.now()
-                banned.append((member, time_to_expiry.seconds / 3600.0))
+                expiry_date = self.__settings['banned'][member.id]
+                if not expiry_date == 'never':
+                    expiry_date = dateutil.parser.parse(expiry_date)
+                    time_to_expiry = expiry_date - datetime.now()
+                    time_to_expiry = '{0:.1f} hour(s)'.format(time_to_expiry.seconds / 3600.0)
+                else:
+                    time_to_expiry = 'forever'
+                banned.append((member, time_to_expiry))
 
         if len(banned) > 0:
-            text = '**Banned Users**\n{}'.format('\n'.join(['  + ' + x[0].name + ' for {0:.1f} hour(s)'.format(x[1]) for x in banned]))
+            text = '**Banned Users**\n{}'.format('\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in banned]))
         else:
             text = 'No one is banned.'
         yield from self.client.send_message(message.channel, text)
