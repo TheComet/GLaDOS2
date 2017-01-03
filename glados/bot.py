@@ -216,37 +216,54 @@ class Bot(object):
         if message.author.bot:
             return
 
+        is_mod = message.author.id in self.settings['moderators']['IDs'] or \
+                 set(x.name for x in message.author.roles).intersection(set(self.settings['moderators']['roles']))
+        is_admin = message.author.id in self.settings['admins']['IDs']
+
+        mod_commands = {
+            self.settings['commands']['ban']: self.__process_ban_command,
+            self.settings['commands']['unban']: self.__process_unban_command,
+            self.settings['commands']['bless']: self.__process_bless_command,
+            self.settings['commands']['unbless']: self.__process_unbless_command,
+        }
+
+        admin_commands = {
+            self.settings['commands']['mod']: self.__process_mod_command,
+            self.settings['commands']['unmod']: self.__process_unmod_command,
+            self.settings['commands']['reload']: self.__process_reload_command
+        }
+
+        if command in mod_commands:
+            if not is_mod and not is_admin:
+                yield from self.client.send_message(message.author, 'You must be a moderator to use this command')
+                return
+
+        if command in admin_commands:
+            if not is_admin:
+                yield from self.client.send_message(message.author, 'You must be an administrator to use this command')
+
         if command == self.settings['commands']['help']:
             yield from self.__process_help_command(message, content)
         elif command == self.settings['commands']['modhelp']:
             yield from self.__process_modhelp_command(message, content)
+        # Remaining commands require moderator privileges
+        elif command == self.settings['commands']['ban']:
+            yield from self.__process_ban_command(message, content)
+        elif command == self.settings['commands']['unban']:
+            yield from self.__process_unban_command(message, content)
+        elif command == self.settings['commands']['bless']:
+            yield from self.__process_bless_command(message, content)
+        elif command == self.settings['commands']['unbless']:
+            yield from self.__process_unbless_command(message, content)
+        # Remaining commands require admin privileges
+        elif command == self.settings['commands']['mod']:
+            yield from self.__process_mod_command(message, content)
+        elif command == self.settings['commands']['unmod']:
+            yield from self.__process_unmod_command(message, content)
+        elif command == self.settings['commands']['reload']:
+            yield from self.__process_reload_command(message, content)
         else:
-            # Remaining commands require moderator privileges
-            if not message.author.id in self.settings['moderators']['IDs'] and \
-                    not message.author.id in self.settings['admins']['IDs'] and \
-                    not set(x.name for x in message.author.roles).intersection(set(self.settings['moderators']['roles'])) and \
-                    not set(x.name for x in message.author.roles).intersection(set(self.settings['admins']['roles'])):
-                yield from self.client.send_message(message.author, 'You must be a moderator to use this command')
-            elif command == self.settings['commands']['ban']:
-                yield from self.__process_ban_command(message, content)
-            elif command == self.settings['commands']['unban']:
-                yield from self.__process_unban_command(message, content)
-            elif command == self.settings['commands']['bless']:
-                yield from self.__process_bless_command(message, content)
-            elif command == self.settings['commands']['unbless']:
-                yield from self.__process_unbless_command(message, content)
-            else:
-                # Remaining commands require admin privileges
-                if not message.author.id in self.settings['admins']['IDs']:
-                    yield from self.client.send_message(message.author, 'You must be an administrator to use this command')
-                elif command == self.settings['commands']['mod']:
-                    yield from self.__process_mod_command(message, content)
-                elif command == self.settings['commands']['unmod']:
-                    yield from self.__process_unmod_command(message, content)
-                elif command == self.settings['commands']['reload']:
-                    yield from self.__process_reload_command(message, content)
-                else:
-                    return None
+            return None
 
     def __process_help_command(self, message, content):
         # creates a list of relevant modules
@@ -305,13 +322,15 @@ class Bot(object):
             hours = 24
         else:
             try:
-                hours = int(args[1])
+                hours = float(args[1])
             except ValueError:
                 hours = 24
 
-        expiry_date = datetime.now() + timedelta(hours / 24.0)
-
-        self.settings['banned'][result.id] = expiry_date.isoformat()
+        if hours > 0:
+            expiry_date = datetime.now() + timedelta(hours / 24.0)
+            self.settings['banned'][result.id] = expiry_date.isoformat()
+        else:
+            self.settings['banned'][result.id] = 'never'
         self.__save_settings()
 
         yield from self.client.send_message(message.channel, 'User "{}" is banned from using this bot until {}'.format(result, expiry_date))
@@ -341,6 +360,8 @@ class Bot(object):
             return True
 
         expiry_date = self.settings['banned'][member.id]
+        if expiry_date == 'never':
+            return False
         if datetime.now().isoformat() > expiry_date:
             self.__unban_user(member)
             return True
@@ -372,7 +393,7 @@ class Bot(object):
         self.settings['blessed'].append(result.id)
         self.__save_settings()
 
-        yield from self.client.send_message(message.channel, 'User "{}" has been blessed'.format(result))
+        yield from self.client.send_message(message.channel, 'User "{}" has been blessed. You may spam to your heart\'s content. Or until you get banned.'.format(result))
 
     def __process_unbless_command(self, message, content):
         if content == '':
