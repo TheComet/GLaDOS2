@@ -331,6 +331,7 @@ class Bot(object):
             self.settings['banned'][result.id] = expiry_date.isoformat()
         else:
             self.settings['banned'][result.id] = 'never'
+            expiry_date = 'forever'
         self.__save_settings()
 
         yield from self.client.send_message(message.channel, 'User "{}" is banned from using this bot until {}'.format(result, expiry_date))
