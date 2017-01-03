@@ -309,12 +309,12 @@ class Bot(object):
             return
 
         args = content.split()
-        author = args[:-1]
+        author = args[0]
 
         # If result is a string, then it is an error message.
-        result = self.__get_members_from_string(author)
-        if isinstance(result, str):
-            yield from self.client.send_message(message.channel, result)
+        results = self.__get_members_from_string(message, author)
+        if isinstance(results, str):
+            yield from self.client.send_message(message.channel, results)
             return
 
         # Default ban length is 24 hours
@@ -328,13 +328,16 @@ class Bot(object):
 
         if hours > 0:
             expiry_date = datetime.now() + timedelta(hours / 24.0)
-            self.settings['banned'][result.id] = expiry_date.isoformat()
+            for member in results:
+                self.settings['banned'][member.id] = expiry_date.isoformat()
         else:
-            self.settings['banned'][result.id] = 'never'
+            for member in results:
+                self.settings['banned'][member.id] = 'never'
             expiry_date = 'forever'
         self.__save_settings()
 
-        yield from self.client.send_message(message.channel, 'User "{}" is banned from using this bot until {}'.format(result, expiry_date))
+        users_banned = ', '.join([x.name for x in results])
+        yield from self.client.send_message(message.channel, 'User "{}" is banned from using this bot until {}'.format(users_banned, expiry_date))
 
     def __process_unban_command(self, message, content):
         if content == '':
@@ -343,18 +346,17 @@ class Bot(object):
 
         # If result is a string, then it is an error message.
         author = content.split()[0]
-        result = self.__get_members_from_string(author)
-        if isinstance(result, str):
-            yield from self.client.send_message(message.channel, result)
+        results = self.__get_members_from_string(message, author)
+        if isinstance(results, str):
+            yield from self.client.send_message(message.channel, results)
             return
 
-        if not result.id in self.settings['banned']:
-            yield from self.client.send_message(message.channel, 'User "{}" isn\'t banned'.format(author))
-            return
-
-        self.__unban_user(result)
-
-        yield from self.client.send_message(message.channel, 'Unbanned user "{}"'.format(result))
+        for member in results:
+            if not member.id in self.settings['banned']:
+                yield from self.client.send_message(message.channel, 'User "{}" isn\'t banned'.format(member))
+            else:
+                self.__unban_user(member)
+                yield from self.client.send_message(message.channel, 'Unbanned user "{}"'.format(member))
 
     def __try_unban_user(self, member):
         if not member.id in self.settings['banned']:
@@ -382,19 +384,18 @@ class Bot(object):
         author = args[0]
 
         # If result is a string, then it is an error message.
-        result = self.__get_members_from_string(author)
-        if isinstance(result, str):
-            yield from self.client.send_message(message.channel, result)
+        results = self.__get_members_from_string(message, author)
+        if isinstance(results, str):
+            yield from self.client.send_message(message.channel, results)
             return
 
-        if result.id in self.settings['blessed']:
-            yield from self.client.send_message(message.channel, 'User "{}" is already blessed'.format(result))
-            return
-
-        self.settings['blessed'].append(result.id)
+        for member in results:
+            if member.id in self.settings['blessed']:
+                yield from self.client.send_message(message.channel, 'User "{}" is already blessed'.format(member))
+            else:
+                self.settings['blessed'].append(member.id)
+                yield from self.client.send_message(message.channel, 'User "{}" has been blessed. You may spam to your heart\'s content. Or until you get banned.'.format(member))
         self.__save_settings()
-
-        yield from self.client.send_message(message.channel, 'User "{}" has been blessed. You may spam to your heart\'s content. Or until you get banned.'.format(result))
 
     def __process_unbless_command(self, message, content):
         if content == '':
@@ -403,19 +404,18 @@ class Bot(object):
 
         # If result is a string, then it is an error message.
         author = content.split()[0]
-        result = self.__get_members_from_string(author)
-        if isinstance(result, str):
-            yield from self.client.send_message(message.channel, result)
+        results = self.__get_members_from_string(message, author)
+        if isinstance(results, str):
+            yield from self.client.send_message(message.channel, results)
             return
 
-        if not result.id in self.settings['blessed']:
-            yield from self.client.send_message(message.channel, 'User "{}" isn\'t blessed'.format(author))
-            return
-
-        self.settings['blessed'].remove(result.id)
+        for member in results:
+            if not member.id in self.settings['blessed']:
+                yield from self.client.send_message(message.channel, 'User "{}" isn\'t blessed'.format(member))
+            else:
+                self.settings['blessed'].remove(member.id)
+                yield from self.client.send_message(message.channel, 'User "{}" has been unblessed'.format(member))
         self.__save_settings()
-
-        yield from self.client.send_message(message.channel, 'User "{}" has been unblessed'.format(result))
 
     def __process_mod_command(self, message, content):
         if content == '':
@@ -426,19 +426,18 @@ class Bot(object):
         author = args[0]
 
         # If result is a string, then it is an error message.
-        result = self.__get_members_from_string(author)
-        if isinstance(result, str):
-            yield from self.client.send_message(message.channel, result)
+        results = self.__get_members_from_string(message, author)
+        if isinstance(results, str):
+            yield from self.client.send_message(message.channel, results)
             return
 
-        if result.id in self.settings['moderators']['IDs']:
-            yield from self.client.send_message(message.channel, 'User "{}" is already a moderator'.format(result))
-            return
-
-        self.settings['moderators']['IDs'].append(result.id)
+        for member in results:
+            if member.id in self.settings['moderators']['IDs']:
+                yield from self.client.send_message(message.channel, 'User "{}" is already a moderator'.format(member))
+            else:
+                self.settings['moderators']['IDs'].append(member.id)
+                yield from self.client.send_message(message.channel, 'User "{}" is now a bot moderator. Type `.modhelp` to learn about your new powers!'.format(member))
         self.__save_settings()
-
-        yield from self.client.send_message(message.channel, 'User "{}" is now a bot moderator. Type `.modhelp` to learn about your new powers!'.format(result))
 
     def __process_unmod_command(self, message, content):
         if content == '':
@@ -447,19 +446,18 @@ class Bot(object):
 
         # If result is a string, then it is an error message.
         author = content.split()[0]
-        result = self.__get_members_from_string(author)
-        if isinstance(result, str):
-            yield from self.client.send_message(message.channel, result)
+        results = self.__get_members_from_string(message, author)
+        if isinstance(results, str):
+            yield from self.client.send_message(message.channel, results)
             return
 
-        if not result.id in self.settings['moderators']['IDs']:
-            yield from self.client.send_message(message.channel, 'User "{}" isn\'t a moderator!'.format(author))
-            return
-
-        self.settings['moderators']['IDs'].remove(result.id)
+        for member in results:
+            if not member.id in self.settings['moderators']['IDs']:
+                yield from self.client.send_message(message.channel, 'User "{}" isn\'t a moderator!'.format(member))
+            else:
+                self.settings['moderators']['IDs'].remove(member.id)
+                yield from self.client.send_message(message.channel, 'User "{}" is no longer a moderator'.format(member))
         self.__save_settings()
-
-        yield from self.client.send_message(message.channel, 'User "{}" is no longer a moderator'.format(result))
 
     def __process_reload_command(self, message, content):
         self.settings = json.loads(open('settings.json').read())
@@ -468,7 +466,11 @@ class Bot(object):
     def __save_settings(self):
         open('settings.json', 'w').write(json.dumps(self.settings, indent=2, sort_keys=True))
 
-    def __get_members_from_string(self, user_name):
+    def __get_members_from_string(self, message, user_name):
+        # Use mentions instead of looking up the name if possible
+        if len(message.mentions) > 0:
+            return message.mentions
+
         user_name = user_name.strip('@').split('#')[0]
         members = list()
         for member in self.client.get_all_members():
@@ -478,7 +480,7 @@ class Bot(object):
             return 'Error: No member found with the name "{}"'.format(user_name)
         if len(members) > 1:
             return 'Error: Multiple members share the name "{}". Try again by mentioning the user.'.format(user_name)
-        return members[0]
+        return members
 
     @staticmethod
     def __concat_into_valid_message(list_of_strings):
