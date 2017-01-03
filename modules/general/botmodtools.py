@@ -42,8 +42,12 @@ class BotModTools(glados.Module):
                 expiry_date = self.__settings['banned'][member.id]
                 if not expiry_date == 'never':
                     expiry_date = dateutil.parser.parse(expiry_date)
-                    time_to_expiry = expiry_date - datetime.now()
-                    time_to_expiry = '{0:.1f} hour(s)'.format(time_to_expiry.seconds / 3600.0)
+                    now = datetime.now()
+                    if expiry_date > now:
+                        time_to_expiry = expiry_date - now
+                        time_to_expiry = '{0:.1f} hour(s)'.format(time_to_expiry.seconds / 3600.0)
+                    else:
+                        time_to_expiry = '0 hour(s)'
                 else:
                     time_to_expiry = 'forever'
                 banned.append((member, time_to_expiry))
