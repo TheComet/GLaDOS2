@@ -308,8 +308,8 @@ class Bot(object):
             yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
             return
 
-        args = content.split(' ', 1)
-        author = args[0]
+        args = content.split()
+        author = args[:-1]
 
         # If result is a string, then it is an error message.
         result = self.__get_members_from_string(author)
