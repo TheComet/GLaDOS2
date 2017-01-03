@@ -67,12 +67,21 @@ class Quotes(glados.Module):
 
         lines = [x for x in lines if len(x) >= 20]
 
-        if len(lines) > 0:
-            line = random.choice(lines).strip('\n')
-            yield from self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
-        else:
+        if len(lines) == 0:
             yield from self.client.send_message(message.channel,
                                            '{} hasn\'t delivered any quotes worth mentioning yet'.format(author))
+            return
+
+        # Remove any mentions from the quote
+        line = random.choice(lines).strip('\n')
+        mentioned_ids = [x.strip('<@>') for x in re.findall('<@[0-9]+>', line)]
+        for id in mentioned_ids:
+            for member in self.client.get_all_members():
+                if member.id == id:
+                    line = line.replace('<@{}>'.format(id), member.name)
+                    break
+
+        yield from self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
 
     @glados.Module.commands('quotestats')
     def quotestats(self, message, content):
@@ -155,4 +164,3 @@ class Quotes(glados.Module):
         else:
             response = '{0} has said "{1}" {2} times ({3:.2f}‰ of all words)'.format(author, word, found_count, found_count * 1000.0 / total_count)
         yield from self.client.send_message(message.channel, response)
-
