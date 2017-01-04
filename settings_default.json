@@ -5,6 +5,17 @@
     "token": "OAuth2 token",
     "method": "token"
   },
+  "irc": {
+    "host": "irc.afternet.org",
+    "port": 6667,
+    "nick": "DiscordBridge",
+    "irc channels": [
+      "#ircbridgetest"
+    ],
+    "discord channels": [
+      "#test"
+    ]
+  },
   "modules": {
     "blessed": [
       "general.log.Log.on_message",
