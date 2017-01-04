@@ -25,7 +25,7 @@ class IRCBridge(glados.Module):
         self.socket = None
         self.irc_write_enable = False
         self.state = self.STATE_DISCONNECTED
-        asyncio.ensure_future(self.run())
+        asyncio.async(self.run())
 
     def connect_to_server(self):
         self.channels_to_join = copy.deepcopy(self.irc_channels)
