@@ -1,0 +1,8 @@
+struct MyFunctor
+{
+    MyFunctor(int x, int y) : x_(x), y_(y) {}
+    int operator() () const { return x_ + y_; }
+private:
+    int x_, y_;
+};
+

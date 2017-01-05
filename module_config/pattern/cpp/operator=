@@ -1,0 +1,5 @@
+X& X::operator=(X rhs)
+{
+    swap(rhs);
+	return *this;
+}

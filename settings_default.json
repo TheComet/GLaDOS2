@@ -23,7 +23,8 @@
       "general.log.Log.on_message",
       "general.mentions.Mentions.record",
       "general.quotes.Quotes.record",
-      "general.seen.Seen.on_message"
+      "general.seen.Seen.on_message",
+      "general.ircbridge.IRCBridge.on_discord_message"
     ],
     "paths": [
       "modules"
