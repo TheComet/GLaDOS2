@@ -17,15 +17,16 @@ class IRCBridge(glados.Module):
     def __init__(self, settings):
         super(IRCBridge, self).__init__(settings)
         self.command_prefix = settings['commands']['prefix']
-        self.settings = settings['irc']
-        self.host = self.settings['host']
-        self.port = self.settings['port']
-        self.botnick = self.settings['nick']
-        self.irc_channels = self.settings['irc channels']
+        self.settings = settings
+        self.irc_settings = settings['irc']
+        self.host = self.irc_settings['host']
+        self.port = self.irc_settings['port']
+        self.botnick = self.irc_settings['nick']
+        self.irc_channels = self.irc_settings['irc channels']
         self.discord_channels = list()
         self.channels_to_join = list()
         self.socket = None
-        self.irc_write_enable = False
+        self.irc_write_enable = True
         self.state = self.STATE_DISCONNECTED
         asyncio.async(self.run())
 
@@ -85,7 +86,7 @@ class IRCBridge(glados.Module):
 
                     if msg.find('PRIVMSG ') != -1:
                         if self.client:
-                            self.discord_channels = self.get_discord_channels(self.settings['discord channels'])
+                            self.discord_channels = self.get_discord_channels(self.irc_settings['discord channels'])
                         for channel in self.discord_channels:
                             match = re.match('^.*PRIVMSG #.* :(.*)$', msg)
                             if not match is None:
@@ -124,9 +125,9 @@ class IRCBridge(glados.Module):
         self.send_to_all_channels('<{}> {}'.format(author, content))
         return ()
 
-    @glados.Module.commands('ircenable')
+    @glados.Module.commands('irc')
     def on_irc_enable(self, message, args):
-        if message.author.id != '104330175243636736':
+        if not message.author.id in self.settings['admins']['IDs']:
             return ()
 
         self.irc_write_enable = not self.irc_write_enable
