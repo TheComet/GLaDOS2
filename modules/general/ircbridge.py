@@ -54,7 +54,7 @@ class IRCBridge(glados.Module):
             glados.log('Joining channel {}'.format(channel))
             self.send_raw_message('JOIN {}\n'.format(channel))
         if not self.irc_settings['password'] == '':
-            self.send_raw_message('PRIVMSG NickServ IDENTIFY {} {}\n'.format(self.botnick, self.irc_settings['password']))
+                self.send_raw_message('PRIVMSG NickServ :IDENTIFY {}'.format(self.irc_settings['password']))
 
     def send_raw_message(self, msg):
         if self.socket:
