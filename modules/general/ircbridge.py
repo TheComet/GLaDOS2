@@ -5,6 +5,7 @@ import discord
 import traceback
 import sys
 import copy
+import re
 
 
 class IRCBridge(glados.Module):
@@ -15,6 +16,7 @@ class IRCBridge(glados.Module):
 
     def __init__(self, settings):
         super(IRCBridge, self).__init__(settings)
+        self.command_prefix = settings['commands']['prefix']
         self.settings = settings['irc']
         self.host = self.settings['host']
         self.port = self.settings['port']
@@ -85,8 +87,9 @@ class IRCBridge(glados.Module):
                         if self.client:
                             self.discord_channels = self.get_discord_channels(self.settings['discord channels'])
                         for channel in self.discord_channels:
-                            if msg.find('PRIVMSG #'.format(channel.name)) != -1:
-                                resp = msg.split('{} :'.format(channel.name), 1)[1]
+                            match = re.match('^.*PRIVMSG #.* :(.*)$', msg)
+                            if not match is None:
+                                resp = match.group(1)
                                 author = msg.split('!')[0].strip(':')
                                 yield from self.client.send_message(channel, '[IRCBridge] <{}> {}'.format(author, resp))
 
@@ -113,6 +116,8 @@ class IRCBridge(glados.Module):
         if message.channel.is_private:
             return ()
         if not self.irc_write_enable:
+            return ()
+        if message.content[0] == self.command_prefix:
             return ()
         author = message.author.name
         content = self.substitute_mentions(message)
