@@ -11,6 +11,7 @@
     "proxy host": "none",
     "proxy port": "none",
     "nick": "DiscordBridge",
+    "password": ""
     "irc channels": [
       "#ircbridgetest"
     ],
