@@ -122,35 +122,35 @@ class Conversions(glados.Module):
 
     @staticmethod
     def binary_to_hex(data):
-        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace('0b', '')[::-1]
+        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace('0b', '')
         ret = list()
         for byte in [data[i:i+8] for i in range(0, len(data), 8)]:
             ret.append(hex(int(byte, 2)).replace('0x', '').rjust(2, '0'))
-        return ' '.join(ret[::-1])
+        return ' '.join(ret)
 
     @staticmethod
     def binary_to_decimal(data):
-        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace('0b', '')[::-1]
+        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace('0b', '')
         ret = list()
         for byte in [data[i:i+8] for i in range(0, len(data), 8)]:
             ret.append(str(int(byte, 2)))
-        return ' '.join(ret[::-1])
+        return ' '.join(ret)
 
     @staticmethod
     def hex_to_binary(data):
-        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace('0x', '')[::-1]
+        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace('0x', '')
         ret = list()
         for byte in [data[i:i+2] for i in range(0, len(data), 2)]:
             ret.append(bin(int(byte, 16)).replace('0b', '').rjust(8, '0'))
-        return ' '.join(ret[::-1])
+        return ' '.join(ret)
 
     @staticmethod
     def hex_to_decimal(data):
-        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace('0x', '')[::-1]
+        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace('0x', '')
         ret = list()
         for byte in [data[i:i+2] for i in range(0, len(data), 2)]:
             ret.append(str(int(byte, 16)))
-        return ' '.join(ret[::-1])
+        return ' '.join(ret)
 
     @staticmethod
     def is_binary(data):
