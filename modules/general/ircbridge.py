@@ -95,7 +95,7 @@ class IRCBridge(glados.Module):
                         if self.client:
                             self.discord_channels = self.get_discord_channels(self.irc_settings['discord channels'])
                         for channel in self.discord_channels:
-                            match = re.match('^.*PRIVMSG #.* :(.*)$', msg)
+                            match = re.match('^.*PRIVMSG #.*? :(.*)$', msg)
                             if not match is None:
                                 resp = match.group(1)
                                 author = msg.split('!')[0].strip(':')
