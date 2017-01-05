@@ -120,6 +120,8 @@ class IRCBridge(glados.Module):
             return ()
         if message.content[0] == self.command_prefix:
             return ()
+        if not '#{}'.format(message.channel.name) in self.irc_settings['discord channels']:
+            return ()
         author = message.author.name
         content = self.substitute_mentions(message)
         self.send_to_all_channels('<{}> {}'.format(author, content))
