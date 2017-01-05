@@ -27,7 +27,7 @@ class IRCBridge(glados.Module):
         self.discord_channels = list()
         self.channels_to_join = list()
         self.socket = None
-        self.irc_read_only = True if self.irc_settings['read only'] == 'true' else False
+        self.bridge_enable = True if self.irc_settings['enable'] == 'true' else False
         self.state = self.STATE_DISCONNECTED
         asyncio.async(self.run())
 
@@ -94,12 +94,13 @@ class IRCBridge(glados.Module):
                     if msg.find('PRIVMSG ') != -1:
                         if self.client:
                             self.discord_channels = self.get_discord_channels(self.irc_settings['discord channels'])
-                        for channel in self.discord_channels:
-                            match = re.match('^.*PRIVMSG #.*? :(.*)$', msg)
-                            if not match is None:
-                                resp = match.group(1)
-                                author = msg.split('!')[0].strip(':')
-                                yield from self.client.send_message(channel, '[IRCBridge] <{}> {}'.format(author, resp))
+                        if self.bridge_enable:
+                            for channel in self.discord_channels:
+                                match = re.match('^.*PRIVMSG #.*? :(.*)$', msg)
+                                if not match is None:
+                                    resp = match.group(1)
+                                    author = msg.split('!')[0].strip(':')
+                                    yield from self.client.send_message(channel, '[IRCBridge] <{}> {}'.format(author, resp))
 
             except Exception as e:
                 glados.log('Exception caught: {}'.format(e))
@@ -123,7 +124,7 @@ class IRCBridge(glados.Module):
             return()
         if message.channel.is_private:
             return ()
-        if self.irc_read_only:
+        if not self.bridge_enable:
             return ()
         if message.content[0] == self.command_prefix:
             return ()
@@ -139,8 +140,8 @@ class IRCBridge(glados.Module):
         if not message.author.id in self.settings['admins']['IDs']:
             return ()
 
-        self.irc_read_only = not self.irc_read_only
-        msg = 'IRC write disabled. You can only see messages from IRC but cannot respond.' if self.irc_read_only else 'IRC write enabled: All messages here will be relayed.'
+        self.bridge_enable = not self.bridge_enable
+        msg = 'IRC bridge enabled.' if self.bridge_enable else 'IRC bridge disabled.'
         yield from self.client.send_message(message.channel, msg)
 
     @staticmethod
