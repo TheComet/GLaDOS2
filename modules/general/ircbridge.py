@@ -26,7 +26,7 @@ class IRCBridge(glados.Module):
         self.discord_channels = list()
         self.channels_to_join = list()
         self.socket = None
-        self.irc_write_enable = True
+        self.irc_read_only = True if self.irc_settings['read only'] == 'true' else False
         self.state = self.STATE_DISCONNECTED
         asyncio.async(self.run())
 
@@ -116,7 +116,7 @@ class IRCBridge(glados.Module):
             return()
         if message.channel.is_private:
             return ()
-        if not self.irc_write_enable:
+        if self.irc_read_only:
             return ()
         if message.content[0] == self.command_prefix:
             return ()
@@ -132,8 +132,8 @@ class IRCBridge(glados.Module):
         if not message.author.id in self.settings['admins']['IDs']:
             return ()
 
-        self.irc_write_enable = not self.irc_write_enable
-        msg = 'IRC write enabled: All messages here will be relayed.' if self.irc_write_enable else 'IRC write disabled. You can only see messages from IRC but cannot respond.'
+        self.irc_read_only = not self.irc_read_only
+        msg = 'IRC write disabled. You can only see messages from IRC but cannot respond.' if self.irc_read_only else 'IRC write enabled: All messages here will be relayed.'
         yield from self.client.send_message(message.channel, msg)
 
     @staticmethod
