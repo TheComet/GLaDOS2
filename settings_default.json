@@ -8,6 +8,8 @@
   "irc": {
     "host": "irc.afternet.org",
     "port": 6667,
+    "proxy host": "none",
+    "proxy port": "none",
     "nick": "DiscordBridge",
     "irc channels": [
       "#ircbridgetest"

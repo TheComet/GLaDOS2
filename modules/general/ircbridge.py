@@ -6,6 +6,7 @@ import traceback
 import sys
 import copy
 import re
+import socks
 
 
 class IRCBridge(glados.Module):
@@ -34,13 +35,17 @@ class IRCBridge(glados.Module):
         self.channels_to_join = copy.deepcopy(self.irc_channels)
         glados.log('Connecting to: {}:{}'.format(self.host, self.port))
         try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket = socks.socksocket()
+            if not self.irc_settings['proxy host'] == 'none' and not self.irc_settings['proxy port'] == 'none':
+                self.socket.setproxy(socks.PROXY_TYPE_SOCKS5, self.irc_settings['proxy host'], int(self.irc_settings['proxy port']), True)
             self.socket.connect((self.host, self.port))
-            self.send_raw_message('USER {0} {0} {0} :Bridge between the IRC and Discord GDNet communities\n'.format(self.botnick))
+            self.send_raw_message('USER {0} {0} {0} :{0}\n'.format(self.botnick))
             self.send_raw_message('NICK {}\n'.format(self.botnick))
             self.state = self.STATE_TRY_JOIN
         except Exception as e:
             glados.log('Exception caught: {}'.format(e))
+            exc_info = sys.exc_info()
+            traceback.print_exception(*exc_info)
 
     def join_remaining_channels(self):
         for channel in self.channels_to_join:
