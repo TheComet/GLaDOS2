@@ -42,7 +42,7 @@ class IRCBridge(glados.Module):
             self.send_raw_message('USER {0} {0} {0} :{0}\n'.format(self.botnick))
             self.send_raw_message('NICK {}\n'.format(self.botnick))
             if not self.irc_settings['password'] == '':
-                self.send_raw_message('PRIVMSG NickServ :IDENTIFY {}'.format(self.irc_settings['password']))
+                self.send_raw_message('PRIVMSG NickServ :IDENTIFY {} {}\n'.format(self.botnick, self.irc_settings['password']))
             self.state = self.STATE_TRY_JOIN
         except Exception as e:
             glados.log('Exception caught: {}'.format(e))
@@ -53,8 +53,6 @@ class IRCBridge(glados.Module):
         for channel in self.channels_to_join:
             glados.log('Joining channel {}'.format(channel))
             self.send_raw_message('JOIN {}\n'.format(channel))
-        if not self.irc_settings['password'] == '':
-                self.send_raw_message('PRIVMSG NickServ :IDENTIFY {}'.format(self.irc_settings['password']))
 
     def send_raw_message(self, msg):
         if self.socket:

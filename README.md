@@ -16,6 +16,7 @@ From pip:
  + requests
  + pyenchant
  + beautifulsoup4
+ + PySocks
 
 ## Settings
 
