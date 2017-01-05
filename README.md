@@ -8,6 +8,15 @@ To run the bot, you need [Python](https://www.python.org/) and [discord.py](http
 
 Running the bot for the first time will produce the `settings.json` file. You should edit this, then run the bot again.
 
+## Dependencies
+
+From pip:
+ + discord.py
+ + python-dateutil
+ + requests
+ + pyenchant
+ + beautifulsoup4
+
 ## Settings
 
 ### Login

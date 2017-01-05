@@ -58,13 +58,15 @@
       "bot.responses.Insult",
       "bot.uptime.UpTime"
     ],
-    "server_id_1": {
-      "Server 1": [
-        "comet.insult.Insult"
-      ],
-      "server_id_2": [
-        "comet.insult.Insult"
-      ]
+    "server specific": {
+      "server_id_1": {
+        "Server 1": [
+          "comet.insult.Insult"
+        ],
+        "server_id_2": [
+          "comet.insult.Insult"
+        ]
+      }
     },
     "config path": "module_config"
   },
