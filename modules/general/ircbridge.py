@@ -108,10 +108,10 @@ class IRCBridge(glados.Module):
                 traceback.print_exception(*exc_info)
             yield
 
-    def get_discord_channels(self, channel_names):
+    def get_discord_channels(self, channel_IDs):
         ret = list()
         for channel in self.client.get_all_channels():
-            if '#{}'.format(channel.name) in channel_names:
+            if channel.id in channel_IDs:
                 ret.append(channel)
         return ret
 
