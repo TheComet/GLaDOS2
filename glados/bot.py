@@ -333,6 +333,13 @@ class Bot(object):
             yield from self.client.send_message(message.channel, results)
             return
 
+        # If you are a moderator, then you can't ban admins
+        if message.author.id in self.settings['moderators']['IDs']:
+            for member in results:
+                if member.id in self.settings['admins']['IDs']:
+                    yield from self.client.send_message(message.channel, 'Moderators can\'t ban admins')
+                    return
+
         # Default ban length is 24 hours
         if len(args) < 2:
             hours = 24
