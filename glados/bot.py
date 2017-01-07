@@ -334,9 +334,12 @@ class Bot(object):
             return
 
         # If you are a moderator, then you can't ban admins
-        if message.author.id in self.settings['moderators']['IDs']:
+        is_mod = message.author.id in self.settings['moderators']['IDs'] or \
+                 len(set(x.name for x in message.author.roles).intersection(set(self.settings['moderators']['roles']))) > 0
+        if is_mod:
             for member in results:
-                if member.id in self.settings['admins']['IDs']:
+                is_admin = member.id in self.settings['admins']['IDs']
+                if is_admin:
                     yield from self.client.send_message(message.channel, 'Moderators can\'t ban admins')
                     return
 
