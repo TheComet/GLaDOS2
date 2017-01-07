@@ -17,6 +17,7 @@ From pip:
  + pyenchant
  + beautifulsoup4
  + PySocks
+ + lxml
 
 ## Settings
 
