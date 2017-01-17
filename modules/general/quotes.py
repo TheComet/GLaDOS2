@@ -4,6 +4,8 @@ import os.path
 import random
 import collections
 import re
+import nltk
+import pylab
 
 
 class Quotes(glados.Module):
@@ -19,7 +21,8 @@ class Quotes(glados.Module):
             glados.Help('quote', '<user>', 'Dig up a quote the user once said in the past.'),
             glados.Help('quotestats', '<user>', 'Provide statistics on how many quotes a user has and how'
                                                 ' intelligent he is'),
-            glados.Help('grep', '<word> [User]', 'Find how many times a user has said a particular word. Case-insensitive')
+            glados.Help('grep', '<word> [User]', 'Find how many times a user has said a particular word. Case-insensitive'),
+            glados.Help('zipf', '[user]', 'Plot a word frequency diagram of the user.')
         ]
 
     def check_nickname_valid(self, author):
@@ -165,3 +168,41 @@ class Quotes(glados.Module):
         else:
             response = '{0} has said "{1}" {2} times ({3:.2f}‰ of all words)'.format(author, word, found_count, found_count * 1000.0 / total_count)
         yield from self.client.send_message(message.channel, response)
+
+    @glados.Module.commands('zipf')
+    def zipf(self, message, user):
+        if user == '':
+            user = message.author.name
+
+        user = user.strip('@').split('#')[0]
+        error = self.check_nickname_valid(user.lower())
+        if error is not None:
+            yield from self.client.send_message(message.channel, error)
+            return
+
+        quotes_file = codecs.open(self.quotes_file_name(user.lower()), 'r', encoding='utf-8')
+        lines = quotes_file.readlines()
+        quotes_file.close()
+
+        tokenizer = nltk.tokenize.RegexpTokenizer(r'\w+')
+        tokens = tokenizer.tokenize(str(lines))
+        freq = nltk.FreqDist(tokens)
+
+        image_file_name = self.quotes_file_name(user.lower())[:-4] + '.png'
+        self.plot_word_frequencies(freq, image_file_name)
+        yield from self.client.send_file(message.channel, image_file_name)
+
+    def plot_word_frequencies(self, freq, file_name):
+        samples = [item for item, _ in freq.most_common(50)]
+
+        freqs = [freq[sample] for sample in samples]
+        ylabel = "Counts"
+
+        pylab.grid(True, color="silver")
+        kwargs = dict()
+        kwargs["linewidth"] = 2
+        pylab.plot(freqs, **kwargs)
+        pylab.xticks(range(len(samples)), [nltk.compat.text_type(s) for s in samples], rotation=90)
+        pylab.xlabel("Samples")
+        pylab.ylabel(ylabel)
+        pylab.savefig(file_name)
