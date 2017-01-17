@@ -189,10 +189,10 @@ class Quotes(glados.Module):
         freq = nltk.FreqDist(tokens)
 
         image_file_name = self.quotes_file_name(user.lower())[:-4] + '.png'
-        self.plot_word_frequencies(freq, image_file_name)
+        self.plot_word_frequencies(freq, image_file_name, 'Word frequencies for {}'.format(user))
         yield from self.client.send_file(message.channel, image_file_name)
 
-    def plot_word_frequencies(self, freq, file_name):
+    def plot_word_frequencies(self, freq, file_name, title):
         samples = [item for item, _ in freq.most_common(50)]
 
         freqs = [freq[sample] for sample in samples]
@@ -201,6 +201,7 @@ class Quotes(glados.Module):
         pylab.grid(True, color="silver")
         kwargs = dict()
         kwargs["linewidth"] = 2
+        pylab.title(title)
         pylab.plot(freqs, **kwargs)
         pylab.xticks(range(len(samples)), [nltk.compat.text_type(s) for s in samples], rotation=90)
         pylab.xlabel("Samples")
