@@ -46,7 +46,7 @@ LATEX_FRAMEWORK = r"""
 }
 
 \begin{document}
-{\color{orange}
+{\color{Black}
 \begin{align*}
 __DATA__
 \end{align*}}
