@@ -219,3 +219,4 @@ class Quotes(glados.Module):
         pylab.xticks(range(len(samples)), [nltk.compat.text_type(s) for s in samples], rotation=90)
         pylab.xlabel("Samples")
         pylab.ylabel(ylabel)
+        pylab.gca().set_yscale('log', basey=2)
