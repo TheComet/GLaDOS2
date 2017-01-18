@@ -6,6 +6,7 @@ import collections
 import re
 import nltk
 import pylab
+import numpy as np
 
 
 class Quotes(glados.Module):
@@ -170,40 +171,51 @@ class Quotes(glados.Module):
         yield from self.client.send_message(message.channel, response)
 
     @glados.Module.commands('zipf')
-    def zipf(self, message, user):
-        if user == '':
-            user = message.author.name
+    def zipf(self, message, users):
+        source_user = message.author.name
+        source_user = source_user.strip('@').split('#')[0]
 
-        user = user.strip('@').split('#')[0]
-        error = self.check_nickname_valid(user.lower())
-        if error is not None:
-            yield from self.client.send_message(message.channel, error)
-            return
+        target_users = [user.strip('@').split('#')[0] for user in users.split()]
+        if len(users) == 0:
+            target_users = [source_user]
 
-        quotes_file = codecs.open(self.quotes_file_name(user.lower()), 'r', encoding='utf-8')
-        lines = quotes_file.readlines()
-        quotes_file.close()
+        for user in target_users:
+            error = self.check_nickname_valid(user.lower())
+            if error is not None:
+                yield from self.client.send_message(message.channel, error)
+                return
 
-        tokenizer = nltk.tokenize.RegexpTokenizer(r'\w+')
-        tokens = tokenizer.tokenize(str(lines))
-        freq = nltk.FreqDist(tokens)
+        image_file_name = self.quotes_file_name(source_user.lower())[:-4] + '.png'
+        pylab.title('Word frequencies for {}'.format(', '.join(target_users)))
+        for user in target_users:
+            quotes_file = codecs.open(self.quotes_file_name(user.lower()), 'r', encoding='utf-8')
+            lines = quotes_file.readlines()
+            quotes_file.close()
 
-        image_file_name = self.quotes_file_name(user.lower())[:-4] + '.png'
-        self.plot_word_frequencies(freq, image_file_name, 'Word frequencies for {}'.format(user))
+            tokenizer = nltk.tokenize.RegexpTokenizer(r'\w+')
+            tokens = tokenizer.tokenize(str(lines))
+            freq = nltk.FreqDist(tokens)
+            self.plot_word_frequencies(freq, user)
+
+        pylab.legend()
+        pylab.savefig(image_file_name)
+        pylab.gcf().clear()
+
         yield from self.client.send_file(message.channel, image_file_name)
 
-    def plot_word_frequencies(self, freq, file_name, title):
+    def plot_word_frequencies(self, freq, user):
         samples = [item for item, _ in freq.most_common(50)]
 
-        freqs = [freq[sample] for sample in samples]
-        ylabel = "Counts"
+        freqs = np.array([float(freq[sample]) for sample in samples])
+        freqs /= np.max(freqs)
+
+        ylabel = "Normalized word count"
 
         pylab.grid(True, color="silver")
         kwargs = dict()
         kwargs["linewidth"] = 2
-        pylab.title(title)
+        kwargs["label"] = user
         pylab.plot(freqs, **kwargs)
         pylab.xticks(range(len(samples)), [nltk.compat.text_type(s) for s in samples], rotation=90)
         pylab.xlabel("Samples")
         pylab.ylabel(ylabel)
-        pylab.savefig(file_name)
