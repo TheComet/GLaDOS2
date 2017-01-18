@@ -138,7 +138,9 @@ class Quotes(glados.Module):
         yield from self.client.send_message(message.channel, response)
 
     def filter_to_english_words(self, words_list):
-        return [word for word in words_list if all(d.check(word) for d in self.dictionaries)]
+        return [word for word in words_list
+                    if any(d.check(word) for d in self.dictionaries)
+                    and (len(word) > 1 or len(word) == 1 and word in 'aAI')]
 
     @glados.Module.commands('grep')
     def grep(self, message, content):
@@ -205,7 +207,7 @@ class Quotes(glados.Module):
             quotes_file.close()
 
             tokenizer = nltk.tokenize.RegexpTokenizer(r'\w+')
-            tokens = tokenizer.tokenize(str(lines))
+            tokens = self.filter_to_english_words(tokenizer.tokenize(str(lines)))
             freq = nltk.FreqDist(tokens)
             self.plot_word_frequencies(freq, user)
 
@@ -215,8 +217,11 @@ class Quotes(glados.Module):
 
         yield from self.client.send_file(message.channel, image_file_name)
 
-    def plot_word_frequencies(self, freq, user):
+    @staticmethod
+    def plot_word_frequencies(freq, user):
         samples = [item for item, _ in freq.most_common(50)]
+        if len(samples) < 200:
+            return
 
         freqs = np.array([float(freq[sample]) for sample in samples])
         freqs /= np.max(freqs)
