@@ -206,8 +206,13 @@ class Quotes(glados.Module):
             lines = quotes_file.readlines()
             quotes_file.close()
 
+            if len(lines) < 20:
+                continue
+
             tokenizer = nltk.tokenize.RegexpTokenizer(r'\w+')
             tokens = self.filter_to_english_words(tokenizer.tokenize(str(lines)))
+            if len(tokens) < 200:
+                continue
             freq = nltk.FreqDist(tokens)
             self.plot_word_frequencies(freq, user)
 
@@ -220,8 +225,6 @@ class Quotes(glados.Module):
     @staticmethod
     def plot_word_frequencies(freq, user):
         samples = [item for item, _ in freq.most_common(50)]
-        if len(samples) < 200:
-            return
 
         freqs = np.array([float(freq[sample]) for sample in samples])
         freqs /= np.max(freqs)
