@@ -192,14 +192,13 @@ class Quotes(glados.Module):
         if len(users) == 0:
             target_users = [source_user]
 
-        for user in target_users:
-            error = self.check_nickname_valid(user.lower())
-            if error is not None:
-                yield from self.client.send_message(message.channel, error)
-                return
+        if users == '*':
+            if message.server is not None:
+                target_users = [member.name for member in message.server.members]
+        target_users = [user for user in target_users if self.check_nickname_valid(user.lower()) is None]
 
         image_file_name = self.quotes_file_name(source_user.lower())[:-4] + '.png'
-        pylab.title('Word frequencies for {}'.format(', '.join(target_users)))
+        pylab.title('Word frequencies')
         for user in target_users:
             quotes_file = codecs.open(self.quotes_file_name(user.lower()), 'r', encoding='utf-8')
             lines = quotes_file.readlines()
