@@ -7,6 +7,7 @@ import re
 import nltk
 import pylab
 import numpy as np
+import enchant
 
 
 class Quotes(glados.Module):
@@ -16,6 +17,11 @@ class Quotes(glados.Module):
         self.quotes_data_path = os.path.join(settings['modules']['config path'], 'quotes')
         if not os.path.exists(self.quotes_data_path):
             os.makedirs(self.quotes_data_path)
+
+        self.dictionaries = [
+            enchant.Dict('en_US'),
+            enchant.Dict('en_GB')
+        ]
 
     def get_help_list(self):
         return [
@@ -107,12 +113,13 @@ class Quotes(glados.Module):
         average_quote_length = float(sum([len(quote) for quote in lines])) / float(number_of_quotes)
 
         words = [x.strip().strip('?.",;:()[]{}') for x in ' '.join(lines).split(' ')]
+        words = [x for x in words if not x == '']
         number_of_words = len(words)
         average_word_length = float(sum([len(quote) for quote in words])) / float(number_of_words)
 
         frequencies = collections.Counter(words)
-        vocab = len(list(set(nltk.regexp_tokenize(str(words), r'\w+', gaps=True)) - set(nltk.corpus.stopwords.words('english'))))
         common = "the be to of and a in that have I it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me when make can like time no just him know take people into year your good some could them see other than then now look only come its over think also back after use two how our work first well way even new want because any these give day most us".split()
+        vocab = len(self.filter_to_english_words(set(words)))
         most_common = ', '.join(['"{}" ({})'.format(w, i) for w, i in frequencies.most_common() if w not in common][:5])
         least_common = ', '.join(['"{}"'.format(w) for w, i in frequencies.most_common() if w.find('http') == -1][-5:])
 
@@ -129,6 +136,9 @@ class Quotes(glados.Module):
             vocab)
 
         yield from self.client.send_message(message.channel, response)
+
+    def filter_to_english_words(self, words_list):
+        return [word for word in words_list if all(d.check(word) for d in self.dictionaries)]
 
     @glados.Module.commands('grep')
     def grep(self, message, content):
