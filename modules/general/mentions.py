@@ -41,7 +41,7 @@ def get_author(msg):
 
 class Mentions(glados.Module):
     def __init__(self, settings):
-        super().__init__(settings)
+        super(Mentions, self).__init__(settings)
 
         mentions_data_path = os.path.join(settings['modules']['config path'], 'mentions')
         if not os.path.exists(mentions_data_path):
@@ -71,6 +71,10 @@ class Mentions(glados.Module):
 
     @glados.Module.rules('^((?!\.\w+).*)$')
     def record(self, message, match):
+        # If user has opted out, don't log
+        if message.author.id in self.settings['optout']:
+            return ()
+
         with codecs.open(self.__mention_log_file, 'a', encoding='utf-8') as f:
             f.write(datetime.now().isoformat()[:19] + "  " + message.author.name + ": " + message.clean_content + "\n")
 

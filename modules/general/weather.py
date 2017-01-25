@@ -119,7 +119,7 @@ def get_wind(parsed):
 class Weather(glados.Module):
 
     def __init__(self, settings):
-        super().__init__(settings)
+        super(Weather, self).__init__(settings)
 
         self.__woeid_db = dict()
         self.__woeid_db_file = os.path.join(settings['modules']['config path'], 'woeid_db.json')

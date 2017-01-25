@@ -226,6 +226,10 @@ class Bot(object):
             yield from self.__process_help_command(message, content)
         elif command == self.settings['commands']['modhelp']:
             yield from self.__process_modhelp_command(message, content)
+        elif command == self.settings['commands']['optout']:
+            yield from self.__process_optout_command(message, content)
+        elif command == self.settings['commands']['optin']:
+            yield from self.__process_optin_command(message, content)
 
         is_mod = message.author.id in self.settings['moderators']['IDs'] or \
                  len(set(x.name for x in message.author.roles).intersection(set(self.settings['moderators']['roles']))) > 0
@@ -318,6 +322,31 @@ class Bot(object):
                     self.settings['commands']['bless'],
                     self.settings['commands']['unbless'])
         )
+
+    def __process_optout_command(self, message, content):
+        if message.author.id in self.settings['optout']:
+            yield from self.client.send_message(message.channel, 'User "{}" is already opted out.'.format(message.author.name))
+            return
+
+        self.settings['optout'].append(message.author.id)
+        self.__save_settings()
+
+        yield from self.client.send_message(message.channel,
+                        'User "{}" has opted out. The bot will no longer log any of your activity. '
+                        'This also means you won\'t be able to use any of the statistic commands, such '
+                        'as `.quote` or `.zipf`. If you want your existing data to be deleted, ask the '
+                        'bot owner.'.format(message.author.name))
+
+    def __process_optin_command(self, message, content):
+        if not message.author.id in self.settings['optout']:
+            yield from self.client.send_message(message.channel, 'User "{}" is already opted in.'.format(message.author.name))
+            return
+
+        self.settings['optout'].remove(message.author.id)
+        self.__save_settings()
+
+        yield from self.client.send_message(message.channel, 'User "{}" has opted in. The bot will collect logs on you '
+                        'for commands such as `.quote` or `.zipf` to function correctly.'.format(message.author.name))
 
     def __process_ban_command(self, message, content):
         if content == '':

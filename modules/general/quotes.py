@@ -52,6 +52,10 @@ class Quotes(glados.Module):
     # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Module.rules('^((?!\.\w+).*)$')
     def record(self, message, match):
+        # If user has opted out, don't log
+        if message.author.id in self.settings['optout']:
+            return ()
+
         glados.log('Recording quote')
 
         author = message.author.name

@@ -31,7 +31,7 @@ class Etymology(glados.Module):
     r_sentence = re.compile(t_sentence % ')(?<!'.join(abbrs))
 
     def __init__(self, settings):
-            super().__init__(settings)
+            super(Etymology, self).__init__(settings)
 
     def get_help_list(self):
         return [

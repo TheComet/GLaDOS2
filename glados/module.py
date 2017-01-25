@@ -12,6 +12,7 @@ class Module(object):
         self.full_name = str()
         # set externally to the discord client object
         self.client = None
+        self.settings = settings
 
     def provide_help(self, command, message):
         """
