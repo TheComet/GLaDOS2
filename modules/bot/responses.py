@@ -80,6 +80,10 @@ class Insult(glados.Module):
     def you_cunt(self, message, match):
         yield from self.respond(message)
 
+
+class Hmkay(glados.Module):
+    def get_help_list(self): return []
+
     @glados.Module.rules("^.*(?=.*hmkay).*$")
     def hmkay(self, message, match):
         yield from self.client.send_message(message.channel, "HHHMMMMKAAAYYY. DRUGS ARE BAD HHMKAY")
