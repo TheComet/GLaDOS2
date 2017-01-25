@@ -6,7 +6,6 @@ import dateutil.parser
 class BotModTools(glados.Module):
     def __init__(self, settings):
         super(BotModTools, self).__init__(settings)
-        self.__settings = settings
 
     def get_help_list(self):
         return [
@@ -20,10 +19,10 @@ class BotModTools(glados.Module):
         mod_list = list()
         admin_list = list()
         for member in self.client.get_all_members():
-            if member.id in self.__settings['moderators']['IDs']:
+            if member.id in self.settings['moderators']['IDs']:
                 if not member in mod_list:
                     mod_list.append(member)
-            if member.id in self.__settings['admins']['IDs']:
+            if member.id in self.settings['admins']['IDs']:
                 if not member in admin_list:
                     admin_list.append(member)
 
@@ -38,8 +37,8 @@ class BotModTools(glados.Module):
     def banlist(self, message, content):
         banned = list()
         for member in self.client.get_all_members():
-            if member.id in self.__settings['banned']:
-                expiry_date = self.__settings['banned'][member.id]
+            if member.id in self.settings['banned']:
+                expiry_date = self.settings['banned'][member.id]
                 if not expiry_date == 'never':
                     expiry_date = dateutil.parser.parse(expiry_date)
                     now = datetime.now()
@@ -62,7 +61,7 @@ class BotModTools(glados.Module):
     def blesslist(self, message, content):
         blessed = list()
         for member in self.client.get_all_members():
-            if member.id in self.__settings['blessed']:
+            if member.id in self.settings['blessed']:
                 if not member in blessed:
                     blessed.append(member)
 
@@ -70,4 +69,18 @@ class BotModTools(glados.Module):
             text = '**Blessed Users**\n{}'.format('\n'.join(['  + ' + x.name for x in blessed]))
         else:
             text = 'No one is blessed.'
+        yield from self.client.send_message(message.channel, text)
+
+    @glados.Module.commands('optoutlist')
+    def optoutlist(self, message, content):
+        optouts = list()
+        for member in self.client.get_all_members():
+            if member.id in self.settings['optout']:
+                if not member in optouts:
+                    optouts.append(member)
+
+        if len(optouts) > 0:
+            text = '**Opted-Out Users**\n{}'.format('\n'.join(['  + ' + x.name for x in optouts]))
+        else:
+            text = 'No one has opted out.'
         yield from self.client.send_message(message.channel, text)
