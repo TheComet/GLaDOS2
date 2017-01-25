@@ -79,7 +79,9 @@
     "unbless": "unbless",
     "mod": "mod",
     "unmod": "unmod",
-    "reload": "reload"
+    "reload": "reload",
+    "optin": "optin",
+    "optout": "optout"
   },
   "admins": {
     "IDs": [],
@@ -92,5 +94,6 @@
   "blessed": [
   ],
   "banned": {
-  }
+  },
+  "optout": []
 }
