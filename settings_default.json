@@ -11,7 +11,7 @@
     "proxy host": "none",
     "proxy port": "none",
     "nick": "DiscordBridge",
-    "password": ""
+    "password": "",
     "irc channels": [
       "#ircbridgetest"
     ],
@@ -31,11 +31,13 @@
       "modules"
     ],
     "names": [
-      "general.8ball.EightBall",
+	  "general.8ball.EightBall",
+      "general.botmodtools.BotModTools",
       "general.burn.Burn",
       "general.etymology.Etymology",
       "general.flip.Flip",
       "general.fortune.Fortune",
+      "general.google.Google",
       "general.hug.Hug",
       "general.isup.IsUp",
       "general.log.Log",
@@ -46,28 +48,24 @@
       "general.quotes.Quotes",
       "general.seen.Seen",
       "general.showip.ShowIP",
+      "general.fact.Fact",
       "general.spellcheck.SpellCheck",
       "general.time.Time",
       "general.units.Units",
       "general.urban.Urban",
+      "general.weather.Weather",
       "general.wikipedia.Wikipedia",
       "general.wiktionary.Wiktionary",
       "general.xkcd.XKCD",
       "general.youtube.Youtube",
+      "gamedev.responses.Goto",
+      "gamedev.pattern.Pattern",
       "bot.responses.Hello",
       "bot.responses.Rude",
       "bot.responses.Insult",
       "bot.uptime.UpTime"
     ],
     "server specific": {
-      "server_id_1": {
-        "Server 1": [
-          "comet.insult.Insult"
-        ],
-        "server_id_2": [
-          "comet.insult.Insult"
-        ]
-      }
     },
     "config path": "module_config"
   },

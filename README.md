@@ -18,6 +18,8 @@ From pip:
  + beautifulsoup4
  + PySocks
  + lxml
+ + nltk
+ + matplotlib
 
 ## Settings
 
