@@ -69,7 +69,9 @@ class Quotes(glados.Module):
         if content == '':
             content = message.author.name
 
-        author = content.strip('@').split('#')[0]
+        content_parts = content.split()
+        author = content_parts[0].strip('@').split('#')[0]
+        search_criteria = ' '.join(content_parts[1:]) if len(content_parts) > 1 else None
         error = self.check_nickname_valid(author.lower())
         if not error is None:
             yield from self.client.send_message(message.channel, error)
@@ -80,6 +82,8 @@ class Quotes(glados.Module):
         quotes_file.close()
 
         lines = [x for x in lines if len(x) >= 20]
+        if search_criteria:
+            lines = [x for x in lines if search_criteria in x]
 
         if len(lines) == 0:
             yield from self.client.send_message(message.channel,
