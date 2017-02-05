@@ -58,8 +58,11 @@ class Youtube(glados.Module):
         url = 'https://www.youtube.com/results?search_query={}'.format(query)
         html = urllib.request.urlopen(url).read().decode('utf-8')
         soup = BeautifulSoup(html, 'lxml')
-        vid = soup.find(attrs={'class':'yt-uix-tile-link'})
-        if vid:
-            return 'https://www.youtube.com' + vid['href']
+        for vid in soup.findAll(attrs={'class': 'yt-uix-tile-link'}):
+            # See issue #5 - remove advertisement links
+            href = vid['href']
+            if "https://googleads.g.doubleclick.net" in href:
+                continue
+            return 'https://www.youtube.com' + href
         else:
             return 'None found'
