@@ -1,0 +1,10 @@
+# Install requirements for GLaDOS2
+discord.py
+python-dateutil
+requests
+pyenchant
+beautifulsoup4
+PySocks
+lxml
+nltk
+matplotlib
