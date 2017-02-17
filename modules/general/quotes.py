@@ -66,11 +66,8 @@ class Quotes(glados.Module):
 
     @glados.Module.commands('quote')
     def quote(self, message, content):
-        if content == '':
-            content = message.author.name
-
         content_parts = content.split()
-        author = content_parts[0].strip('@').split('#')[0]
+        author = content_parts[0].strip('@').split('#')[0] if content != '' else message.author.name
         search_criteria = ' '.join(content_parts[1:]) if len(content_parts) > 1 else None
         error = self.check_nickname_valid(author.lower())
         if not error is None:
