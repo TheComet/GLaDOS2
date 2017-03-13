@@ -209,13 +209,12 @@ class Bot(object):
         # set module properties
         m.full_name = modfullname
         m.client = self.client
+        m.setup()
 
         # get a list of tuples containing (callback function, module) pairs.
         callback_tuples = self.__get_callback_tuples(m)
-        if len(callback_tuples) == 0:
-            return 'Error: Module {0} has no callbacks'.format(modfullname)
-
-        self.__callback_tuples += callback_tuples
+        if len(callback_tuples) > 0:
+            self.__callback_tuples += callback_tuples
 
     def __process_core_commands(self, message, command, content):
         # Ignore bots

@@ -14,6 +14,12 @@ class Module(object):
         self.client = None
         self.settings = settings
 
+    def setup(self):
+        """
+        Called right after the external module attributes were set.
+        """
+        pass
+
     def provide_help(self, command, message):
         """
         If the user has entered an invalid command, you can call this function to send help to the user.
