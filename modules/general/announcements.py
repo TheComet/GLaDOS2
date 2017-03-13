@@ -1,6 +1,5 @@
 import glados
 import asyncio
-from glados.Log import log
 
 
 class Announcements(glados.Module):
