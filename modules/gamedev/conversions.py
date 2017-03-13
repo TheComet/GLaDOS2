@@ -31,7 +31,7 @@ class Conversions(glados.Module):
         elif isinstance(data, float):
             data = 'Interpreted as ieee754 float: ```{}```'.format(self.float_to_binary(data))
         else:
-            data = 'Interpreted as unsigned integer: ```{}```'.format(bin(data).replace('0b', '').rjust(8, '0'))
+            data = 'Interpreted as decimal: ```{}```'.format(bin(data).rjust(8, '0'))
 
         yield from self.client.send_message(message.channel, data)
 
@@ -121,10 +121,18 @@ class Conversions(glados.Module):
         return ' '.join(hex(c).replace('0x', '').rjust(2, '0') for c in struct.pack('!f', num))
 
     @staticmethod
-    def binary_to_hex(data):
-        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace('0b', '')
+    def do_conversion(data, base, prefix):
+        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace(prefix, '')[::-1]
+        width = 256
         ret = list()
-        for byte in [data[i:i+8] for i in range(0, len(data), 8)]:
+        for byte in [data[i:][:8][::-1] for i in range(0, len(data), base)]:
+            pass
+
+    @staticmethod
+    def binary_to_hex(data):
+        data = data.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '').replace('0b', '')[::-1]
+        ret = list()
+        for byte in [data[i:][:8] for i in range(0, len(data), 8)]:
             ret.append(hex(int(byte, 2)).replace('0x', '').rjust(2, '0'))
         return ' '.join(ret)
 
@@ -135,6 +143,10 @@ class Conversions(glados.Module):
         for byte in [data[i:i+8] for i in range(0, len(data), 8)]:
             ret.append(str(int(byte, 2)))
         return ' '.join(ret)
+
+    @staticmethod
+    def binary_to_octal(data):
+        pass
 
     @staticmethod
     def hex_to_binary(data):
@@ -154,12 +166,12 @@ class Conversions(glados.Module):
 
     @staticmethod
     def is_binary(data):
-        return all(c in ('0', '1', ' ') for c in data)
+        if len(re.findall('0b', data)) > 0:
+            return True
+        return False
 
     @staticmethod
     def is_hex(data):
-        if len(re.findall('0x', data)) > len(data) * 0.1:
-            return True
-        if all(c in list('0123456789ABCDEFabcdef ') for c in data):
+        if len(re.findall('0x', data)) > 0:
             return True
         return False

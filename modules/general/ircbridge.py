@@ -40,9 +40,10 @@ class IRCBridge(glados.Module):
                 self.socket.setproxy(socks.PROXY_TYPE_SOCKS5, self.irc_settings['proxy host'], int(self.irc_settings['proxy port']), True)
             self.socket.connect((self.host, self.port))
             self.send_raw_message('USER {0} {0} {0} :{0}\n'.format(self.botnick))
-            self.send_raw_message('NICK {}\n'.format(self.botnick))
             if not self.irc_settings['password'] == '':
-                self.send_raw_message('PRIVMSG NickServ :IDENTIFY {} {}\n'.format(self.botnick, self.irc_settings['password']))
+                #self.send_raw_message('PRIVMSG NickServ :IDENTIFY {} {}\n'.format(self.botnick, self.irc_settings['password']))
+                self.send_raw_message('PASS {}\n'.format(self.irc_settings['password']))
+            self.send_raw_message('NICK {}\n'.format(self.botnick))
             self.state = self.STATE_TRY_JOIN
         except Exception as e:
             glados.log('Exception caught: {}'.format(e))
@@ -95,12 +96,15 @@ class IRCBridge(glados.Module):
                         if self.client:
                             self.discord_channels = self.get_discord_channels(self.irc_settings['discord channels'])
                         if self.bridge_enable:
-                            for channel in self.discord_channels:
-                                match = re.match('^.*PRIVMSG #.*? :(.*)$', msg)
-                                if not match is None:
-                                    resp = match.group(1)
-                                    author = msg.split('!')[0].strip(':')
-                                    yield from self.client.send_message(channel, '[IRCBridge] <{}> {}'.format(author, resp))
+                            match = re.match('^.*PRIVMSG #.*? :(.*)$', msg)
+                            if not match is None:
+                                resp = match.group(1)
+                                for channel in self.discord_channels:
+                                    try:
+                                        yield from self.client.send_message(channel, resp)
+                                    except:
+                                        yield
+                                        continue
 
             except Exception as e:
                 glados.log('Exception caught: {}'.format(e))
@@ -109,6 +113,7 @@ class IRCBridge(glados.Module):
             yield
 
     def get_discord_channels(self, channel_IDs):
+        return self.client.get_all_channels()
         ret = list()
         for channel in self.client.get_all_channels():
             if channel.id in channel_IDs:

@@ -19,6 +19,9 @@
       "#test"
     ]
   },
+  "announcements": {
+    "channels": []
+  },
   "modules": {
     "blessed": [
       "general.log.Log.on_message",
