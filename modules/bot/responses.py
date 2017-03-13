@@ -8,7 +8,7 @@ class Hello(glados.Module):
 
     def get_help_list(self): return []
 
-    @glados.Module.rules(r'(?i)(hi|hello|hey|greetings),? texbot.*$')
+    @glados.Module.rules(r'(?i)(hi|hello|hey|greetings),? glados.*$')
     def respond_hello(self, message, match):
         greeting = random.choice(('Hi ', 'Hey ', 'Hello '))
         greeting += message.author.name + random.choice(('', '!'))
@@ -39,7 +39,7 @@ class Rude(glados.Module):
 
     def get_help_list(self): return []
 
-    @glados.Module.rules(r'(?i)(Fuck|Screw) you,? texbot[ \t]*$')
+    @glados.Module.rules(r'(?i)(Fuck|Screw) you,? glados[ \t]*$')
     def rude(self, message, match):
         yield from self.client.send_message(message.channel,
                                        'Watch your mouth, ' +
@@ -68,15 +68,15 @@ class Insult(glados.Module):
         yield from self.client.send_message(message.channel, self.phrases[self.counter].format(message.author.name))
         self.counter = (self.counter + 1) % len(self.phrases)
 
-    @glados.Module.rules("^.*(?=.*shut)(?=.*up)(?=.*texbot).*$")
+    @glados.Module.rules("^.*(?=.*shut)(?=.*up)(?=.*glados).*$")
     def shut_up(self, message, match):
         yield from self.respond(message)
 
-    @glados.Module.rules("^.*(?=.*fuck)(?=.*texbot).*$")
+    @glados.Module.rules("^.*(?=.*fuck)(?=.*glados).*$")
     def fuck_you(self, message, match):
         yield from self.respond(message)
 
-    @glados.Module.rules("^.*(?=.*texbot)(?=.*cunt).*$")
+    @glados.Module.rules("^.*(?=.*glados)(?=.*cunt).*$")
     def you_cunt(self, message, match):
         yield from self.respond(message)
 
