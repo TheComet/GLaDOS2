@@ -80,7 +80,8 @@ class Seen(glados.Module):
     @glados.Module.commands('seen')
     def on_seen(self, message, content):
         if content == "":
-            yield from self.provide_help('seen', message)
+            # Count how many users in total have been seen
+            yield from self.client.send_message(message.channel, '{} users have been seen saying at least something.'.format(len(self.__dict)))
             return
 
         author = content.strip('@').split('#')[0]
