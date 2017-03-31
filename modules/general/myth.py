@@ -106,7 +106,18 @@ class Myth(glados.Module):
                 yield from self.client.send_message(message.channel, 'Only botmods can pass IDs')
                 return ()
 
-        line = random.choice(lines).strip('\n')
+            line = ''
+            for l in lines:
+                parts = self.__extract_parts(l)
+                if parts[0] == content.strip():
+                    line = l
+                    break
+            if line == '':
+                yield from self.client.send_message(message.channel, 'Myth #{} does not exist'.format(content.strip()))
+                return
+        else:
+            line = random.choice(lines).strip('\n')
+
         parts = self.__extract_parts(line)
         line = 'Myth #{}: "{}" -- *Submitted by {}*'.format(parts[0], parts[1], parts[2])
 
