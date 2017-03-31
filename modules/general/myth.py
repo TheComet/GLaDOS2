@@ -46,7 +46,7 @@ class Myth(glados.Module):
                     new_id = int(parts[0]) + 1
 
         with codecs.open(self.data_file, 'a', encoding='utf-8') as f:
-            content = content.replace(':', '\\:')
+            content = content.replace('\n', '\\n')
             f.write('{}:{}:{}\n'.format(new_id, content, author))
 
         yield from self.client.send_message(message.channel, 'Myth #{} added.'.format(new_id))
@@ -116,7 +116,7 @@ class Myth(glados.Module):
                 yield from self.client.send_message(message.channel, 'Myth #{} does not exist'.format(content.strip()))
                 return
         else:
-            line = random.choice(lines).strip('\n')
+            line = random.choice(lines)
 
         parts = self.__extract_parts(line)
         line = 'Myth #{}: "{}" -- *Submitted by {}*'.format(parts[0], parts[1], parts[2])
@@ -140,22 +140,12 @@ class Myth(glados.Module):
                     line = line.replace('<@{}>'.format(id), member.name).replace('<@!{}>'.format(id), member.name)
                     break
 
-        def special_split(msg):
-            ret = list()
-            last_i = 0
-            i = 0
-            l = len(msg)
-            while True:
-                if i == l:
-                    break
-                if msg[i] == ':':
-                    if msg[i - 1] == '\\':
-                        continue
-                    ret.append(msg[last_i:i])
-                    last_i = i + 1
-                i += 1
-            if i > last_i:
-                ret.append(msg[last_i:i].strip())
-            return ret
+        bad_parts = line.split(':')
+        parts = [
+            bad_parts[0],
+            ':'.join(bad_parts[1:-1]),
+            bad_parts[-1].strip()
+        ]
 
-        return special_split(line.strip('<@!>'))
+        parts[1] = parts[1].replace('\\n', '\n')
+        return parts
