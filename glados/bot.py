@@ -280,28 +280,26 @@ class Bot(object):
         relevant_modules = set(module for c, module in self.__callback_tuples
                                if len(module.server_whitelist) == 0
                                or message.server and message.server.name in module.server_whitelist)
+        # Filter relevant modules if the user is requesting a specific command
+        if len(content) > 0:
+            relevant_modules = set(module for module in relevant_modules
+                                   if any(True for x in content.split()
+                                          if any(True for hlp in module.get_help_list()
+                                                 if x.lower() in hlp.command)))
         # generates a list of help strings from the modules
         relevant_help = sorted([self.__command_prefix + hlp.get()
                                 for mod in relevant_modules
-                                for hlp in mod.get_help_list()
-                                if content == hlp.command or content == ''])
+                                for hlp in mod.get_help_list()])
 
-        # If sending all help, PM it to the user
-        if content == '':
-            relevant_help = ['==== Loaded modules ===='] + relevant_help
-
-            # If the user was banned, don't announce the help sending
+        # If the user was banned, don't announce the help sending, but send the help anyway
+        do_announce = False
+        for msg in self.__concat_into_valid_message(relevant_help):
+            do_announce = True
+            yield from self.client.send_message(message.author, msg)
+        if do_announce:
             if not message.author.id in self.settings['banned']:
                 yield from self.client.send_message(message.channel,
                                                     'I\'m sending you a direct message with a list of commands!')
-            for msg in self.__concat_into_valid_message(relevant_help):
-                yield from self.client.send_message(message.author, msg)
-        # If sending help for a single command, send it to the channel
-        else:
-            if len(relevant_help) > 0:
-                yield from self.client.send_message(message.channel, relevant_help[0])
-            else:
-                yield from self.client.send_message(message.channel, 'Unknown command {}'.format(content))
 
     def __process_modhelp_command(self, message, content):
         # If the user was banned, don't announce the help sending
@@ -548,6 +546,10 @@ class Bot(object):
         temp = list()
         l = 0
         max_length = 1000
+
+        if len(list_of_strings) == 0:
+            return ret
+
         for s in list_of_strings:
             l += len(s)
             if l >= max_length:
