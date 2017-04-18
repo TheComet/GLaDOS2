@@ -135,6 +135,7 @@ class Activity(glados.Module):
         ax1.set_xlim([0, 24])
         ax1.grid()
         ax1.set_title('Average Activity')
+        ax1.set_xlabel('Hour (UTC)')
         ax1.set_ylabel('Message Count per Hour')
 
         # Create pie chart of the most active channels
