@@ -127,8 +127,14 @@ class Myth(glados.Module):
     def mythstats(self, message, content):
         if os.path.isfile(self.data_file):
             with codecs.open(self.data_file, 'r', encoding='utf-8') as f:
-                count = len(f.readlines())
-            yield from self.client.send_message(message.channel, 'There are {} myths submitted'.format(count))
+                lines = [x for x in f.readlines() if len(x) > 2]
+                count = len(lines)
+                last_id = count
+                if len(lines) > 0:
+                    last_line = lines[-1]
+                    parts = self.__extract_parts(last_line)
+                    last_id = int(parts[0])
+            yield from self.client.send_message(message.channel, 'There are {} active myths submitted ({} were deleted)'.format(count, last_id - count))
         else:
             yield from self.client.send_message(message.channel, 'No myths.')
 
