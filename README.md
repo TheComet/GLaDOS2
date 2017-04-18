@@ -20,6 +20,7 @@ From pip:
  + lxml
  + nltk
  + matplotlib
+ + jsonpickle
 
 ## Settings
 
