@@ -91,6 +91,11 @@ class Activity(glados.Module):
 
                         a.day_cycle[str(m.stamp.tm_hour)] += 1
 
+        # Normalise the 24h per day statistic over the number of days the author has made messages
+        for author_name, author in authors.items():
+            for hour, message_count in author.day_cycle.items():
+                author.day_cycle[hour] = message_count / len(author.participation_per_day)
+
         self.__cache['authors'] = authors
         with open(self.__cache_file, 'w') as f:
             f.write(jsonpickle.encode(self.__cache))
@@ -129,7 +134,8 @@ class Activity(glados.Module):
         ax1.plot(t, y)
         ax1.set_xlim([0, 24])
         ax1.grid()
-        ax1.set_title('24h Activity')
+        ax1.set_title('Average Activity')
+        ax1.set_ylabel('Message Count per Hour')
 
         # Create pie chart of the most active channels
         top5 = sorted(user.channel_participation, key=user.channel_participation.get, reverse=True)[:5]
@@ -147,6 +153,7 @@ class Activity(glados.Module):
         ax3.xaxis_date()
         ax3.set_title('Total Activity')
         ax3.set_xlim([dates[0], dates[-1]])
+        ax3.set_ylabel('Message Count per Day')
         ax3.grid()
         spacing = 2
         for label in ax3.xaxis.get_ticklabels()[::spacing]:
