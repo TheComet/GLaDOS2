@@ -96,7 +96,24 @@ class Activity(glados.Module):
             for hour, message_count in author.day_cycle.items():
                 author.day_cycle[hour] = message_count / len(author.participation_per_day)
 
+        # Create a fake author that reflects the statistics of the server
+        server_stats = Author()
+        for author_name, author in authors.items():
+            for stamp, message_count in author.participation_per_day.items():
+                if not stamp in server_stats.participation_per_day:
+                    server_stats.participation_per_day[stamp] = 0
+                server_stats.participation_per_day[stamp] += message_count
+
+            for channel_name, message_count in author.channel_participation.items():
+                if not channel_name in server_stats.channel_participation:
+                    server_stats.channel_participation[channel_name] = 0
+                server_stats.channel_participation[channel_name] += message_count
+
+            for hour, message_count in author.day_cycle.items():
+                server_stats.day_cycle[hour] += message_count
+
         self.__cache['authors'] = authors
+        self.__cache['server'] = server_stats
         with open(self.__cache_file, 'w') as f:
             f.write(jsonpickle.encode(self.__cache))
 
@@ -118,26 +135,31 @@ class Activity(glados.Module):
 
     @glados.Module.commands('activity')
     def plot_activity(self, message, users):
-
         # Mentions have precedence
         if len(message.mentions) > 0:
             user_name = message.mentions[0].name
         else:
-            if users == '':
-                user_name = message.author.name
-            else:
-                user_name = users.split(' ', 1)[0].strip('@').split('#')[0]
+            user_name = users.split(' ', 1)[0].strip('@').split('#')[0]
 
         if self.__cache_is_stale():
             yield from self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
             self.__reprocess_cache()
 
-        authors = self.__cache['authors']
-        if not user_name in authors:
-            yield from self.client.send_message(message.channel, 'Unknown user "{}". Try mentioning him?'.format(user_name))
+        if user_name == '':
+            user = self.__cache['server']
+            user_name = 'Server'
+        else:
+            authors = self.__cache['authors']
+            if not user_name in authors:
+                yield from self.client.send_message(message.channel, 'Unknown user "{}". Try mentioning him?'.format(user_name))
+                return
+            user = authors[user_name]
 
+        image_file_name = self.__generate_figure(user, user_name)
+        yield from self.client.send_file(message.channel, image_file_name)
+
+    def __generate_figure(self, user, user_name):
         # Set up figure
-        user = authors[user_name]
         fig = plt.figure(figsize=(8, 6), dpi=150)
         fig.suptitle('{}\'s activity'.format(user_name), fontsize=20)
         ax1 = fig.add_subplot(221)
@@ -178,5 +200,4 @@ class Activity(glados.Module):
 
         image_file_name = path.join(self.__cache_dir, user_name + '.png')
         fig.savefig(image_file_name)
-
-        yield from self.client.send_file(message.channel, image_file_name)
+        return image_file_name
