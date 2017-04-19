@@ -188,7 +188,10 @@ class Activity(glados.Module):
         dates, values = zip(*sorted(user.participation_per_day.items(), key=lambda dv: dv[0]))
         dates = [datetime.fromtimestamp(float(x)) for x in dates]
         dates = date2num(dates)
-        ax3.bar(dates, values)
+        if len(values) > 80:
+            ax3.bar(dates, values, width=1)
+        else:
+            ax3.bar(dates, values)
         ax3.xaxis_date()
         ax3.set_title('Total Activity')
         ax3.set_xlim([dates[0], dates[-1]])
