@@ -12,7 +12,6 @@ class Announcements(glados.Module):
         self.channel_ids = self.settings['announcements']['channels']
         self.join_msg = self.settings['announcements']['join message']
 
-    def setup(self):
         @self.client.event
         @asyncio.coroutine
         def on_member_join(member):
