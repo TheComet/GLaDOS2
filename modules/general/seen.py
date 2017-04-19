@@ -54,6 +54,7 @@ class Seen(glados.Module):
         for k, v in memory['dict'].items():
             if not 'author' in v: v['author'] = k
             if not 'channel' in v: v['channel'] = 'unknown_channel'
+            v['author'] = v['author'].lower()
 
     def __save_dict(self):
         memory = self.get_memory()
@@ -72,7 +73,7 @@ class Seen(glados.Module):
         channel = message.channel.name
         msg = message.clean_content
         ts = datetime.now().isoformat()
-        self.get_memory()['dict'][key] = {'author': str(author),
+        self.get_memory()['dict'][key] = {'author': str(key),
                             'message': str(msg),
                             'channel': str(channel),
                             'timestamp': str(ts)}
@@ -81,12 +82,12 @@ class Seen(glados.Module):
 
     @glados.Module.commands('seen')
     def on_seen(self, message, content):
+        memory = self.get_memory()
         if content == "":
             # Count how many users in total have been seen
             yield from self.client.send_message(message.channel, '{} users have been seen saying at least something.'.format(len(memory['dict'])))
             return
 
-        memory = self.get_memory()
         author = content.strip('@').split('#')[0]
         key = author.lower()
         if not key in memory['dict']:
