@@ -2,6 +2,7 @@ import glados
 import re
 import time
 import jsonpickle
+import asyncio
 import pylab as plt
 from os import path, listdir, makedirs
 from os.path import isfile, join
@@ -27,7 +28,7 @@ class Author(object):
         self.participation_per_day = dict()
         self.participation_per_channel = dict()
         self.average_day_cycle = [0] * 24
-        self.recent_day_cycle = [0] * 24
+        self.recent_day_cycle = dict() # gets turned into a list as a post-processing step
 
 
 class Activity(glados.Module):
@@ -57,6 +58,7 @@ class Activity(glados.Module):
             return True
         return False
 
+    @asyncio.coroutine
     def __reprocess_cache(self):
         # Get list of all channel log files
         memory = self.get_memory()
@@ -90,13 +92,25 @@ class Activity(glados.Module):
 
                         a.average_day_cycle[int(m.stamp.tm_hour)] += 1
 
+                        if not log_stamp in a.recent_day_cycle:
+                            a.recent_day_cycle[log_stamp] = [0] * 24
+                        a.recent_day_cycle[log_stamp][int(m.stamp.tm_hour)] += 1
+                yield
+
         # Normalise the 24h per day statistic over the number of days the author has made messages
         for author_name, author in authors.items():
             for hour, message_count in enumerate(author.average_day_cycle):
-                author.average_day_cycle[hour] = message_count / len(author.participation_per_day)
+                den = sum(1 for k, v in author.participation_per_day.items() if v > 0)
+                author.average_day_cycle[hour] = message_count / den
+
+        # Now that we know the last date, eliminate all but the most recent full day
+        for author_name, author in authors.items():
+            day_stamps, hours = zip(*sorted(author.recent_day_cycle.items(), key=lambda dv: dv[0]))
+            author.recent_day_cycle = hours[-min(2, len(hours))]
 
         # Create a fake author that reflects the statistics of the server
         server_stats = Author()
+        server_stats.recent_day_cycle = [0] * 24
         for author_name, author in authors.items():
             for stamp, message_count in author.participation_per_day.items():
                 if not stamp in server_stats.participation_per_day:
@@ -111,6 +125,9 @@ class Activity(glados.Module):
             for hour, message_count in enumerate(author.average_day_cycle):
                 server_stats.average_day_cycle[hour] += message_count
 
+            for hour, message_count in enumerate(author.recent_day_cycle):
+                server_stats.recent_day_cycle[hour] += message_count
+
         memory['cache']['authors'] = authors
         memory['cache']['server'] = server_stats
         with open(memory['cache file'], 'w') as f:
@@ -120,7 +137,7 @@ class Activity(glados.Module):
     def ranks(self, message, users):
         if self.__cache_is_stale():
             yield from self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
-            self.__reprocess_cache()
+            yield from self.__reprocess_cache()
 
         memory = self.get_memory()
         authors = memory['cache']['authors']
@@ -143,7 +160,7 @@ class Activity(glados.Module):
 
         if self.__cache_is_stale():
             yield from self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
-            self.__reprocess_cache()
+            yield from self.__reprocess_cache()
 
         memory = self.get_memory()
         if user_name == '':
@@ -171,11 +188,14 @@ class Activity(glados.Module):
         t = [x for x in range(24)]
         y = [user.average_day_cycle[x] for x in t]
         ax1.plot(t, y)
+        y = [user.recent_day_cycle[x] for x in t]
+        ax1.plot(t, y)
         ax1.set_xlim([0, 24])
         ax1.grid()
-        ax1.set_title('Average Activity')
+        ax1.set_title('Daily Activity')
         ax1.set_xlabel('Hour (UTC)')
         ax1.set_ylabel('Message Count per Hour')
+        ax1.legend(['Average', 'Last Day'])
 
         # Create pie chart of the most active channels
         top5 = sorted(user.participation_per_channel, key=user.participation_per_channel.get, reverse=True)[:5]
