@@ -40,17 +40,15 @@ def get_author(msg):
 
 
 class Mentions(glados.Module):
-    def __init__(self, settings):
-        super(Mentions, self).__init__(settings)
-
-        mentions_data_path = os.path.join(settings['modules']['config path'], 'mentions')
+    def setup_memory(self):
+        memory = self.get_memory()
+        mentions_data_path = os.path.join(self.get_config_dir(), 'mentions')
         if not os.path.exists(mentions_data_path):
             os.makedirs(mentions_data_path)
 
-        self.__mention_log_file = os.path.join(mentions_data_path, 'mentions.txt')
-        self.__seen_file = os.path.join(mentions_data_path, 'seen_timestamps.json')
-
-        self.__last_seen = dict()
+        memory['log file'] = os.path.join(mentions_data_path, 'mentions.txt')
+        memory['seen file'] = os.path.join(mentions_data_path, 'seen_timestamps.json')
+        memory['last seen'] = dict()
         self.__load_seen_timestamps()
 
     def get_help_list(self):
@@ -61,13 +59,15 @@ class Mentions(glados.Module):
 
     def __load_seen_timestamps(self):
         glados.log('loading seen timestamps for .mentions')
-        if os.path.isfile(self.__seen_file):
-            self.__last_seen = json.loads(open(self.__seen_file).read())
+        memory = self.get_memory()
+        if os.path.isfile(memory['seen file']):
+            memory['last seen'] = json.loads(open(memory['seen file']).read())
 
     def __save_seen_timestamps(self):
         glados.log('saving seen timestamps for .mentions')
-        with open(self.__seen_file, 'w') as f:
-            f.write(json.dumps(self.__last_seen))
+        memory = self.get_memory()
+        with open(memory['seen file'], 'w') as f:
+            f.write(json.dumps(memory['last seen']))
 
     @glados.Module.rules('^((?!\.\w+).*)$')
     def record(self, message, match):
@@ -75,12 +75,13 @@ class Mentions(glados.Module):
         if message.author.id in self.settings['optout']:
             return ()
 
-        with codecs.open(self.__mention_log_file, 'a', encoding='utf-8') as f:
+        memory = self.get_memory()
+        with codecs.open(memory['log file'], 'a', encoding='utf-8') as f:
             f.write(datetime.now().isoformat()[:19] + "  " + message.author.name + ": " + message.clean_content + "\n")
 
         author = message.author.name
         key = author.lower()
-        self.__last_seen[key] = datetime.now().isoformat()[:19]  # don't need microseconds
+        memory['last seen'][key] = datetime.now().isoformat()[:19]  # don't need microseconds
         self.__save_seen_timestamps()
 
         return tuple()
@@ -103,17 +104,18 @@ class Mentions(glados.Module):
             yield from self.client.send_message(message.channel, 'Please, don\'t be an idiot')
             return
 
-        mentions_file = codecs.open(self.__mention_log_file, 'r', encoding='utf-8')
+        memory = self.get_memory()
+        mentions_file = codecs.open(memory['log file'], 'r', encoding='utf-8')
         lines = mentions_file.readlines()
         mentions_file.close()
 
         if num == 0:
 
-            if key not in self.__last_seen:
+            if key not in memory['last seen']:
                 yield from self.client.send_message(message.channel, '{0} has never been mentioned.'.format(author))
                 return
 
-            last_seen = dateutil.parser.parse(self.__last_seen[key])
+            last_seen = dateutil.parser.parse(memory['last seen'][key])
             for msg in reversed(lines):
                 stamp = get_timestamp(msg)
                 if stamp is None:

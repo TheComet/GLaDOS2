@@ -3,8 +3,12 @@ import asyncio
 
 
 class Announcements(glados.Module):
-    def __init__(self, settings):
-        super(Announcements, self).__init__(settings)
+    def __init__(self):
+        super(Announcements, self).__init__()
+        self.channel_ids = None
+        self.join_msg = None
+
+    def setup(self):
         self.channel_ids = self.settings['announcements']['channels']
         self.join_msg = self.settings['announcements']['join message']
 

@@ -30,9 +30,6 @@ class Etymology(glados.Module):
     t_sentence = r'^.*?(?<!%s)(?:\.(?= [A-Z0-9]|\Z)|\Z)'
     r_sentence = re.compile(t_sentence % ')(?<!'.join(abbrs))
 
-    def __init__(self, settings):
-            super(Etymology, self).__init__(settings)
-
     def get_help_list(self):
         return [
             glados.Help('ety', '<word>', 'Looks up the etymology of a word.')

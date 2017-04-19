@@ -4,9 +4,6 @@ import dateutil.parser
 
 
 class BotModTools(glados.Module):
-    def __init__(self, settings):
-        super(BotModTools, self).__init__(settings)
-
     def get_help_list(self):
         return [
             glados.Help('modlist', '', 'Displays which users are bot moderators'),

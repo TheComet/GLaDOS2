@@ -4,10 +4,12 @@ import codecs
 
 
 class Pattern(glados.Module):
+    def __init__(self):
+        super(Pattern, self).__init__()
+        self.config_path = None
 
-    def __init__(self, settings):
-        super(Pattern, self).__init__(settings)
-        self.config_path = os.path.join(settings['modules']['config path'], 'pattern')
+    def setup(self):
+        self.config_path = os.path.join(self.settings['modules']['config path'], 'pattern')
 
     def get_help_list(self):
         return [

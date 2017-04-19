@@ -11,14 +11,13 @@ import enchant
 
 
 class Quotes(glados.Module):
-    def __init__(self, settings):
-        super(Quotes, self).__init__(settings)
+    def setup_memory(self):
+        memory = self.get_memory()
+        memory['quotes path'] = os.path.join(self.get_config_dir(), 'quotes')
+        if not os.path.exists(memory['quotes path']):
+            os.makedirs(memory['quotes path'])
 
-        self.quotes_data_path = os.path.join(settings['modules']['config path'], 'quotes')
-        if not os.path.exists(self.quotes_data_path):
-            os.makedirs(self.quotes_data_path)
-
-        self.dictionaries = [
+        memory['dictionaries'] = [
             enchant.Dict('en_US'),
             enchant.Dict('en_GB')
         ]
@@ -47,7 +46,7 @@ class Quotes(glados.Module):
         return None
 
     def quotes_file_name(self, author):
-        return os.path.join(self.quotes_data_path, author) + '.txt'
+        return os.path.join(self.get_memory()['quotes path'], author) + '.txt'
 
     # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Module.rules('^((?!\.\w+).*)$')
@@ -70,7 +69,7 @@ class Quotes(glados.Module):
         author = content_parts[0].strip('@').split('#')[0] if content != '' else message.author.name
         search_criteria = ' '.join(content_parts[1:]) if len(content_parts) > 1 else None
         error = self.check_nickname_valid(author.lower())
-        if not error is None:
+        if error is not None:
             yield from self.client.send_message(message.channel, error)
             return
 
@@ -144,7 +143,7 @@ class Quotes(glados.Module):
 
     def filter_to_english_words(self, words_list):
         return [word for word in words_list
-                    if any(d.check(word) for d in self.dictionaries)
+                    if any(d.check(word) for d in self.get_memory()['dictionaries'])
                     and (len(word) > 1 or len(word) == 1 and word in 'aAI')]
 
     @glados.Module.commands('grep')

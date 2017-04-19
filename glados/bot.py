@@ -63,9 +63,11 @@ class Bot(object):
                         return
 
             for callback, module, content in commands_to_process:
+                module.set_current_server(message.server.id)  # required for server isolation
                 yield from callback(message, content)
 
             for callback, module, match in matches_to_process:
+                module.set_current_server(message.server.id)  # required for server isolation
                 yield from callback(message, match)
 
         @self.client.event
@@ -191,7 +193,7 @@ class Bot(object):
         # try importing the module
         try:
             m = __import__(modnamespace, fromlist=[classname])
-            m = getattr(m, classname)(self.settings)
+            m = getattr(m, classname)()
         except ImportError:
             return 'Error: Failed to import module {0}\n{1}'.format(modfullname,
                                                                     traceback.print_exc())
@@ -209,6 +211,7 @@ class Bot(object):
         # set module properties
         m.full_name = modfullname
         m.client = self.client
+        m.set_settings(self.settings)
         m.setup()
 
         # get a list of tuples containing (callback function, module) pairs.

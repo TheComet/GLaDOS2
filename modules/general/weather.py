@@ -117,22 +117,22 @@ def get_wind(parsed):
 
 
 class Weather(glados.Module):
-
-    def __init__(self, settings):
-        super(Weather, self).__init__(settings)
-
-        self.__woeid_db = dict()
-        self.__woeid_db_file = os.path.join(settings['modules']['config path'], 'woeid_db.json')
+    def setup_memory(self):
+        memory = self.get_memory()
+        memory['woeid db'] = dict()
+        memory['woeid db file'] = os.path.join(self.get_config_dir(), 'woeid_db.json')
         self.__load_locations()
 
     def __load_locations(self):
-        if os.path.isfile(self.__woeid_db_file):
-            self.__woeid_db = json.loads(open(self.__woeid_db_file).read())
+        memory = self.get_memory()
+        if os.path.isfile(memory['woeid db file']):
+            memory['woeid db'] = json.loads(open(memory['woeid db file']).read())
 
     def __update_location(self, author, location):
-        self.__woeid_db[author.lower()] = location
-        with open(self.__woeid_db_file, 'w') as f:
-            f.write(json.dumps(self.__woeid_db))
+        memory = self.get_memory()
+        memory['woeid db'][author.lower()] = location
+        with open(memory['woeid db file'], 'w') as f:
+            f.write(json.dumps(memory['woeid db']))
 
     def get_help_list(self):
         return [
@@ -151,9 +151,10 @@ class Weather(glados.Module):
         woeid = ''
         author = message.author.name
         key = author.lower()
+        memory = self.get_memory()
         if location == '':
             try:
-                woeid = self.__woeid_db[key]
+                woeid = memory['woeid db'][key]
             except KeyError:
                 yield from self.client.send_message(message.channel, "I don't know where you live. " +
                                'Give me a location, like .weather London, or tell me where you live by saying .setlocation London, for example.')
@@ -161,7 +162,7 @@ class Weather(glados.Module):
         else:
             location = location.strip()
             try:
-                woeid = self.__woeid_db[location.lower()]  # assume location is a user first
+                woeid = memory['woeid db'][location.lower()]  # assume location is a user first
             except KeyError:
                 first_result = woeid_search(location)
                 if first_result is not None:
@@ -227,7 +228,7 @@ class Weather(glados.Module):
             user = message.author.name
 
         try:
-            woeid = self.__woeid_db[user.lower()]
+            woeid = self.get_memory()['woeid db'][user.lower()]
 
             query = urllib.parse.quote('select * from weather.forecast where woeid="{}" and u=\'c\''.format(woeid))
             query = 'http://query.yahooapis.com/v1/public/yql?q=' + query

@@ -25,27 +25,24 @@ class Message(object):
 class Author(object):
     def __init__(self):
         self.participation_per_day = dict()
-        self.channel_participation = dict()
-        self.day_cycle = dict()
-        for hour in range(24):
-            self.day_cycle[str(hour)] = 0
+        self.participation_per_channel = dict()
+        self.average_day_cycle = [0] * 24
+        self.recent_day_cycle = [0] * 24
 
 
 class Activity(glados.Module):
+    def setup_memory(self):
+        memory = self.get_memory()
+        memory['log_dir'] = path.join(self.get_config_dir(), 'log')
+        memory['cache dir'] = path.join(self.get_config_dir(), 'activity')
+        memory['cache file'] = path.join(memory['cache dir'], 'activity_cache.json')
+        memory['cache'] = None
 
-    def __init__(self, settings):
-        super(Activity, self).__init__(settings)
+        if not path.exists(memory['cache dir']):
+            makedirs(memory['cache dir'])
 
-        self.__log_dir = path.join(settings['modules']['config path'], 'log')
-        self.__cache_dir = path.join(settings['modules']['config path'], 'activity')
-        self.__cache_file = path.join(self.__cache_dir, 'activity_cache.json')
-        self.__cache = None
-
-        if not path.exists(self.__cache_dir):
-            makedirs(self.__cache_dir)
-
-        if path.isfile(self.__cache_file):
-            self.__cache = jsonpickle.decode(open(self.__cache_file).read())
+        if path.isfile(memory['cache file']):
+            memory['cache'] = jsonpickle.decode(open(memory['cache file']).read())
 
     def get_help_list(self):
         return [
@@ -55,15 +52,17 @@ class Activity(glados.Module):
 
     def __cache_is_stale(self):
         date = datetime.now().strftime('%Y-%m-%d')
-        if self.__cache is None or not self.__cache['date'] == date:
+        memory = self.get_memory()
+        if memory['cache'] is None or not memory['cache']['date'] == date:
             return True
         return False
 
     def __reprocess_cache(self):
         # Get list of all channel log files
-        files = [join(self.__log_dir, f) for f in listdir(self.__log_dir) if isfile(join(self.__log_dir, f))]
-        self.__cache = dict()
-        self.__cache['date'] = datetime.now().strftime('%Y-%m-%d')
+        memory = self.get_memory()
+        files = [join(memory['log_dir'], f) for f in listdir(memory['log_dir']) if isfile(join(memory['log_dir'], f))]
+        memory['cache'] = dict()
+        memory['cache']['date'] = datetime.now().strftime('%Y-%m-%d')
         authors = dict()
 
         for f in files:
@@ -85,16 +84,16 @@ class Activity(glados.Module):
                             a.participation_per_day[log_stamp] = 0
                         a.participation_per_day[log_stamp] += 1
 
-                        if not m.channel in a.channel_participation:
-                            a.channel_participation[m.channel] = 0
-                        a.channel_participation[m.channel] += 1
+                        if not m.channel in a.participation_per_channel:
+                            a.participation_per_channel[m.channel] = 0
+                        a.participation_per_channel[m.channel] += 1
 
-                        a.day_cycle[str(m.stamp.tm_hour)] += 1
+                        a.average_day_cycle[int(m.stamp.tm_hour)] += 1
 
         # Normalise the 24h per day statistic over the number of days the author has made messages
         for author_name, author in authors.items():
-            for hour, message_count in author.day_cycle.items():
-                author.day_cycle[hour] = message_count / len(author.participation_per_day)
+            for hour, message_count in enumerate(author.average_day_cycle):
+                author.average_day_cycle[hour] = message_count / len(author.participation_per_day)
 
         # Create a fake author that reflects the statistics of the server
         server_stats = Author()
@@ -104,18 +103,18 @@ class Activity(glados.Module):
                     server_stats.participation_per_day[stamp] = 0
                 server_stats.participation_per_day[stamp] += message_count
 
-            for channel_name, message_count in author.channel_participation.items():
-                if not channel_name in server_stats.channel_participation:
-                    server_stats.channel_participation[channel_name] = 0
-                server_stats.channel_participation[channel_name] += message_count
+            for channel_name, message_count in author.participation_per_channel.items():
+                if not channel_name in server_stats.participation_per_channel:
+                    server_stats.participation_per_channel[channel_name] = 0
+                server_stats.participation_per_channel[channel_name] += message_count
 
-            for hour, message_count in author.day_cycle.items():
-                server_stats.day_cycle[hour] += message_count
+            for hour, message_count in enumerate(author.average_day_cycle):
+                server_stats.average_day_cycle[hour] += message_count
 
-        self.__cache['authors'] = authors
-        self.__cache['server'] = server_stats
-        with open(self.__cache_file, 'w') as f:
-            f.write(jsonpickle.encode(self.__cache))
+        memory['cache']['authors'] = authors
+        memory['cache']['server'] = server_stats
+        with open(memory['cache file'], 'w') as f:
+            f.write(jsonpickle.encode(memory['cache']))
 
     @glados.Module.commands('ranks')
     def ranks(self, message, users):
@@ -123,7 +122,8 @@ class Activity(glados.Module):
             yield from self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
             self.__reprocess_cache()
 
-        authors = self.__cache['authors']
+        memory = self.get_memory()
+        authors = memory['cache']['authors']
         authors_total = dict()
         for author_name, author in authors.items():
             authors_total[author_name] = sum(v for k, v in author.participation_per_day.items())
@@ -145,11 +145,12 @@ class Activity(glados.Module):
             yield from self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
             self.__reprocess_cache()
 
+        memory = self.get_memory()
         if user_name == '':
-            user = self.__cache['server']
+            user = memory['cache']['server']
             user_name = 'Server'
         else:
-            authors = self.__cache['authors']
+            authors = memory['cache']['authors']
             if not user_name in authors:
                 yield from self.client.send_message(message.channel, 'Unknown user "{}". Try mentioning him?'.format(user_name))
                 return
@@ -168,7 +169,7 @@ class Activity(glados.Module):
 
         # Plot 24 hour participation data, accumulated over all time
         t = [x for x in range(24)]
-        y = [user.day_cycle[str(x)] for x in t]
+        y = [user.average_day_cycle[x] for x in t]
         ax1.plot(t, y)
         ax1.set_xlim([0, 24])
         ax1.grid()
@@ -177,9 +178,9 @@ class Activity(glados.Module):
         ax1.set_ylabel('Message Count per Hour')
 
         # Create pie chart of the most active channels
-        top5 = sorted(user.channel_participation, key=user.channel_participation.get, reverse=True)[:5]
+        top5 = sorted(user.participation_per_channel, key=user.participation_per_channel.get, reverse=True)[:5]
         labels = top5
-        sizes = [user.channel_participation[x] for x in top5]
+        sizes = [user.participation_per_channel[x] for x in top5]
         explode = [0] * len(top5)
         explode[0] = 0.1
         ax2.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%', shadow=True)
@@ -201,6 +202,6 @@ class Activity(glados.Module):
         for label in ax3.xaxis.get_ticklabels()[::spacing]:
             label.set_visible(False)
 
-        image_file_name = path.join(self.__cache_dir, user_name + '.png')
+        image_file_name = path.join(self.get_memory()['cache dir'], user_name + '.png')
         fig.savefig(image_file_name)
         return image_file_name

@@ -4,26 +4,25 @@ from datetime import datetime
 
 
 class Log(glados.Module):
+    def setup_memory(self):
+        memory = self.get_memory()
+        memory['log path'] = os.path.join(self.get_config_dir(), 'log')
+        if not os.path.exists(memory['log path']):
+            os.makedirs(memory['log path'])
 
-    def __init__(self, settings):
-        super(Log, self).__init__(settings)
-
-        self.__log_path = os.path.join(settings['modules']['config path'], 'log')
-        if not os.path.exists(self.__log_path):
-            os.makedirs(self.__log_path)
-
-        self.__date = datetime.now().strftime('%Y-%m-%d')
-        self.__log = open(os.path.join(self.__log_path, 'chanlog-{}'.format(self.__date)), 'a')
+        memory['date'] = datetime.now().strftime('%Y-%m-%d')
+        memory['log file'] = open(os.path.join(memory['log path'], 'chanlog-{}'.format(memory['date'])), 'a')
 
     def get_help_list(self):
         return list()
 
     def __open_new_log_if_necessary(self):
+        memory = self.get_memory()
         date = datetime.now().strftime('%Y-%m-%d')
-        if not self.__date == date:
-            self.__log.close()
-            self.__date = date
-            self.__log = open(os.path.join(self.__log_path, 'chanlog-{}'.format(self.__date)), 'a')
+        if not memory['date'] == date:
+            memory['log file'].close()
+            memory['date'] = date
+            memory['log file'] = open(os.path.join(memory['log path'], 'chanlog-{}'.format(memory['date'])), 'a')
 
     @glados.Module.rules('^.*$')
     def on_message(self, message, match):
@@ -38,6 +37,8 @@ class Log(glados.Module):
                                                     message.channel.name,
                                                     message.author.name,
                                                     message.clean_content)
-        self.__log.write(info)
-        self.__log.flush()
+
+        memory = self.get_memory()
+        memory['log file'].write(info)
+        memory['log file'].flush()
         return tuple()

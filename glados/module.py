@@ -1,10 +1,13 @@
 import re
+import os
 
 
 class Module(object):
 
-    def __init__(self, settings):
-        self.__command_prefix = settings['commands']['prefix']
+    def __init__(self):
+        self.__command_prefix = None
+        self.__config_path = None
+        self.__server_specific_config_dir = None
         # this is set externally when the module is loaded. Contains a list of server names where this module should
         # be active. An empty list means it can be active on all servers.
         self.server_whitelist = list()
@@ -12,13 +15,52 @@ class Module(object):
         self.full_name = str()
         # set externally to the discord client object
         self.client = None
+        self.settings = None
+
+        self.__server_specific_name = None
+        self.__memories = dict()
+
+    def set_settings(self, settings):
         self.settings = settings
+        self.__command_prefix = settings['commands']['prefix']
+        self.__config_path = self.settings['modules']['config path']
+
+    def set_current_server(self, server_id):
+        self.__server_specific_name = self.full_name + server_id
+        self.__server_specific_config_dir = os.path.join(self.__config_path, server_id)
+        self.__may_need_to_setup_memory()
 
     def setup(self):
         """
         Called right after the external module attributes were set.
         """
         pass
+
+    def setup_memory(self):
+        """
+        Gets called once during initialisation for every server. This is useful when modules want to create the server
+        specific directories and set up memory storage.
+        """
+        pass
+
+    def get_config_dir(self):
+        """
+        Returns the path in which modules can store their data. Modules **must** use this function and not retrieve it
+        from the "settings" dict. It changes depending on which server a message originated from.
+        """
+        return self.__server_specific_config_dir
+
+    def get_memory(self):
+        """
+        Returns the server specific memory. Modules can store whatever they want in here.
+        :return: A dictionary. Store whatever you want
+        """
+        return self.__memories[self.__server_specific_name]
+
+    def __may_need_to_setup_memory(self):
+        if not self.__server_specific_name in self.__memories:
+            self.__memories[self.__server_specific_name] = dict()
+            self.setup_memory()  # calls derived
 
     def provide_help(self, command, message):
         """

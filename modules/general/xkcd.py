@@ -61,11 +61,12 @@ def google(query):
 
 
 class XKCD(glados.Module):
+    def __init__(self):
+        super(XKCD, self).__init__()
+        self.__tmp_dir = None
 
-    def __init__(self, settings):
-        super().__init__(settings)
-
-        self.__tmp_dir = os.path.join(settings['modules']['config path'], 'xkcd')
+    def setup(self):
+        self.__tmp_dir = os.path.join(self.settings['modules']['config path'], 'xkcd')
         if not os.path.exists(self.__tmp_dir):
             os.makedirs(self.__tmp_dir)
 

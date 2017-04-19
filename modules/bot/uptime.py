@@ -21,8 +21,8 @@ class UpTime(glados.Module):
         "I am but an abstract description being used in an abstract way. Been so for {}"
     )
 
-    def __init__(self, settings):
-        super().__init__(settings)
+    def __init__(self):
+        super(UpTime, self).__init__()
         self.__started = datetime.utcnow()
 
     def get_help_list(self):

@@ -39,24 +39,26 @@ def readable_timestamp(delta):
 
 class Seen(glados.Module):
 
-    def __init__(self, settings):
-        super(Seen, self).__init__(settings)
-        self.__dict = dict()
-        self.__config_file = os.path.join(settings['modules']['config path'], 'seen.json')
+    def setup_memory(self):
+        memory = self.get_memory()
+        memory['dict'] = dict()
+        memory['config file'] = os.path.join(self.get_config_dir(), 'seen.json')
 
         self.__load_dict()
 
     def __load_dict(self):
-        if os.path.isfile(self.__config_file):
-            self.__dict = json.loads(open(self.__config_file).read())
+        memory = self.get_memory()
+        if os.path.isfile(memory['config file']):
+            memory['dict'] = json.loads(open(memory['config file']).read())
         # make sure all keys exists
-        for k, v in self.__dict.items():
+        for k, v in memory['dict'].items():
             if not 'author' in v: v['author'] = k
             if not 'channel' in v: v['channel'] = 'unknown_channel'
 
     def __save_dict(self):
-        with open(self.__config_file, 'w') as f:
-            f.write(json.dumps(self.__dict))
+        memory = self.get_memory()
+        with open(memory['config file'], 'w') as f:
+            f.write(json.dumps(memory['dict']))
 
     def get_help_list(self):
         return [
@@ -70,7 +72,7 @@ class Seen(glados.Module):
         channel = message.channel.name
         msg = message.clean_content
         ts = datetime.now().isoformat()
-        self.__dict[key] = {'author': str(author),
+        self.get_memory()['dict'][key] = {'author': str(author),
                             'message': str(msg),
                             'channel': str(channel),
                             'timestamp': str(ts)}
@@ -81,20 +83,21 @@ class Seen(glados.Module):
     def on_seen(self, message, content):
         if content == "":
             # Count how many users in total have been seen
-            yield from self.client.send_message(message.channel, '{} users have been seen saying at least something.'.format(len(self.__dict)))
+            yield from self.client.send_message(message.channel, '{} users have been seen saying at least something.'.format(len(memory['dict'])))
             return
 
+        memory = self.get_memory()
         author = content.strip('@').split('#')[0]
         key = author.lower()
-        if not key in self.__dict:
+        if not key in memory['dict']:
             yield from self.client.send_message(message.channel, '{0} has never been seen.'.format(author))
             return
 
-        stamp = get_time(self.__dict[key]['timestamp'])
+        stamp = get_time(memory['dict'][key]['timestamp'])
         elapsed = datetime.now() - stamp
         yield from self.client.send_message(message.channel, '{0} was last seen {1} in #{2} saying: "{3}"'.format(
-            self.__dict[key]['author'],
+            memory['dict'][key]['author'],
             readable_timestamp(elapsed),
-            self.__dict[key]['channel'],
-            self.__dict[key]['message']
+            memory['dict'][key]['channel'],
+            memory['dict'][key]['message']
         ))

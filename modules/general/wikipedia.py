@@ -11,9 +11,8 @@ REDIRECT = re.compile(r'^REDIRECT (.*)')
 
 
 class Wikipedia(glados.Module):
-    def __init__(self, settings):
-        super(Wikipedia, self).__init__(settings)
-
+    def __init__(self):
+        super(Wikipedia, self).__init__()
         self.__lang = 'en'
 
     def get_help_list(self):
