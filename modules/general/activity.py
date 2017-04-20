@@ -145,7 +145,7 @@ class Activity(glados.Module):
         for author_name, author in authors.items():
             authors_total[author_name] = sum(v for k, v in author.participation_per_day.items())
 
-        top5 = zip(*sorted(authors_total.items(), key=lambda dv: dv[1], reverse=True)[:5])
+        top5 = list(zip(*sorted(authors_total.items(), key=lambda dv: dv[1], reverse=True)[:5]))[1]
         fmt = '. {}\n'.join(str(x+1) for x in range(5)) + '. {}'
         msg = fmt.format(*top5)
         yield from self.client.send_message(message.channel, msg)
