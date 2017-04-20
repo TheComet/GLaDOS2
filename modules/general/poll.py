@@ -99,11 +99,12 @@ class Poll(glados.Module):
             yield from self.client.send_message(message.channel, 'Unknown poll "{}"'.format(name))
             return
 
+        memory[name]['votes'] = {'fag': 2, 'shit': 2, 'fuck': 2}
         vote_dict = dict()
         for author, vote_id in memory[name]['votes'].items():
             if not vote_id in vote_dict:
                 vote_dict[vote_id] = 0
-                vote_dict[vote_id] += 1
+            vote_dict[vote_id] += 1
 
         if len(vote_dict) == 0:
             del memory[name]
@@ -128,3 +129,8 @@ class Poll(glados.Module):
         msg = 'Vote with ``.poll vote {} <number>``'.format(name, name)
         msg = msg + '\n  ' + '\n  '.join(memory[name]['options'])
         yield from self.client.send_message(message.channel, msg)
+
+    @glados.Module.commands('polls')
+    def show_polls(self, message, content):
+        polls = [k for k, v in self.get_memory().items()]
+        yield from self.client.send_message(message.channel, 'Open polls:\n' + '\n  '.join(polls))
