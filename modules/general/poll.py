@@ -85,7 +85,7 @@ class Poll(glados.Module):
             return
 
         memory[name]['votes'][message.author.id] = vote_id
-        vote = memory[name]['options'][vote_id]
+        vote = memory[name]['options'][vote_id - 1]
         yield from self.client.send_message(message.channel, '{} voted for {}!'.format(message.author.name, vote))
 
     def handle_close(self, message, parts):
