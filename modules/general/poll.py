@@ -6,7 +6,7 @@ class Poll(glados.Module):
         return [
             glados.Help('poll', '<new> <name> <1. first option 2. second option 3. ...>', 'Start a new poll with a number of options'),
             glados.Help('poll', '<vote> <name> <option>', 'Place your vote in a running poll'),
-            glados.Help('poll', '<close> <name>', 'Close a poll and show results')
+            glados.Help('poll', '<close|show> <name>', 'Close or show a poll')
         ]
 
     @glados.Module.commands('poll')
@@ -19,6 +19,8 @@ class Poll(glados.Module):
             yield from self.handle_vote(message, parts[1:])
         elif cmd == 'close':
             yield from self.handle_close(message, parts[1:])
+        elif cmd == 'show':
+            yield from self.handle_show(message, parts[1:])
 
     def handle_new(self, message, parts):
         if len(parts) < 2:
@@ -83,7 +85,8 @@ class Poll(glados.Module):
             return
 
         memory[name]['votes'][message.author.id] = vote_id
-        yield from self.client.send_message(message.channel, '{} voted for {}!'.format(message.author.name, vote_id))
+        vote = memory[name]['options'][vote_id]
+        yield from self.client.send_message(message.channel, '{} voted for {}!'.format(message.author.name, vote))
 
     def handle_close(self, message, parts):
         if len(parts) < 1:
@@ -110,3 +113,18 @@ class Poll(glados.Module):
         del memory[name]
         yield from self.client.send_message(message.channel,
                 'Poll "{}" closed.\nWinning option is "{}" with {} votes'.format(name, winner_option_str, winner_votes))
+
+    def handle_show(self, message, parts):
+        if len(parts) < 1:
+            yield from self.provide_help('poll', message)
+            return
+
+        memory = self.get_memory()
+        name = parts[0]
+        if not name in memory:
+            yield from self.client.send_message(message.channel, 'Unknown poll "{}"'.format(name))
+            return
+
+        msg = 'Vote with ``.poll vote {} <number>``'.format(name, name)
+        msg = msg + '\n  ' + '\n  '.join(memory[name]['options'])
+        yield from self.client.send_message(message.channel, msg)
