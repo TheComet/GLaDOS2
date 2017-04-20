@@ -54,7 +54,6 @@ class Seen(glados.Module):
         for k, v in memory['dict'].items():
             if not 'author' in v: v['author'] = k
             if not 'channel' in v: v['channel'] = 'unknown_channel'
-            v['author'] = v['author'].lower()
 
     def __save_dict(self):
         memory = self.get_memory()
