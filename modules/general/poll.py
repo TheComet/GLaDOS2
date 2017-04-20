@@ -99,7 +99,6 @@ class Poll(glados.Module):
             yield from self.client.send_message(message.channel, 'Unknown poll "{}"'.format(name))
             return
 
-        memory[name]['votes'] = {'fag': 2, 'shit': 2, 'fuck': 2}
         vote_dict = dict()
         for author, vote_id in memory[name]['votes'].items():
             if not vote_id in vote_dict:
