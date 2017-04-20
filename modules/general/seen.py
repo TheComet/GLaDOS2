@@ -90,7 +90,10 @@ class Seen(glados.Module):
         author = content.strip('@').split('#')[0]
         key = author.lower()
         if not key in memory['dict']:
-            yield from self.client.send_message(message.channel, '{0} has never been seen.'.format(author))
+            if key == 'glados':
+                yield from self.client.send_message(message.channel, '{0} Do you see me? I see you.')
+            else:
+                yield from self.client.send_message(message.channel, '{0} has never been seen.'.format(author))
             return
 
         stamp = get_time(memory['dict'][key]['timestamp'])
