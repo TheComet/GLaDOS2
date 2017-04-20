@@ -105,7 +105,7 @@ class Poll(glados.Module):
         if len(vote_dict) == 0:
             del memory[name]
             return
-        winner_option, winner_votes = sorted(vote_dict.items(), key=lambda kv: kv[1])[0]
+        winner_option, winner_votes = sorted(vote_dict.items(), key=lambda kv: kv[1])[-1]
         winner_option_str = memory[name]['options'][winner_option - 1]
         del memory[name]
         yield from self.client.send_message(message.channel,

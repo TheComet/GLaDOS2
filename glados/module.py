@@ -74,8 +74,9 @@ class Module(object):
         :param message: The discord.message object
         :return: Returns a generator, must be yielded (asyncio coroutine).
         """
-        hlp = next(x for x in self.get_help_list() if x.command == command)
-        yield from self.client.send_message(message.channel, self.__command_prefix + hlp.get())
+        for hlp in self.get_help_list():
+            if hlp.command == command:
+                yield from self.client.send_message(message.channel, self.__command_prefix + hlp.get())
 
     def get_help_list(self):
         """
