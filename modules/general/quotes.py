@@ -65,13 +65,17 @@ class Quotes(glados.Module):
 
     @glados.Module.commands('quote')
     def quote(self, message, content):
-        content_parts = content.split()
-        author = content_parts[0].strip('@').split('#')[0] if content != '' else message.author.name
-        search_criteria = ' '.join(content_parts[1:]) if len(content_parts) > 1 else None
-        error = self.check_nickname_valid(author.lower())
-        if error is not None:
-            yield from self.client.send_message(message.channel, error)
-            return
+        if len(message.mentions) > 0:
+            author = message.mentions[0].name
+            search_criteria = None
+        else:
+            content_parts = content.split()
+            author = content_parts[0].strip('@').split('#')[0] if content != '' else message.author.name
+            search_criteria = ' '.join(content_parts[1:]) if len(content_parts) > 1 else None
+            error = self.check_nickname_valid(author.lower())
+            if error is not None:
+                yield from self.client.send_message(message.channel, error)
+                return
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
         lines = quotes_file.readlines()
