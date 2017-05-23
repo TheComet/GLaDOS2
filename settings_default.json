@@ -5,6 +5,10 @@
     "token": "OAuth2 token",
     "method": "token"
   },
+  "announcements": {
+    "channels": [],
+    "join message": "Have fun!"
+  },
   "irc": {
     "host": "irc.afternet.org",
     "port": 6667,
@@ -19,14 +23,12 @@
       "#test"
     ]
   },
-  "announcements": {
-    "channels": []
-  },
   "modules": {
     "blessed": [
       "general.log.Log.on_message",
       "general.mentions.Mentions.record",
       "general.quotes.Quotes.record",
+      "general.r9k.R9K.on_message",
       "general.seen.Seen.on_message",
       "general.ircbridge.IRCBridge.on_discord_message"
     ],
@@ -88,7 +90,8 @@
     "unmod": "unmod",
     "reload": "reload",
     "optin": "optin",
-    "optout": "optout"
+    "optout": "optout",
+    "say": "say"
   },
   "admins": {
     "IDs": [],
