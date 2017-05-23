@@ -247,7 +247,8 @@ class Bot(object):
         admin_commands = {
             self.settings['commands']['mod']: self.__process_mod_command,
             self.settings['commands']['unmod']: self.__process_unmod_command,
-            self.settings['commands']['reload']: self.__process_reload_command
+            self.settings['commands']['reload']: self.__process_reload_command,
+            self.settings['commands']['say']: self.__process_say_command
         }
 
         # commands that require moderator privileges
@@ -275,6 +276,8 @@ class Bot(object):
             yield from self.__process_unmod_command(message, content)
         elif command == self.settings['commands']['reload']:
             yield from self.__process_reload_command(message, content)
+        elif command == self.settings['commands']['say']:
+            yield from admin_commands[command](message, content)
         else:
             return None
 
@@ -302,7 +305,7 @@ class Bot(object):
         if do_announce:
             if not message.author.id in self.settings['banned']:
                 yield from self.client.send_message(message.channel,
-                                                    'I\'m sending you a direct message with a list of commands!')
+                                                    'I\'m sending you a gigantic wall of direct message with a list of commands!')
 
     def __process_modhelp_command(self, message, content):
         # If the user was banned, don't announce the help sending
@@ -517,6 +520,20 @@ class Bot(object):
     def __process_reload_command(self, message, content):
         self.settings = json.loads(open('settings.json').read())
         yield from self.client.send_message(message.channel, 'Reloaded settings')
+
+    def __process_say_command(self, message, content):
+        parts = content.split(' ', 2)
+        if len(parts) < 3:
+            yield from self.client.send_message(message.channel, 'Error: Specify server name or ID, then channel name or ID. Example: ``.say <server> <channel> <message>``')
+            return
+
+        # find relevant channel
+        for channel in self.client.get_all_channels():
+            if channel.server.id == parts[0] or channel.server.name == parts[0]:
+                if channel.id == parts[1] or channel.name.strip('#') == parts[1].strip('#'):
+                    yield from self.client.send_message(channel, parts[2])
+                    return
+        return tuple()
 
     def __save_settings(self):
         open('settings.json', 'w').write(json.dumps(self.settings, indent=2, sort_keys=True))

@@ -32,7 +32,7 @@ class Module(object):
 
     def setup(self):
         """
-        Called right after the external module attributes were set.
+        Called right after the external module attributes were set. Gets called only once globally.
         """
         pass
 

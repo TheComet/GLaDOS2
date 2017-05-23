@@ -28,7 +28,7 @@ class IsUp(glados.Module):
                 yield from self.client.send_message(message.channel, "Try it again without the {}".format(protocol))
                 return
             else:
-                site = 'http://' + site
+                site = 'https://' + site
 
         if not '.' in site:
             site += ".com"
@@ -43,3 +43,8 @@ class IsUp(glados.Module):
             yield from self.client.send_message(message.channel, site + ' looks fine to me.')
         else:
             yield from self.client.send_message(message.channel, site + ' is down from here.')
+
+    @glados.Module.rules(r'(?i).*?(gdnet|gd.net|gamedev|gamedev.net).*?(down\??)')
+    def is_gdnet_down(self, message, match):
+        yield from self.isup(message, 'https://gamedev.net')
+    

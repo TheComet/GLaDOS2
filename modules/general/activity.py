@@ -101,13 +101,12 @@ class Activity(glados.Module):
         # Normalise the 24h per day statistic over the number of days the author has made messages
         for author_name, author in authors.items():
             for hour, message_count in enumerate(author.average_day_cycle):
-                den = sum(1 for k, v in author.participation_per_day.items() if v > 0)
-                author.average_day_cycle[hour] = message_count / den
+                author.average_day_cycle[hour] = message_count / len(author.participation_per_day)
 
         # Now that we know the last date, eliminate all but the most recent full day
         for author_name, author in authors.items():
             day_stamps, hours = zip(*sorted(author.recent_day_cycle.items(), key=lambda dv: dv[0]))
-            author.recent_day_cycle = hours[-min(2, len(hours))]
+            author.recent_day_cycle = hours[-min(2, len(hours))]  # second last item
 
         # Create a fake author that reflects the statistics of the server
         server_stats = Author()

@@ -64,7 +64,6 @@ class Mentions(glados.Module):
             memory['last seen'] = json.loads(open(memory['seen file']).read())
 
     def __save_seen_timestamps(self):
-        glados.log('saving seen timestamps for .mentions')
         memory = self.get_memory()
         with open(memory['seen file'], 'w') as f:
             f.write(json.dumps(memory['last seen']))
