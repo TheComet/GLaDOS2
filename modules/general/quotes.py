@@ -55,8 +55,6 @@ class Quotes(glados.Module):
         if message.author.id in self.settings['optout']:
             return ()
 
-        glados.log('Recording quote')
-
         author = message.author.name
         with codecs.open(self.quotes_file_name(author.lower()), 'a', encoding='utf-8') as f:
             f.write(match.group(1) + "\n")
