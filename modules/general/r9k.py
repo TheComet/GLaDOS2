@@ -37,12 +37,25 @@ class R9K(glados.Module):
             memory['hashes'].add(line.strip())
 
     @glados.Module.commands('r9k')
-    def send_scores(self, message, args):
+    def send_scores(self, message, users):
         memory = self.get_memory()
-        msg = '**Top 5 most unoriginal users**\n'
-        top5 = sorted(memory['scores'].items(), key=lambda kv: kv[1]['score'], reverse=True)[:5]
-        for author, d in top5:
-            msg += '  + {} ({})'.format(author, d['score'])
+
+        if users == '':
+            msg = '**Top 5 most unoriginal users**\n'
+            top5 = sorted(memory['scores'].items(), key=lambda kv: kv[1]['score'], reverse=True)[:5]
+            for author, d in top5:
+                msg += '  + {} ({})'.format(author, d['score'])
+        else:
+            # Mentions have precedence
+            if len(message.mentions) > 0:
+                user_name = message.mentions[0].name
+            else:
+                user_name = users.split(' ', 1)[0].strip('@').split('#')[0]
+            try:
+                author = memory['scores'][user_name]
+                msg = '{} has been unoriginal {} times'.format(user_name, author['score'])
+            except KeyError:
+                msg = '{} has never been unoriginal'.format(user_name)
 
         yield from self.client.send_message(message.channel, msg)
 
