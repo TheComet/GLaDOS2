@@ -3,7 +3,6 @@ import os
 import hashlib
 import re
 import json
-import asyncio
 
 
 class R9K(glados.Module):
@@ -41,7 +40,7 @@ class R9K(glados.Module):
     def send_scores(self, message, args):
         memory = self.get_memory()
         msg = '**Top 5 most unoriginal users**\n'
-        top5 = sorted(memory['scores'].items(), key=lambda kv: kv[1]['score'])[:5]
+        top5 = sorted(memory['scores'].items(), key=lambda kv: kv[1]['score'], reverse=True)[:5]
         for author, d in top5:
             msg += '  + {} ({})'.format(author, d['score'])
 
