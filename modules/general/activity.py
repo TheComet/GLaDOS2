@@ -95,6 +95,7 @@ class Activity(glados.Module):
                         if not log_stamp in a.recent_day_cycle:
                             a.recent_day_cycle[log_stamp] = [0] * 24
                         a.recent_day_cycle[log_stamp][int(m.stamp.tm_hour)] += 1
+                # This process does take some time
                 yield
 
         # Normalise the 24h per day statistic over the number of days the author has made messages
