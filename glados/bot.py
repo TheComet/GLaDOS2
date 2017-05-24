@@ -73,7 +73,22 @@ class Bot(object):
         @self.client.event
         @asyncio.coroutine
         def on_ready():
+            yield from self.__auto_join_channels()
             log('Running as {}'.format(self.client.user.name))
+
+    @asyncio.coroutine
+    def __auto_join_channels(self):
+        invite_urls = [url for name, url in self.settings['auto join'].items()]
+        for url in invite_urls:
+            log('Auto-joining {}'.format(url))
+            try:
+                yield from self.client.accept_invite(url)
+            except discord.NotFound:
+                log('Invite has expired')
+            except discord.HTTPException as e:
+                log('Got an HTTP exception: {}'.format(e))
+            except discord.Forbidden:
+                log('Forbidden')
 
     def __get_commands_that_will_be_executed(self, message, commands):
         ret = list()
