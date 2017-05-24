@@ -7,7 +7,7 @@ import json
 
 class R9K(glados.Module):
     def get_help_list(self):
-        return [glados.Help('r9k', '', 'Enables/Disables ROBOT9000 for the channel you type this in')]
+        return [glados.Help('r9k', '', 'ROBOT9000 tells you how many original comments you\'ve made')]
 
     def setup_memory(self):
         memory = self.get_memory()
@@ -44,7 +44,8 @@ class R9K(glados.Module):
             msg = '**Top 5 most unoriginal users**\n'
             top5 = sorted(memory['scores'].items(), key=lambda kv: kv[1]['score'], reverse=True)[:5]
             for author, d in top5:
-                msg += '  + {} ({})'.format(author, d['score'])
+                permille = 1000 * float(d['score']) / float(d['message count'])
+                msg += '  + {} ({3:.2f}‰)'.format(author, permille)
         else:
             # Mentions have precedence
             if len(message.mentions) > 0:
@@ -53,7 +54,8 @@ class R9K(glados.Module):
                 user_name = users.split(' ', 1)[0].strip('@').split('#')[0]
             try:
                 author = memory['scores'][user_name]
-                msg = '{} has been unoriginal {} times'.format(user_name, author['score'])
+                permille = 1000 * float(author['score']) / float(author['message count'])
+                msg = '{} has been unoriginal {3:.2f}‰ of the time'.format(user_name, permille)
             except KeyError:
                 msg = '{} has never been unoriginal'.format(user_name)
 
@@ -69,6 +71,14 @@ class R9K(glados.Module):
         phrase = re.sub('[^A-Za-z0-9]+', '', phrase)
         h = hashlib.sha256(phrase.encode('utf-8')).hexdigest()
 
+        # Create score entry if it doesn't exist
+        author = message.author.name
+        if author not in memory['scores']:
+            memory['scores'][author] = {'score': 0, 'message count': 0}
+
+        # Need total message count for percentual calculation
+        memory['scores'][author]['message count'] += 1
+
         # Check for originality
         if h in memory['hashes']:
             # annoy user, if enabled
@@ -79,13 +89,11 @@ class R9K(glados.Module):
                 yield from self.client.send_message(message.channel, '[r9k] The phrase `{}` is unoriginal!'.format(phrase))
 
             # update scores
-            author = message.author.name
-            if author not in memory['scores']:
-                memory['scores'][author] = {'score': 0}
             memory['scores'][author]['score'] += 1
 
-            with open(memory['scores file'], 'w') as f:
-                f.write(json.dumps(memory['scores']))
+        # lol is this really a good idea?
+        with open(memory['scores file'], 'w') as f:
+            f.write(json.dumps(memory['scores']))
 
         memory['hashes'].add(h)
         memory['hashes file'].write(h + '\n')
