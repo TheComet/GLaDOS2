@@ -7,6 +7,10 @@ from datetime import datetime, timedelta
 
 class Sub(glados.Module):
 
+    def __init__(self):
+        super(Sub, self).__init__()
+        self.__enabled = True
+
     def setup_memory(self):
         memory = self.get_memory()
         memory['subs file'] = os.path.join(self.get_config_dir(), 'subs.json')
@@ -112,6 +116,18 @@ class Sub(glados.Module):
 
         yield from self.client.send_message(message.channel, 'Unsubscribed from {}'.format(', '.join(str(x) for x in indices)))
 
+    @glados.Module.commands('subs')
+    def toggle_subscription_feature(self, message, args):
+        is_mod = message.author.id in self.settings['moderators']['IDs'] or \
+                 len(set(x.name for x in message.author.roles).intersection(
+                     set(self.settings['moderators']['roles']))) > 0
+        if not is_mod and not message.author.id in self.settings['admins']['IDs']:
+            return tuple()
+
+        self.__enabled = not self.__enabled
+        msg = 'enabled' if self.__enabled else 'disabled'
+        yield from self.client.send_message(message.channel, 'Subscription system {}'.format(msg))
+
     @glados.Module.commands('sublist')
     def list_subscriptions(self, message, user):
         if user == '':
@@ -143,6 +159,9 @@ class Sub(glados.Module):
 
     @glados.Module.rules('^((?!\.\w+).*)$')
     def on_message(self, message, match):
+        if not self.__enabled:
+            return tuple()
+
         memory = self.get_memory()
 
         # Reset timer if user just made a message
