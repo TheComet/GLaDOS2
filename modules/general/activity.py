@@ -114,9 +114,11 @@ class Activity(glados.Module):
             # stats for the last week
             day_stamps, hours = zip(*sorted(author.weekly_day_cycle.items(), key=lambda dv: dv[0]))
             author.weekly_day_cycle = hours[-8:len(hours)-1]  # last 8 items, omit the most recent day to make it 7
-            # Normalise weekly statistic
+            # Accumulate and Normalise weekly statistic
+            num_days_in_week = len(author.weekly_day_cycle)
+            author.weekly_day_cycle = [sum(msgs_at_hour) for msgs_at_hour in zip(*author.weekly_day_cycle)]
             for hour, message_count in enumerate(author.weekly_day_cycle):
-                author.weekly_day_cycle[hour] = message_count / len(author.weekly_day_cycle)
+                author.weekly_day_cycle[hour] = message_count / num_days_in_week
 
         # Create a fake author that reflects the statistics of the server
         server_stats = Author()
