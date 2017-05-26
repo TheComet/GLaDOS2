@@ -157,11 +157,6 @@ class Sub(glados.Module):
             msg += '  {}. `{}`'.format(i+1, regex)
         yield from self.client.send_message(message.channel, msg)
 
-    def __remove_member_id(self, id):
-        memory = self.get_memory()
-        del memory['subs'][id]
-        self.__recompile_regex()
-
     @glados.Module.rules('^((?!\.\w+).*)$')
     def on_message(self, message, match):
         if not self.__enabled:
@@ -175,6 +170,8 @@ class Sub(glados.Module):
 
         # buffer all mentions, in case multiple people are mentioned (to avoid spamming chat)
         msg = ''
+
+        members_to_remove = list()
 
         for i, tup in enumerate(memory['regex']):
             regex, subscribed_author = tup[0], tup[1]
@@ -190,7 +187,7 @@ class Sub(glados.Module):
                         memory['regex'][i] = (regex, member)
                 if isinstance(subscribed_author, str):
                     # failed at getting member, remove all settings (fuck you!)
-                    self.__remove_member_id(subscribed_author)
+                    members_to_remove.append(subscribed_author)
                     continue
 
             # Only perform the mention if enough time has passed
@@ -204,9 +201,14 @@ class Sub(glados.Module):
                     memory['times'][subscribed_author.id] = datetime.now()
                 else:
                     # Remove all settings entirely (fuck you!)
-                    self.__remove_member_id(subscribed_author.id)
+                    members_to_remove.append(subscribed_author.id)
 
         if msg != '':
             yield from self.client.send_message(message.channel, '[sub]{}'.format(msg))
+
+        for member_id in members_to_remove:
+            del memory['subs'][member_id]
+        if len(members_to_remove) > 0:
+            self.__recompile_regex()
 
         return tuple()
