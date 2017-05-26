@@ -134,10 +134,10 @@ class Sub(glados.Module):
                     continue  # failed at getting member
 
             # Only perform the mention if enough time has passed
-            dt = timedelta(minutes=3)  # larger than below, in case time stamp doesn't exist yet
+            dt = timedelta(hours=24)  # larger than below, in case time stamp doesn't exist yet
             if subscribed_author.id in memory['times']:
                 dt = datetime.now() - memory['times'][subscribed_author.id]
-            if dt > timedelta(seconds=5):
+            if dt > timedelta(minutes=5):
                 yield from self.client.send_message(message.channel, '[sub] {}'.format(subscribed_author.mention))
             memory['times'][subscribed_author] = datetime.now()
 
