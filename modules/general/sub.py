@@ -11,14 +11,17 @@ class Sub(glados.Module):
         memory = self.get_memory()
         memory['subs file'] = os.path.join(self.get_config_dir(), 'subs.json')
         memory['subs'] = dict()
-        memory['regex'] = list()
         memory['times'] = dict()
 
         if os.path.isfile(memory['subs file']):
             glados.log('Loading subscriptions from {}'.format(memory['subs file']))
             memory['subs'] = json.loads(open(memory['subs file']).read())
 
-        # pre-compile regex
+        self.__recompile_regex()
+
+    def __recompile_regex(self):
+        memory = self.get_memory()
+        memory['regex'] = list()
         for author_id, regexes in memory['subs'].items():
             for regex in regexes:
                 try:
@@ -44,6 +47,9 @@ class Sub(glados.Module):
         if regex == '':
             yield from self.provide_help('sub', message)
             return
+        if len(regex) > 128:
+            yield from self.client.send_message(message.channel, 'Limit of 128 characters exceeded!')
+            return
 
         try:
             compiled_regex = re.compile(regex, flags=re.IGNORECASE)
@@ -52,11 +58,15 @@ class Sub(glados.Module):
             return
 
         memory = self.get_memory()
-        memory['regex'].append((compiled_regex, message.author))
 
         if message.author.id not in memory['subs']:
             memory['subs'][message.author.id] = list()
+        if len(memory['subs'][message.author.id]) >= 15:
+            yield from self.client.send_message(message.channel, 'Limit of 15 rules exceeded!')
+            return
+
         memory['subs'][message.author.id].append(regex)
+        memory['regex'].append((compiled_regex, message.author))
         self.__save_subs()
 
         yield from self.client.send_message(message.channel, 'Subscription added!')
@@ -81,6 +91,7 @@ class Sub(glados.Module):
                                              if i+1 not in indices]
         if len(memory['subs'][message.author.id]) == 0:
             del memory['subs'][message.author.id]
+        self.__recompile_regex()
         self.__save_subs()
 
         yield from self.client.send_message(message.channel, 'Unsubscribed from {}'.format(', '.join(str(x) for x in indices)))
@@ -109,9 +120,9 @@ class Sub(glados.Module):
             yield from self.client.send_message(message.channel, 'User "{}" has no subscriptions'.format(member.name))
             return
 
-        msg = '{} is subscribed to'.format(member.name)
+        msg = '{} is subscribed to\n'.format(member.name)
         for i, regex in enumerate(memory['subs'][member.id]):
-            msg += '\n  {}. `{}`'.format(i+1, regex)
+            msg += '  {}. `{}`'.format(i+1, regex)
         yield from self.client.send_message(message.channel, msg)
 
     @glados.Module.rules('^((?!\.\w+).*)$')
