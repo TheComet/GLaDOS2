@@ -28,7 +28,8 @@ class Author(object):
         self.participation_per_day = dict()
         self.participation_per_channel = dict()
         self.average_day_cycle = [0] * 24
-        self.recent_day_cycle = dict() # gets turned into a list as a post-processing step
+        self.weekly_day_cycle = dict()  # gets turned into a list as a post-processing step
+        self.recent_day_cycle = dict()  # gets turned into a list as a post-processing step
 
 
 class Activity(glados.Module):
@@ -94,7 +95,9 @@ class Activity(glados.Module):
 
                         if not log_stamp in a.recent_day_cycle:
                             a.recent_day_cycle[log_stamp] = [0] * 24
+                            a.weekly_day_cycle[log_stamp] = [0] * 24
                         a.recent_day_cycle[log_stamp][int(m.stamp.tm_hour)] += 1
+                        a.weekly_day_cycle[log_stamp][int(m.stamp.tm_hour)] += 1
                 # This process does take some time
                 yield
 
@@ -105,8 +108,15 @@ class Activity(glados.Module):
 
         # Now that we know the last date, eliminate all but the most recent full day
         for author_name, author in authors.items():
+            # stats for the last day
             day_stamps, hours = zip(*sorted(author.recent_day_cycle.items(), key=lambda dv: dv[0]))
             author.recent_day_cycle = hours[-min(2, len(hours))]  # second last item
+            # stats for the last week
+            day_stamps, hours = zip(*sorted(author.weekly_day_cycle.items(), key=lambda dv: dv[0]))
+            author.weekly_day_cycle = hours[-8:len(hours)-1]  # last 8 items, omit the most recent day to make it 7
+            # Normalise weekly statistic
+            for hour, message_count in enumerate(author.weekly_day_cycle):
+                author.weekly_day_cycle[hour] = message_count / len(author.weekly_day_cycle)
 
         # Create a fake author that reflects the statistics of the server
         server_stats = Author()
@@ -124,6 +134,9 @@ class Activity(glados.Module):
 
             for hour, message_count in enumerate(author.average_day_cycle):
                 server_stats.average_day_cycle[hour] += message_count
+
+            for hour, message_count in enumerate(author.weekly_day_cycle):
+                server_stats.weekly_day_cycle[hour] += message_count
 
             for hour, message_count in enumerate(author.recent_day_cycle):
                 server_stats.recent_day_cycle[hour] += message_count
@@ -190,12 +203,14 @@ class Activity(glados.Module):
         ax1.plot(t, y)
         y = [user.recent_day_cycle[x] for x in t]
         ax1.plot(t, y)
+        y = [user.weekly_day_cycle[x] for x in t]
+        ax1.plot(t, y)
         ax1.set_xlim([0, 24])
         ax1.grid()
         ax1.set_title('Daily Activity')
         ax1.set_xlabel('Hour (UTC)')
         ax1.set_ylabel('Message Count per Hour')
-        ax1.legend(['Average', 'Last Day'])
+        ax1.legend(['Average', 'Last Day', 'Last Week'])
 
         # Create pie chart of the most active channels
         top5 = sorted(user.participation_per_channel, key=user.participation_per_channel.get, reverse=True)[:5]
