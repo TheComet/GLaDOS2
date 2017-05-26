@@ -95,6 +95,7 @@ class Sub(glados.Module):
                 member = message.mentions[0]
             else:
                 user_name = user.strip('@').split('#')[0]
+                member = None
                 for m in self.client.get_all_members():
                     if m.name == user_name:
                         member = m
