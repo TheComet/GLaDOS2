@@ -45,7 +45,7 @@ class R9K(glados.Module):
             top5 = sorted(memory['scores'].items(), key=lambda kv: kv[1]['score'], reverse=True)[:5]
             for author, d in top5:
                 permille = 1000 * float(d['score']) / float(d['message count'])
-                msg += '  + {} ({3:.2f}‰)'.format(author, permille)
+                msg += '  + {0} ({1:.2f}‰)'.format(author, permille)
         else:
             # Mentions have precedence
             if len(message.mentions) > 0:
@@ -55,7 +55,7 @@ class R9K(glados.Module):
             try:
                 author = memory['scores'][user_name]
                 permille = 1000 * float(author['score']) / float(author['message count'])
-                msg = '{} has been unoriginal {3:.2f}‰ of the time'.format(user_name, permille)
+                msg = '{0} has been unoriginal {1:.2f}‰ of the time'.format(user_name, permille)
             except KeyError:
                 msg = '{} has never been unoriginal'.format(user_name)
 
