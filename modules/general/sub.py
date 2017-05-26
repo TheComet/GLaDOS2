@@ -86,6 +86,7 @@ class Sub(glados.Module):
                 return ()
 
             member = message.mentions[0]
+            args = ' '.join(args.split()[:-1])  # remove name from args list
         else:
             member = message.author.id
 
