@@ -146,7 +146,7 @@ class Sub(glados.Module):
                 dt = datetime.now() - memory['times'][subscribed_author.id]
             if dt > timedelta(minutes=5):
                 msg += ' {}'.format(subscribed_author.mention)
-            memory['times'][subscribed_author.id] = datetime.now()
+                memory['times'][subscribed_author.id] = datetime.now()
 
         if msg != '':
             yield from self.client.send_message(message.channel, '[sub]{}'.format(msg))
