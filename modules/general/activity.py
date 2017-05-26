@@ -123,6 +123,7 @@ class Activity(glados.Module):
         # Create a fake author that reflects the statistics of the server
         server_stats = Author()
         server_stats.recent_day_cycle = [0] * 24
+        server_stats.weekly_day_cycle = [0] * 24
         for author_name, author in authors.items():
             for stamp, message_count in author.participation_per_day.items():
                 if not stamp in server_stats.participation_per_day:
