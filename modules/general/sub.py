@@ -90,7 +90,7 @@ class Sub(glados.Module):
             member = message.author.id
 
         memory = self.get_memory()
-        if member not in memory['subs']:
+        if member.id not in memory['subs']:
             yield from self.client.send_message(message.channel, '{} has no subscriptions'.format(member.name))
             return
 
