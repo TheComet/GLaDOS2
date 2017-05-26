@@ -193,6 +193,8 @@ class Sub(glados.Module):
             if dt > timedelta(minutes=1):
                 msg += ' {} (`{}`)'.format(subscribed_author.mention, regex.pattern)
                 memory['times'][subscribed_author.id] = datetime.now()
+                print(subscribed_author.server)
+                print(subscribed_author.status)
 
         if msg != '':
             yield from self.client.send_message(message.channel, '[sub]{}'.format(msg))
