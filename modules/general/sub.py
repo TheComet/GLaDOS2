@@ -191,7 +191,7 @@ class Sub(glados.Module):
             if subscribed_author.id in memory['times']:
                 dt = datetime.now() - memory['times'][subscribed_author.id]
             if dt > timedelta(minutes=1):
-                msg += ' {}'.format(subscribed_author.mention)
+                msg += ' {} (`{}`)'.format(subscribed_author.mention, regex.pattern)
                 memory['times'][subscribed_author.id] = datetime.now()
 
         if msg != '':
