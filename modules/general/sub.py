@@ -95,7 +95,10 @@ class Sub(glados.Module):
                 member = message.mentions[0]
             else:
                 user_name = user.strip('@').split('#')[0]
-                member = self.client.get_member_named(user_name)
+                for m in self.client.get_all_members():
+                    if m.name == user_name:
+                        member = m
+                        break
                 if member is None:
                     yield from self.client.send_message(message.channel, 'User "{}" not found'.format(user_name))
                     return
