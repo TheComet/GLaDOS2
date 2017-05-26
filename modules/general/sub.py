@@ -144,7 +144,7 @@ class Sub(glados.Module):
             dt = timedelta(hours=24)  # larger than below, in case time stamp doesn't exist yet
             if subscribed_author.id in memory['times']:
                 dt = datetime.now() - memory['times'][subscribed_author.id]
-            if dt > timedelta(minutes=5):
+            if dt > timedelta(minutes=1):
                 msg += ' {}'.format(subscribed_author.mention)
                 memory['times'][subscribed_author.id] = datetime.now()
 
