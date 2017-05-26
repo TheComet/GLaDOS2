@@ -73,7 +73,7 @@ class Bot(object):
         @self.client.event
         @asyncio.coroutine
         def on_ready():
-            yield from self.__auto_join_channels()
+            #yield from self.__auto_join_channels()
             log('Running as {}'.format(self.client.user.name))
 
     @asyncio.coroutine
@@ -89,6 +89,7 @@ class Bot(object):
                 log('Got an HTTP exception: {}'.format(e))
             except discord.Forbidden:
                 log('Forbidden')
+        return tuple()
 
     def __get_commands_that_will_be_executed(self, message, commands):
         ret = list()
@@ -227,7 +228,7 @@ class Bot(object):
         m.full_name = modfullname
         m.client = self.client
         m.set_settings(self.settings)
-        m.setup()
+        m.setup_global()
 
         # get a list of tuples containing (callback function, module) pairs.
         callback_tuples = self.__get_callback_tuples(m)

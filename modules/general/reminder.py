@@ -99,7 +99,7 @@ class Reminder(glados.Module):
                 f.write('%s\t%s\t%s\t%s\n' % (unixtime, channel, nick, message))
         f.close()
 
-    def setup(self):
+    def setup_global(self):
 
         def monitor(bot):
             time.sleep(5)

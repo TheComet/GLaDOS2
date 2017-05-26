@@ -10,7 +10,7 @@ class PushNotifier(glados.Module):
         super(PushNotifier, self).__init__()
         self.__channels = None
 
-    def setup(self):
+    def setup_global(self):
         self.__channels = self.settings['git']['push notifier']['channels']
         asyncio.async(self.run())
 
