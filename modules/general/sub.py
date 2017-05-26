@@ -32,7 +32,7 @@ class Sub(glados.Module):
 
     def get_help_list(self):
         return [
-            glados.Help('sub', '<regex>', 'Get notified when a message matches'),
+            glados.Help('sub', '<regex>', 'Get notified when a message matches the regex. The regex is **case insensitive** and does not have to match the entire message, it searches for substrings (e.g. ".sub (trash can|trashcan)" will match those two phrases). You must be inactive for at least 1 minute before being notified. You cannot notify yourself. A 1 minute cooldown is placed between notifications to prevent spam.'),
             glados.Help('unsub', '<number>', 'Stop getting notifications. Use .sublist to get the number'),
             glados.Help('sublist', '', 'See all of the things you\'ve subscribed to')
         ]
