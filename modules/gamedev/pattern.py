@@ -8,7 +8,7 @@ class Pattern(glados.Module):
         super(Pattern, self).__init__()
         self.config_path = None
 
-    def setup(self):
+    def setup_global(self):
         self.config_path = os.path.join(self.settings['modules']['config path'], 'pattern')
 
     def get_help_list(self):

@@ -30,7 +30,7 @@ class Module(object):
         self.__server_specific_config_dir = os.path.join(self.__config_path, server_id)
         self.__may_need_to_setup_memory()
 
-    def setup(self):
+    def setup_global(self):
         """
         Called right after the external module attributes were set. Gets called only once globally.
         """

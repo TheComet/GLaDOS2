@@ -8,7 +8,7 @@ class Announcements(glados.Module):
         self.channel_ids = None
         self.join_msg = None
 
-    def setup(self):
+    def setup_global(self):
         self.channel_ids = self.settings['announcements']['channels']
         self.join_msg = self.settings['announcements']['join message']
 
