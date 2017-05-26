@@ -122,6 +122,9 @@ class Sub(glados.Module):
         # Doing it here has the nice side effect of making it impossible to mention yourself
         memory['times'][message.author.id] = datetime.now()
 
+        # buffer all mentions, in case multiple people are mentioned (to avoid spamming chat)
+        msg = ''
+
         for i, tup in enumerate(memory['regex']):
             regex, subscribed_author = tup[0], tup[1]
             match = regex.search(message.clean_content)
@@ -142,7 +145,10 @@ class Sub(glados.Module):
             if subscribed_author.id in memory['times']:
                 dt = datetime.now() - memory['times'][subscribed_author.id]
             if dt > timedelta(minutes=5):
-                yield from self.client.send_message(message.channel, '[sub] {}'.format(subscribed_author.mention))
+                msg += ' {}'.format(subscribed_author.mention)
             memory['times'][subscribed_author] = datetime.now()
+
+        if msg != '':
+            yield from self.client.send_message(message.channel, '[sub]{}'.format(msg))
 
         return tuple()
