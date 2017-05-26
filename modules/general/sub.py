@@ -157,6 +157,11 @@ class Sub(glados.Module):
             msg += '  {}. `{}`'.format(i+1, regex)
         yield from self.client.send_message(message.channel, msg)
 
+    def __remove_member_id(self, id):
+        memory = self.get_memory()
+        del memory['subs'][id]
+        self.__recompile_regex()
+
     @glados.Module.rules('^((?!\.\w+).*)$')
     def on_message(self, message, match):
         if not self.__enabled:
@@ -184,17 +189,22 @@ class Sub(glados.Module):
                         subscribed_author = member
                         memory['regex'][i] = (regex, member)
                 if isinstance(subscribed_author, str):
-                    continue  # failed at getting member
+                    # failed at getting member, remove all settings (fuck you!)
+                    self.__remove_member_id(subscribed_author)
+                    continue
 
             # Only perform the mention if enough time has passed
             dt = timedelta(hours=24)  # larger than below, in case time stamp doesn't exist yet
             if subscribed_author.id in memory['times']:
                 dt = datetime.now() - memory['times'][subscribed_author.id]
             if dt > timedelta(minutes=1):
-                msg += ' {} (`{}`)'.format(subscribed_author.mention, regex.pattern)
-                memory['times'][subscribed_author.id] = datetime.now()
-                print(subscribed_author.server)
-                print(subscribed_author.status)
+                # Make sure the member is even still part of the server (thanks Helper...)
+                if any(member.id == subscribed_author.id for member in self.client.get_all_members()):
+                    msg += ' {} (`{}`)'.format(subscribed_author.mention, regex.pattern)
+                    memory['times'][subscribed_author.id] = datetime.now()
+                else:
+                    # Remove all settings entirely (fuck you!)
+                    self.__remove_member_id(subscribed_author.id)
 
         if msg != '':
             yield from self.client.send_message(message.channel, '[sub]{}'.format(msg))
