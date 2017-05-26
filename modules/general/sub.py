@@ -33,7 +33,7 @@ class Sub(glados.Module):
     def get_help_list(self):
         return [
             glados.Help('sub', '<regex>', 'Get notified when a message matches the regex. The regex is **case insensitive** and does not have to match the entire message, it searches for substrings (e.g. ".sub (trash can|trashcan)" will match those two phrases). You must be inactive for at least 1 minute before being notified. You cannot notify yourself. A 1 minute cooldown is placed between notifications to prevent spam.'),
-            glados.Help('unsub', '<number>', 'Stop getting notifications. Use .sublist to get the number'),
+            glados.Help('unsub', '<number> [@user]', 'Stop getting notifications. Use .sublist to get the number'),
             glados.Help('sublist', '', 'See all of the things you\'ve subscribed to')
         ]
 
@@ -73,10 +73,25 @@ class Sub(glados.Module):
 
     @glados.Module.commands('unsub')
     def unsubscribe(self, message, args):
-        memory = self.get_memory()
+        if args == '':
+            yield from self.provide_help('unsub', message)
+            return
 
-        if message.author.id not in memory['subs']:
-            yield from self.client.send_message(message.channel, 'You have no subscriptions')
+        if len(message.mentions) > 0:
+            is_mod = message.author.id in self.settings['moderators']['IDs'] or \
+                     len(set(x.name for x in message.author.roles).intersection(
+                         set(self.settings['moderators']['roles']))) > 0
+            if not is_mod and not message.author.id in self.settings['admins']['IDs']:
+                yield from self.client.send_message(message.channel, 'Only botmods can delete subscriptions from other users')
+                return ()
+
+            member = message.mentions[0]
+        else:
+            member = message.author.id
+
+        memory = self.get_memory()
+        if member not in memory['subs']:
+            yield from self.client.send_message(message.channel, '{} has no subscriptions'.format(member.name))
             return
 
         try:
@@ -84,7 +99,7 @@ class Sub(glados.Module):
             if any(i > len(memory['subs'][message.author.id]) or i < 1 for i in indices):
                 raise ValueError('Out of range')
         except ValueError:
-            yield from self.client.send_message(message.channel, 'Invalid parameter!')
+            yield from self.client.send_message(message.channel, 'Invalid parameter! (Is it a number?)')
             return
 
         memory['subs'][message.author.id] = [x for i, x in enumerate(memory['subs'][message.author.id])
