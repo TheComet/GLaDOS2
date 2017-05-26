@@ -71,7 +71,7 @@ class Sub(glados.Module):
 
         try:
             indices = [int(x) for x in args.split()]
-            if any(i > len(memory['subs'][message.author.id]) for i in indices):
+            if any(i > len(memory['subs'][message.author.id]) or i < 1 for i in indices):
                 raise ValueError('Out of range')
         except ValueError:
             yield from self.client.send_message(message.channel, 'Invalid parameter!')
