@@ -22,7 +22,7 @@ class Sub(glados.Module):
         for author_id, regexes in memory['subs'].items():
             for regex in regexes:
                 try:
-                    compiled_regex = re.compile(regex)
+                    compiled_regex = re.compile(regex, flags=re.IGNORECASE)
                     memory['regex'].append((compiled_regex, author_id))
                 except re.error:
                     pass
@@ -46,7 +46,7 @@ class Sub(glados.Module):
             return
 
         try:
-            compiled_regex = re.compile(regex)
+            compiled_regex = re.compile(regex, flags=re.IGNORECASE)
         except re.error as e:
             yield from self.client.send_message(message.channel, str(e))
             return
