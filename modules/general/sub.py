@@ -73,7 +73,7 @@ class Sub(glados.Module):
         memory['regex'].append((compiled_regex, message.author))
         self.__save_subs()
 
-        yield from self.client.send_message(message.channel, 'Subscription added!')
+        yield from self.client.send_message(message.channel, 'Subscription #{} added!'.format(len(memory['subs'][message.author.id])))
 
     @glados.Module.commands('unsub')
     def unsubscribe(self, message, args):
@@ -154,7 +154,7 @@ class Sub(glados.Module):
 
         msg = '{} is subscribed to\n'.format(member.name)
         for i, regex in enumerate(memory['subs'][member.id]):
-            msg += '  {}. `{}`'.format(i+1, regex)
+            msg += '  #{} `{}`'.format(i+1, regex)
         yield from self.client.send_message(message.channel, msg)
 
     @glados.Module.rules('^((?!\.\w+).*)$')
