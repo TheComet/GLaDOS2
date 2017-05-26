@@ -207,8 +207,12 @@ class Sub(glados.Module):
             yield from self.client.send_message(message.channel, '[sub]{}'.format(msg))
 
         for member_id in members_to_remove:
-            del memory['subs'][member_id]
+            try:
+                del memory['subs'][member_id]
+            except KeyError:
+                pass
         if len(members_to_remove) > 0:
+            self.__save_subs()
             self.__recompile_regex()
 
         return tuple()
