@@ -138,7 +138,7 @@ class Sub(glados.Module):
 
         for i, tup in enumerate(memory['regex']):
             regex, subscribed_author = tup[0], tup[1]
-            match = regex.search(message.clean_content)
+            match = regex.search(message.content)
             if match is None:
                 continue
 
