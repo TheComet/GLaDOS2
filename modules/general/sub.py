@@ -92,7 +92,7 @@ class Sub(glados.Module):
             member = message.mentions[0]
             args = ' '.join(args.split()[:-1])  # remove name from args list
         else:
-            member = message.author.id
+            member = message.author
 
         memory = self.get_memory()
         if member.id not in memory['subs']:
