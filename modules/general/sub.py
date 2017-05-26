@@ -103,10 +103,10 @@ class Sub(glados.Module):
             yield from self.client.send_message(message.channel, 'Invalid parameter! (Is it a number?)')
             return
 
-        memory['subs'][message.author.id] = [x for i, x in enumerate(memory['subs'][message.author.id])
+        memory['subs'][member.id] = [x for i, x in enumerate(memory['subs'][member.id])
                                              if i+1 not in indices]
-        if len(memory['subs'][message.author.id]) == 0:
-            del memory['subs'][message.author.id]
+        if len(memory['subs'][member.id]) == 0:
+            del memory['subs'][member.id]
         self.__recompile_regex()
         self.__save_subs()
 
