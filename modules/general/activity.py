@@ -81,8 +81,8 @@ class Activity(glados.Module):
                         m = Message(line)
                         if m.author not in authors:
                             authors[m.author] = Author()
-                            self.weekly_day_cycle = dict()  # gets turned into a list as a post-processing step
-                            self.recent_day_cycle = dict()  # gets turned into a list as a post-processing step
+                            authors[m.author].weekly_day_cycle = dict()  # gets turned into a list as a post-processing step
+                            authors[m.author].recent_day_cycle = dict()  # gets turned into a list as a post-processing step
                         a = authors[m.author]
 
                         if not log_stamp in a.participation_per_day:
