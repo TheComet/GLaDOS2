@@ -68,6 +68,7 @@
       "general.weather.Weather",
       "general.wikipedia.Wikipedia",
       "general.wiktionary.Wiktionary",
+      "general.wolframalpha.WolframAlpha",
       "general.xkcd.XKCD",
       "general.youtube.Youtube",
       "gamedev.responses.Goto",
@@ -108,5 +109,8 @@
   ],
   "banned": {
   },
-  "optout": []
+  "optout": [],
+  "wolfram alpha": {
+    "key": "GIVE_ME_THE_KEY"
+  }
 }

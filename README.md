@@ -20,7 +20,7 @@ From pip:
  + lxml
  + nltk
  + matplotlib
- + jsonpickle
+ + wolframalpha
 
 ## Settings
 
