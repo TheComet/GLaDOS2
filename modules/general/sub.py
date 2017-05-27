@@ -1,8 +1,37 @@
 import glados
 import json
 import os
+import errno
+import signal
 import re
 from datetime import datetime, timedelta
+from functools import wraps
+
+
+class TimeoutError(Exception):
+    pass
+
+
+def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
+    def decorator(func):
+        def _handle_timeout(signum, frame):
+            raise TimeoutError(error_message)
+
+        def wrapper(*args, **kwargs):
+            signal.signal(signal.SIGALRM, _handle_timeout)
+            signal.setitimer(signal.ITIMER_REAL,seconds) #used timer instead of alarm
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+        return wraps(func)(wrapper)
+    return decorator
+
+
+@timeout(0.5)
+def timeout_match(regex, message):
+    return regex.search(message)
 
 
 class Sub(glados.Module):
@@ -175,9 +204,6 @@ class Sub(glados.Module):
 
         for i, tup in enumerate(memory['regex']):
             regex, subscribed_author = tup[0], tup[1]
-            match = regex.search(message.content)
-            if match is None:
-                continue
 
             # may need to retrieve the author (this doesn't happen when first loading from JSON)
             if isinstance(subscribed_author, str):
@@ -189,6 +215,16 @@ class Sub(glados.Module):
                     # failed at getting member, remove all settings (fuck you!)
                     members_to_remove.append(subscribed_author)
                     continue
+
+            # Do match, with timeout
+            try:
+                match = timeout_match(regex, message.content)
+            except TimeoutError:
+                members_to_remove.append(subscribed_author)
+                yield from self.client.send_message(message.channel, 'Shit regex detected, removing sublist of {}'.format(subscribed_author.name))
+                continue
+            if match is None:
+                continue
 
             # Only perform the mention if enough time has passed
             dt = timedelta(hours=24)  # larger than below, in case time stamp doesn't exist yet
