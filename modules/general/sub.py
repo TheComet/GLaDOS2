@@ -220,7 +220,7 @@ class Sub(glados.Module):
             try:
                 match = timeout_match(regex, message.content)
             except TimeoutError:
-                members_to_remove.append(subscribed_author)
+                members_to_remove.append(subscribed_author.id)
                 yield from self.client.send_message(message.channel, 'Shit regex detected, removing sublist of {}'.format(subscribed_author.name))
                 continue
             if match is None:
