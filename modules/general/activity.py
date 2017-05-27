@@ -28,8 +28,8 @@ class Author(object):
         self.participation_per_day = dict()
         self.participation_per_channel = dict()
         self.average_day_cycle = [0] * 24
-        self.weekly_day_cycle = dict()  # gets turned into a list as a post-processing step
-        self.recent_day_cycle = dict()  # gets turned into a list as a post-processing step
+        self.weekly_day_cycle = [0] * 24
+        self.recent_day_cycle = [0] * 24
 
 
 class Activity(glados.Module):
@@ -79,8 +79,10 @@ class Activity(glados.Module):
                 for line in fd:
                     if len(line) > 10:
                         m = Message(line)
-                        if not m.author in authors:
+                        if m.author not in authors:
                             authors[m.author] = Author()
+                            self.weekly_day_cycle = dict()  # gets turned into a list as a post-processing step
+                            self.recent_day_cycle = dict()  # gets turned into a list as a post-processing step
                         a = authors[m.author]
 
                         if not log_stamp in a.participation_per_day:
@@ -122,8 +124,6 @@ class Activity(glados.Module):
 
         # Create a fake author that reflects the statistics of the server
         server_stats = Author()
-        server_stats.recent_day_cycle = [0] * 24
-        server_stats.weekly_day_cycle = [0] * 24
         for author_name, author in authors.items():
             for stamp, message_count in author.participation_per_day.items():
                 if not stamp in server_stats.participation_per_day:
