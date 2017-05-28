@@ -8,11 +8,12 @@ http://sopel.chat
 import os
 import re
 import time
-import threading
+import json
 import collections
 import codecs
 import glados
 import glados.tools
+import asyncio
 from datetime import datetime
 from glados.tools.time import get_timezone, format_time
 
@@ -65,75 +66,68 @@ periods = '|'.join(scaling.keys())
 
 class Reminder(glados.Module):
 
-    def __init__(self, settings):
-        super().__init__(settings)
-        self.reminder_file = os.path.join(settings['modules']['config path'], 'reminders.db')
-
-        self.rdb = self.load_database()
+    def __init__(self):
+        super(Reminder, self).__init__()
 
     def get_help_list(self):
         return [
             glados.Help('in', '<offset> <reminder>', 'Creates a reminder. Example: ".in 3h45m Go to class"')
         ]
+        
+    def setup_memory(self):
+        memory = self.get_memory()
+        memory['reminder_file'] = os.path.join(self.get_config_dir(), 'reminders.db')
+        memory['rdb'] = self.__load_database()
 
-    def load_database(self):
+        @asyncio.coroutine
+        def monitor():
+            while True:
+                yield from asyncio.sleep(2.5)
+
+                now = int(time.time())
+                unixtimes = [int(key) for key in memory['rdb']]
+                oldtimes = [t for t in unixtimes if t <= now]
+                if not oldtimes:
+                    continue
+
+                for oldtime in oldtimes:
+                    for (channel_id, author_id, message) in memory['rdb'][oldtime]:
+                        channel = self.client.get_channel(channel_id)
+                        author = self.client.get_member(author_id)
+                        if channel is None or author is None:
+                            continue
+
+                        if message:
+                            self.client.send_message(channel, '{} {}'.format(author.mention, message))
+                        else:
+                            self.client.send_message(channel, '{}!'.format(author.mention))
+                    del memory['rdb'][oldtime]
+                self.__dump_database()
+
+        asyncio.ensure_future(monitor)
+
+    def __load_database(self):
+        memory = self.get_memory()
         data = {}
-        if os.path.isfile(self.reminder_file):
-            f = codecs.open(self.reminder_file, 'r', encoding='utf-8')
-            for line in f:
-                unixtime, channel, nick, message = line.split('\t')
-                message = message.rstrip('\n')
-                t = int(float(unixtime))  # WTFs going on here?
-                reminder = (channel, nick, message)
-                try:
-                    data[t].append(reminder)
-                except KeyError:
-                    data[t] = [reminder]
-            f.close()
+        if os.path.isfile(memory['reminder_file']):
+            data = json.loads(codecs.open(memory['reminder_file'], 'r', encoding='utf-8').read())
         return data
 
-    def dump_database(self):
-        f = codecs.open(self.reminder_file, 'w', encoding='utf-8')
-        for unixtime, reminders in self.rdb.items():
-            for channel, nick, message in reminders:
-                f.write('%s\t%s\t%s\t%s\n' % (unixtime, channel, nick, message))
-        f.close()
-
-    def setup_global(self):
-
-        def monitor(bot):
-            time.sleep(5)
-            while True:
-                now = int(time.time())
-                unixtimes = [int(key) for key in bot.rdb]
-                oldtimes = [t for t in unixtimes if t <= now]
-                if oldtimes:
-                    for oldtime in oldtimes:
-                        for (channel, author, message) in bot.rdb[oldtime]:
-                            if message:
-                                bot.msg(channel, author + ': ' + message)
-                            else:
-                                bot.msg(channel, author + '!')
-                        del bot.rdb[oldtime]
-                    self.dump_database()
-                time.sleep(2.5)
-
-        targs = (bot,)
-        t = threading.Thread(target=monitor, args=targs)
-        t.start()
+    def __dump_database(self):
+        memory = self.get_memory()
+        with codecs.open(memory['reminder_file'], 'w', encoding='utf-8') as f:
+            f.write(json.dumps(memory['rdb']))
 
     @glados.Module.commands('in')
-    def remind(self, client, message, args):
-        """Gives you a reminder in the given amount of time."""
-
+    def remind(self, message, args):
         args = args.split(' ', 1)
         if len(args) < 2:
-            yield from self.provide_help('in', client, message)
+            yield from self.provide_help('in', message)
             return
 
         duration = 0
         message = filter(None, re.split('(\d+(?:\.\d+)? ?(?:(?i)' + periods + ')) ?',
-                                        trigger.group(2))[1:])
+                                        args[0])[1:])
         reminder = ''
         stop = False
         for piece in message:
@@ -146,12 +140,15 @@ class Reminder(glados.Module):
                 reminder = reminder + piece
                 stop = True
         if duration == 0:
-            return bot.reply("Sorry, didn't understand the input.")
+            yield from self.client.send_message(message.channel, "Sorry, didn't understand the input.")
+            return
 
         if duration % 1:
             duration = int(duration) + 1
         else:
             duration = int(duration)
+
+        memory = self.get_memory()
         timezone = get_timezone(
             bot.db, bot.config, None, trigger.nick, trigger.sender)
         create_reminder(bot, trigger, duration, reminder, timezone)
@@ -211,11 +208,11 @@ class Reminder(glados.Module):
         t = int(time.time()) + duration
         reminder = (trigger.sender, trigger.nick, message)
         try:
-            bot.rdb[t].append(reminder)
+            memory['rdb'][t].append(reminder)
         except KeyError:
-            bot.rdb[t] = [reminder]
+            memory['rdb'][t] = [reminder]
 
-        dump_database(bot.rfn, bot.rdb)
+        dump_database(bot.rfn, memory['rdb'])
 
         if duration >= 60:
             remind_at = datetime.utcfromtimestamp(t)
