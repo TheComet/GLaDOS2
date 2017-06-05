@@ -65,7 +65,7 @@ class Sub(glados.Module):
 
     def get_help_list(self):
         return [
-            glados.Help('sub', '<regex>', 'Get notified when a message matches the regex. The regex is **case insensitive** and does not have to match the entire message, it searches for substrings (e.g. ".sub (trash can|trashcan)" will match those two phrases). You must be inactive for at least 1 minute before being notified. You cannot notify yourself. A 1 minute cooldown is placed between notifications to prevent spam.'),
+            glados.Help('sub', '<regex>', 'Get notified when a message matches the regex. The regex is **case insensitive** and does not have to match the entire message, it searches for substrings (e.g. ".sub (trash can|trashcan)" will match those two phrases). You must be inactive for at least 1 minutes before being notified. You cannot notify yourself. A 1 minute cooldown is placed between notifications to prevent spam.'),
             glados.Help('unsub', '<number> [@user]', 'Stop getting notifications. Use .sublist to get the number'),
             glados.Help('sublist', '', 'See all of the things you\'ve subscribed to')
         ]
@@ -83,6 +83,9 @@ class Sub(glados.Module):
         if len(regex) > 128:
             yield from self.client.send_message(message.channel, 'Limit of 128 characters exceeded!')
             return
+
+        if len(regex) < 5:
+            regex = r'\b' + regex + r'\b'
 
         try:
             compiled_regex = re.compile(regex, flags=re.IGNORECASE)
@@ -102,7 +105,7 @@ class Sub(glados.Module):
         memory['regex'].append((compiled_regex, message.author))
         self.__save_subs()
 
-        yield from self.client.send_message(message.channel, 'Subscription #{} added!'.format(len(memory['subs'][message.author.id])))
+        yield from self.client.send_message(message.channel, '{} added subscription #{} (``{}``)'.format(message.author.name, len(memory['subs'][message.author.id]), regex))
 
     @glados.Module.commands('unsub')
     def unsubscribe(self, message, args):
@@ -130,7 +133,7 @@ class Sub(glados.Module):
 
         try:
             indices = [int(x) for x in args.split()]
-            if any(i > len(memory['subs'][message.author.id]) or i < 1 for i in indices):
+            if any(i > len(memory['subs'][member.id]) or i < 1 for i in indices):
                 raise ValueError('Out of range')
         except ValueError:
             yield from self.client.send_message(message.channel, 'Invalid parameter! (Is it a number?)')
@@ -143,7 +146,7 @@ class Sub(glados.Module):
         self.__recompile_regex()
         self.__save_subs()
 
-        yield from self.client.send_message(message.channel, 'Unsubscribed from {}'.format(', '.join(str(x) for x in indices)))
+        yield from self.client.send_message(message.channel, '{} unsubscribed from {}'.format(member.name, ', '.join(str(x) for x in indices)))
 
     @glados.Module.commands('subs')
     def toggle_subscription_feature(self, message, args):
@@ -233,14 +236,18 @@ class Sub(glados.Module):
             if dt > timedelta(minutes=1):
                 # Make sure the member is even still part of the server (thanks Helper...)
                 if any(member.id == subscribed_author.id for member in self.client.get_all_members()):
-                    msg += ' {} (`{}`)'.format(subscribed_author.mention, regex.pattern)
+                    pattern = regex.pattern
+                    if len(pattern) > 30:
+                        pattern = pattern[:30] + '...'
+                    yield from self.client.send_message(subscribed_author, '[sub][{}][{}] (``{}``) ```{}: {}```'.format(message.server.name, message.channel.name, pattern, message.author.name, message.content))
+                    #msg += ' {} (`{}`)'.format(subscribed_author.mention, pattern)
                     memory['times'][subscribed_author.id] = datetime.now()
                 else:
                     # Remove all settings entirely (fuck you!)
                     members_to_remove.append(subscribed_author.id)
 
-        if msg != '':
-            yield from self.client.send_message(message.channel, '[sub]{}'.format(msg))
+        #if msg != '':
+            #yield from self.client.send_message(message.channel, '[sub]{}'.format(msg))
 
         for member_id in members_to_remove:
             try:

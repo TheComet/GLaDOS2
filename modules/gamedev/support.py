@@ -17,6 +17,6 @@ class GDNIsOffline(glados.Module):
         if GDN_member is None or isinstance(GDN_member, str):  # can be a string or none if the member is not found
             return tuple()
         print(GDN_member.status)
-        if not GDN_member.status == 'online':
+        if GDN_member.status == 'offline':
             yield from self.client.send_message(message.channel, '{} is offline because {} didn\'t feed the hamster'.format(GDN_member.mention, Hodge_member.mention))
         return tuple()
