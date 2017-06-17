@@ -22,6 +22,26 @@ From pip:
  + matplotlib
  + wolframalpha
 
+The picarto module requires google's protobuf to be built from source.
+
+```
+$ git clone https://github.com/google/protobuf
+$ cd protobuf
+$ ./autogen.sh
+$ ./configure --prefix=some/place
+$ make
+$ make check
+$ make install
+```
+
+Additionally, the python bindings need to be built and installed
+```
+$ (source the virtualenv)
+$ cd python/
+$ python setup.py install
+$ cp -r build/lib/google ../../env/lib/site-packages/
+```
+
 ## Settings
 
 ### Login

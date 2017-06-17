@@ -64,10 +64,12 @@ class Bot(object):
 
             for callback, module, content in commands_to_process:
                 module.set_current_server(message.server.id)  # required for server isolation
+                print('Processing commands "{}" for module "{}"'.format(callback.commands, module.full_name))
                 yield from callback(message, content)
 
             for callback, module, match in matches_to_process:
                 module.set_current_server(message.server.id)  # required for server isolation
+                print('Processing rules "{}" for module "{}"'.format(callback.rules, module.full_name))
                 yield from callback(message, match)
 
         @self.client.event
@@ -99,6 +101,7 @@ class Bot(object):
             return ret
 
         for callback, module in self.__callback_tuples:
+            print('Testing for commands in module "{}"'.format(module.full_name))
 
             # Does the module have a server whitelist? If so, make sure this module is allowed.
             if len(module.server_whitelist) > 0:
@@ -115,6 +118,7 @@ class Bot(object):
     def __get_matches_that_will_be_executed(self, message):
         ret = list()
         for callback, module in self.__callback_tuples:
+            print('Testing for matches in module "{}"'.format(module.full_name))
 
             # Does the module have a server whitelist? If so, make sure this module is allowed.
             if len(module.server_whitelist) > 0:

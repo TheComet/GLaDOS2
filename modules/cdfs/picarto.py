@@ -1,9 +1,13 @@
 import glados
 import asyncio
 import json
+import websockets
 import http.client
 import urllib.parse
-from autobahn.asyncio.websocket import WebSocketClientFactory, WebSocketClientProtocol
+import time
+from modules.cdfs.proto import chat_pb2
+from google.protobuf.message import Message
+
 
 # /channel/name/{channel name}
 # -> retrieve user_id -> this might be the channel ID?
@@ -12,26 +16,51 @@ from autobahn.asyncio.websocket import WebSocketClientFactory, WebSocketClientPr
 
 API_URL = 'api.picarto.tv'
 API_V = '/v1'
-CHAT_ENDPOINT = 'https://nd2.picarto.tv/socket?token={}'
+CHAT_ENDPOINT = 'wss://nd2.picarto.tv/socket?token={}'
 
 
-class PicartoClient(WebSocketClientProtocol):
+class PicartoClient(object):
+    def __init__(self, discord_client, discord_channel_id, websocket):
+        self.discord_client = discord_client
+        self.websocket = websocket
+        self.discord_channel_id = discord_channel_id
 
-    def __init__(self):
-        super(PicartoClient, self).__init__()
-        self.discord_channel = None
+    @asyncio.coroutine
+    def listen(self):
+        yield from self.discord_client.wait_until_ready()
 
-    def onConnect(self, request):
-        print('oh?')
+        discord_channel = None
+        for channel in self.discord_client.get_all_channels():
+            if channel.id == self.discord_channel_id:
+                discord_channel = channel
+                break
+        if discord_channel is None:
+            glados.log('Failed to get discord channel with ID {}'.format(self.discord_channel_id))
+            yield from self.websocket.close()
+            return
 
-    def onOpen(self):
-        print('hell yeah')
+        while True:
+            time_started = time.time()
+            data = yield from self.websocket.recv()
+            message_type_id = data[0]
+            data = data[1:]
+            try:
+                print(message_type_id)
+                success = True
+                if message_type_id == 2:  # ID for user message
+                    message = chat_pb2.ChatMessage()
+                    message.ParseFromString(data)
+                    content = message.message
+                    author = message.display_name
+                    if message.time_stamp < time_started:
+                        success = False
+                else:
+                    success = False
 
-    def onMessage(self, payload, is_binary):
-        print('lol')
-
-    def onClose(self, was_clean, code, reason):
-        print('shit')
+                if success:
+                    yield from self.discord_client.send_message(discord_channel, '<{}> {}'.format(author, content))
+            except:
+                pass
 
 
 class Picarto(glados.Module):
@@ -44,12 +73,12 @@ class Picarto(glados.Module):
         return tuple()
 
     def setup_global(self):
-
         for bridge in self.settings['picarto']['bridges']:
             client = self.__connect(bridge)
             if client is None:
                 continue
             self.picarto_clients.append(client)
+            asyncio.ensure_future(client.listen())
 
     def __connect(self, bridge):
         conn = http.client.HTTPSConnection(API_URL)
@@ -73,15 +102,20 @@ class Picarto(glados.Module):
             glados.log('Failed to generate JWT key\n{} {}\n{}'.format(
                 response.status, response.reason, response.read()))
             return None
-        jwt_key = response.read()
+        jwt_key = response.read().decode('utf-8')
 
         conn.close()
 
         url = CHAT_ENDPOINT.format(jwt_key)
-        factory = WebSocketClientFactory(url)
-        factory.protocol = PicartoClient
-        loop = asyncio.get_event_loop()
-        coro = loop.create_connection(factory, url)
-        asyncio.ensure_future(coro)
+        websocket = asyncio.get_event_loop().run_until_complete(websockets.connect(url))
+        client = PicartoClient(self.client, bridge['discord channel id'], websocket)
+        return client
 
-        return True
+    @glados.Module.rules('^.*$')
+    def on_message(self, message, match):
+        for picarto_client in self.picarto_clients:
+            picarto_message = chat_pb2.NewMessage()
+            picarto_message.message = message.clean_content
+            data = picarto_message.SerializeToString()
+            data = b'\x00' + data
+            yield from picarto_client.websocket.send(data)
