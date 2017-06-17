@@ -25,7 +25,6 @@ class Verify(glados.Module):
         @asyncio.coroutine
         def on_member_remove(member):
             channel = self.client.get_channel(off_topic_channel_id)
-            print('removing member')
             if channel is None:
                 glados.log('ERROR: Failed to retrieve off-topic channel')
                 return tuple()
@@ -68,4 +67,5 @@ class Verify(glados.Module):
 
     @glados.Module.rules('^.*$')
     def delete_this(self, message, match):
-        yield from self.clean_up_shit_messages()
+        asyncio.ensure_future(self.clean_up_shit_messages())
+        return tuple()

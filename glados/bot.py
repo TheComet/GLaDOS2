@@ -72,6 +72,8 @@ class Bot(object):
                 print('Processing rules "{}" for module "{}"'.format(callback.rules, module.full_name))
                 yield from callback(message, match)
 
+            print('done')
+
         @self.client.event
         @asyncio.coroutine
         def on_ready():
