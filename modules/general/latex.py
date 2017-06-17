@@ -18,6 +18,7 @@ LATEX_FRAMEWORK = r"""
 \usepackage{trfsigns}
 \usepackage{mathrsfs}
 \usepackage{mathtools}
+\usepackage{skull}
 
 \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
