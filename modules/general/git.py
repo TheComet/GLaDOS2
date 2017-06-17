@@ -12,7 +12,7 @@ class PushNotifier(glados.Module):
 
     def setup_global(self):
         self.__channels = self.settings['git']['push notifier']['channels']
-        asyncio.async(self.run())
+        asyncio.ensure_future(self.run())
 
     def get_help_list(self):
         return list()
