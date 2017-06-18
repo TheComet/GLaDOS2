@@ -21,20 +21,23 @@ class Derpi(glados.Module):
         if len(args) > 1:
             tags = args[1].split(',')
 
-        if mode == 's':
-            search = derpibooru.Search()
-            if tags == '':
-                image = next(search)
+        try:
+            if mode == 's':
+                search = derpibooru.Search()
+                if tags == '':
+                    image = next(search)
+                else:
+                    image = next(search.query(*tags))
+            elif mode == 'r':
+                search = derpibooru.Search()
+                if tags == '':
+                    image = next(search.sort_by(derpibooru.sort.RANDOM))
+                else:
+                    image = next(search.sort_by(derpibooru.sort.RANDOM).query(*tags))
             else:
-                image = next(search.query(*tags))
-        elif mode == 'r':
-            search = derpibooru.Search()
-            if tags == '':
-                image = next(search.sort_by(derpibooru.sort.RANDOM))
-            else:
-                image = next(search.sort_by(derpibooru.sort.RANDOM).query(*tags))
-        else:
-            yield from  self.provide_help('derpi', message)
-            return
+                yield from  self.provide_help('derpi', message)
+                return
 
-        yield from self.client.send_message(message.channel, image.url)
+            yield from self.client.send_message(message.channel, image.url)
+        except StopIteration:
+            yield from self.client.send_message(message.channel, "No posts found!")
