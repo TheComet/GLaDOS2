@@ -55,33 +55,33 @@ class Translate(glados.Module):
             glados.Help('.tr', '[:en :fr] <phrase>', 'Translates phrase from :en to :fr')
         ]
 
-    @glados.Module.rules('(?:([a-z]{2}) +)?(?:([a-z]{2}|en-raw) +)?["“](.+?)["”]\? *$')
-    def tr(self, message, match):
-        # example: "mon chien"? or $nickname: fr "mon chien"?
-        in_lang, out_lang, phrase = match.groups()
-
-        if len(phrase) > 350:
-            yield from self.client.send_message(message.channel, 'Phrase must be under 350 characters.')
-            return
-
-        if phrase.strip() == '':
-            yield from self.client.send_message(message.channel, 'You need to specify a string for me to translate!')
-            return
-
-        in_lang = in_lang or 'auto'
-        out_lang = out_lang or 'en'
-
-        if in_lang != out_lang:
-            msg, in_lang = translate(phrase, in_lang, out_lang)
-            if msg:
-                msg = urllib.parse.unquote(msg)
-                msg = '"%s" (%s to %s, translate.google.com)' % (msg, in_lang, out_lang)
-            else:
-                msg = 'The %s to %s translation failed, are you sure you specified valid language abbreviations?' % (in_lang, out_lang)
-
-            yield from self.client.send_message(message.channel, msg)
-        else:
-            yield from self.client.send_message(message.channel, 'Language guessing failed, so try suggesting one!')
+#    @glados.Module.rules('(?:([a-z]{2}) +)?(?:([a-z]{2}|en-raw) +)?["“](.+?)["”]\? *$')
+#    def tr(self, message, match):
+#        # example: "mon chien"? or $nickname: fr "mon chien"?
+#        in_lang, out_lang, phrase = match.groups()
+#
+#        if len(phrase) > 350:
+#            yield from self.client.send_message(message.channel, 'Phrase must be under 350 characters.')
+#            return
+#
+#        if phrase.strip() == '':
+#            yield from self.client.send_message(message.channel, 'You need to specify a string for me to translate!')
+#            return
+#
+#        in_lang = in_lang or 'auto'
+#        out_lang = out_lang or 'en'
+#
+#        if in_lang != out_lang:
+#            msg, in_lang = translate(phrase, in_lang, out_lang)
+#            if msg:
+#                msg = urllib.parse.unquote(msg)
+#                msg = '"%s" (%s to %s, translate.google.com)' % (msg, in_lang, out_lang)
+#            else:
+#                msg = 'The %s to %s translation failed, are you sure you specified valid language abbreviations?' % (in_lang, out_lang)
+#
+#            yield from self.client.send_message(message.channel, msg)
+#        else:
+#            yield from self.client.send_message(message.channel, 'Language guessing failed, so try suggesting one!')
 
     @glados.Module.commands('translate', 'tr')
     def tr2(self, message, command):

@@ -22,6 +22,10 @@ From pip:
  + matplotlib
  + wolframalpha
 
+```
+pip install discord.py python-dateutil requests pyenchant beautifulsoup4 PySocks lxml nltk matplotlib wolframalpha
+```
+
 The picarto module requires google's protobuf to be built from source.
 
 ```

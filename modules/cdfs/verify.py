@@ -24,6 +24,8 @@ class Verify(glados.Module):
         @self.client.event
         @asyncio.coroutine
         def on_member_remove(member):
+            if member.server is None or member.server.id != cdfs_server_id:
+                return tuple()
             channel = self.client.get_channel(off_topic_channel_id)
             if channel is None:
                 glados.log('ERROR: Failed to retrieve off-topic channel')
