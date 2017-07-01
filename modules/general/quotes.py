@@ -100,7 +100,7 @@ class Quotes(glados.Module):
 
         lines = self.get_quote_lines(author)
         if search_query:
-            lines = [x for x in lines if search_query.lower() in x.lower()]
+            lines = [x for x in lines if re.search(r'\b' + search_query + r'\b', x, re.IGNORECASE)]
         
         if len(lines) == 0:
             yield from self.client.send_message(message.channel,
