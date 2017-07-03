@@ -27,6 +27,7 @@ class Quotes(glados.Module):
             glados.Help('quote', '<user>', 'Dig up a quote the user once said in the past.'),
             glados.Help('quotestats', '<user>', 'Provide statistics on how many quotes a user has and how'
                                                 ' intelligent he is'),
+            glados.Help('findquote', '<user> <text>', 'Dig up a quote the user once said containing the specified text.'),
             glados.Help('grep', '<word> [User]', 'Find how many times a user has said a particular word. Case-insensitive'),
             glados.Help('zipf', '[user]', 'Plot a word frequency diagram of the user.')
         ]
@@ -65,40 +66,67 @@ class Quotes(glados.Module):
     def quote(self, message, content):
         if len(message.mentions) > 0:
             author = message.mentions[0].name
-            search_criteria = None
         else:
-            content_parts = content.split()
-            author = content_parts[0].strip('@').split('#')[0] if content != '' else message.author.name
-            search_criteria = ' '.join(content_parts[1:]) if len(content_parts) > 1 else None
+            author = content.strip('@').split('#')[0] if content != '' else message.author.name
             error = self.check_nickname_valid(author.lower())
             if error is not None:
                 yield from self.client.send_message(message.channel, error)
                 return
 
-        quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
-        lines = quotes_file.readlines()
-        quotes_file.close()
-
-        lines = [x for x in lines if len(x) >= 20]
-        if search_criteria:
-            lines = [x for x in lines if search_criteria in x]
+        lines = self.get_quote_lines(author)
 
         if len(lines) == 0:
             yield from self.client.send_message(message.channel,
                                            '{} hasn\'t delivered any quotes worth mentioning yet'.format(author))
             return
 
-        # Remove any mentions from the quote and replace them with actual member names
         line = random.choice(lines).strip('\n')
-        mentioned_ids = [x.strip('<@!>') for x in re.findall('<@!?[0-9]+>', line)]
-        for id in mentioned_ids:
-            for member in self.client.get_all_members():
-                if member.id == id:
-                    line = line.replace('<@{}>'.format(id), member.name).replace('<@!{}>'.format(id), member.name)
-                    break
-        line = line.strip('<@!>')
+        line = self.remove_mentions(line)
 
         yield from self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
+
+    @glados.Module.commands('findquote')
+    def findquote(self, message, content):
+        if len(message.mentions) == 1:
+            author = message.mentions[0].name
+            content = content.replace('@' + author, '')
+        elif len(message.mentions) > 1:
+            yield from self.client.send_message(message.channel,
+                                            'Multiple mentions are not supported. What are you trying to do?')
+            return
+        else:
+            author = message.author.name
+        search_query = content.strip()
+
+        lines = self.get_quote_lines(author)
+        if search_query:
+            lines = [x for x in lines if re.search(r'\b' + search_query + r'\b', x, re.IGNORECASE)]
+        
+        if len(lines) == 0:
+            yield from self.client.send_message(message.channel,
+                                            '{} hasn\'t delivered any quotes containing "{}"'.format(author, search_query))
+            return
+
+        line = random.choice(lines).strip('\n')
+        line = self.remove_mentions(line)
+
+        yield from self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
+
+    def remove_mentions(self, text):
+        '''Remove any mentions from the quote and replace them with actual member names'''
+        mentioned_ids = [x.strip('<@!>') for x in re.findall('<@!?[0-9]+>', text)]
+        for mentioned_id in mentioned_ids:
+            for member in self.client.get_all_members():
+                if member.id == mentioned_id:
+                    text = text.replace('<@{}>'.format(id), member.name).replace('<@!{}>'.format(id), member.name)
+                    break
+        return text.strip('<@!>')
+
+    def get_quote_lines(self, author):
+        quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
+        lines = quotes_file.readlines()
+        quotes_file.close()
+        return [x for x in lines if len(x) >= 20]
 
     @glados.Module.commands('quotestats')
     def quotestats(self, message, content):
