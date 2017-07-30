@@ -35,16 +35,13 @@ class Morgen(glados.Module):
         yield from self.client.send_message(message.channel, greeting + ' ' + message.author.name + punctuation)
 
 
-class Rude(glados.Module):
+class Swiss(glados.Module):
+    def get_help_list(self): return list()
 
-    def get_help_list(self): return []
-
-    @glados.Module.rules(r'(?i)(Fuck|Screw) you,? glados[ \t]*$')
-    def rude(self, message, match):
-        yield from self.client.send_message(message.channel,
-                                       'Watch your mouth, ' +
-                                       message.author.name +
-                                       ', or I\'ll tell your mother!')
+    @glados.Module.rules(r'.*(grüetzi|grützi|grüessech|grüessich).*')
+    def hii(self, message, match):
+        greeting = random.choice(('Hoi büebli!', 'Sali!', 'Grüessech wohl', 'Grüessgott', 'S Wätter esch net schlächt hüt, äs chutet e chli'))
+        yield from self.client.send_message(message.channel, greeting)
 
 
 class Insult(glados.Module):

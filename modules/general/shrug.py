@@ -13,7 +13,11 @@ shrugs = [
     'http://www.reactiongifs.com/wp-content/uploads/2013/11/shrug-house.gif',
     'http://i0.kym-cdn.com/photos/images/original/000/003/308/xjobz5hofa.jpg',
     'http://i1.kym-cdn.com/photos/images/newsfeed/000/991/996/a7c.jpg',
-    'https://uboachan.net/warc/src/1340433133397.jpeg'
+    'https://uboachan.net/warc/src/1340433133397.jpeg',
+    'http://i.imgur.com/VQ9Cdad.png',
+    'http://i.imgur.com/l4KQj8w.png',
+    'http://i.imgur.com/p4YJfO2.png',
+    'http://i.imgur.com/XUsxfpG.png'
 ]
 
 class Shrug(glados.Module):

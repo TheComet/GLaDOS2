@@ -32,6 +32,7 @@ class Movie(glados.Module):
         if data['Response'] == 'False':
             if 'Error' in data:
                 response = '[MOVIE] %s' % data['Error']
+                response += '\n**I am looking for a movie API, this one has gone private! If you know of one, let TheComet know about it!**'
             else:
                 glados.log(
                     'Got an error from the OMDb api, search phrase was {0}; data was {1}'.format(movie, str(data)))
