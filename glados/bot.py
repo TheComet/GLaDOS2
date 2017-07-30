@@ -143,7 +143,7 @@ class Bot(object):
 
     def __apply_cooldown(self, message):
         author = message.author.name
-        if not self.__cooldown.punish(author):
+        if not self.__cooldown.check(author):
             return ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'
                     'You have reached punishment level {}.\n'
                     'Your punishment level decreases by 1 every 180 seconds.'). \

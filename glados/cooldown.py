@@ -3,52 +3,84 @@ from datetime import datetime
 
 class Tracker(object):
     """
+    Helper mechanism to regulate frequent uses.  Calling `update` advances `margin` and `margin_factor`, which both
+    decay over time, as determined by `margin_rate` and `punish_rate`.  Each usage increases `margin_factor` and
+    consequently causes `margin` to increase exponentially.
+
+    Properties:
+
+        stamp          Timestamp since last checked
+        margin         Value from [-max_margin, max_margin]; if >= 0, on cooldown; decreases by `margin_rate` over time
+        margin_factor  Margin multiplier, increases by 1 with each check, decreases by `punish_rate` over time
+        last_stamp     Stamp form last update
+        last_margin    Margin from last update (unused?)
+
+
     The values in this class were determined empirically.
     """
 
-    max_margin = 50    # seconds
-    punish_margin = 5  # seconds
+    max_margin        = 50      # seconds
+    punish_margin     = 5       # seconds
+    margin_rate       = 1       # -Δ(margin)/s
+    punish_rate       = 1/180   # -Δ(punish)/s
 
-    def __init__(self):
-        self.stamp = datetime.now()
-        self.margin = -self.max_margin
-        self.last_margin = self.margin
-        self.punishment_factor = 1
-        self.last_punished = datetime.now()
+    def __init__(self, **kwargs):
+        if not kwargs:
+            self.stamp          = datetime.now()
+            self.margin         = -self.max_margin
+            self.margin_factor  = 1
 
-    def punish(self):
+            # state tracking
+            self.last_margin    = self.margin
+            self.last_stamp     = self.stamp
+            self.last_punished  = None
 
-        # first, decrease margin depending on how long since the last punishment
-        self.last_margin = self.margin
-        self.margin -= (datetime.now() - self.stamp).seconds
-        if self.margin < -self.max_margin:
-            self.margin = -self.max_margin
-        self.stamp = datetime.now()
+        else:
+            # clone
+            for k, v in kwargs.items():
+                setattr(self, k, v)
 
-        # increase punishment with punishment factor
-        self.margin += self.punish_margin * self.punishment_factor
+    def update(self):
+        # update time–based state
+        self.last_margin   = self.margin
+        self.last_stamp    = self.stamp
+        self.stamp         = datetime.now()
+        elapsed            = (self.stamp - self.last_stamp).total_seconds()
 
-        # punish
-        if self.margin <= 0:
-            self.punishment_factor += 1
-            self.last_punished = datetime.now()
+        # decrease margin and factor depending on how long since the last check
+        self.margin        = max(-self.max_margin, self.margin - elapsed*self.margin_rate)
+        self.margin_factor = max(1, self.margin_factor - elapsed*self.punish_rate)
 
-        self.__decrease_punishment()
+        # check if cooldown is still active, before applying margin
+        result = self.margin <= 0
+        if not result:
+            self.last_punished = self.stamp
 
-        return self.margin <= 0
+        # increase margin and factor, clamping margin to `max_margin`
+        self.margin        = min(self.max_margin, self.margin + self.margin_factor * self.punish_margin)
+        self.margin_factor += 1
 
-    def __decrease_punishment(self):
-        decrease_by, rem = divmod((datetime.now() - self.last_punished).seconds, 180)
-        self.punishment_factor = max(1, self.punishment_factor - decrease_by)
-        self.last_punished = datetime.now()
+        return result
+
+
+    def __repr__(self):
+        return "Tracker({})".format(', '.join(map(
+            lambda k: "{}={}".format(k, repr(getattr(self,k,None))),
+            ['stamp','margin','last_punished','last_margin','margin_factor']
+        )))
+
 
 
 class Cooldown(object):
+    """
+    Tracks usages by users
+    """
 
     def __init__(self):
         self.__timestamps = dict()
 
-    def punish(self, author_name):
+
+    def check(self, author_name):
         """
         Checks if the author is off of cooldown or not.
         :param author_name: Name of the author to check.
@@ -56,8 +88,8 @@ class Cooldown(object):
         """
         if not author_name in self.__timestamps:
             self.__timestamps[author_name] = Tracker()
-        return self.__timestamps[author_name].punish()
 
+        return self.__timestamps[author_name].update()
     def expires_in(self, author_name):
         return self.__timestamps[author_name].margin
 
