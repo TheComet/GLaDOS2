@@ -90,8 +90,16 @@ class Cooldown(object):
             self.__timestamps[author_name] = Tracker()
 
         return self.__timestamps[author_name].update()
-    def expires_in(self, author_name):
-        return self.__timestamps[author_name].margin
 
-    def punishment(self, author_name):
-        return self.__timestamps[author_name].punishment_factor
+
+    def detail_for(self, author_name):
+        """
+        Retrieves cooldown information for a specific user.
+        Assumes `self.punish` with `author_name` has already been called.
+
+        :param author_name: Name of author to retrieve cooldown details
+        :return: user’s margin, margin_factor, and punishment decrease rate
+        """
+
+        tracker = self.__timestamps[author_name]
+        return tracker.margin, tracker.margin_factor, 1/Tracker.punish_rate
