@@ -40,11 +40,11 @@ class Tracker(object):
             for k, v in kwargs.items():
                 setattr(self, k, v)
 
-    def update(self):
+    def update(self, now=None):
         # update time–based state
         self.last_margin   = self.margin
         self.last_stamp    = self.stamp
-        self.stamp         = datetime.now()
+        self.stamp         = now or datetime.now()
         elapsed            = (self.stamp - self.last_stamp).total_seconds()
 
         # decrease margin and factor depending on how long since the last check
