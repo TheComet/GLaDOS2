@@ -6,7 +6,8 @@ env/
 env2/
 
 # tex output
-tex/
+/tex/*
+!/tex/.gitkeep
 
 # generated files
 *log
