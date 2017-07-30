@@ -38,7 +38,7 @@
       "modules"
     ],
     "names": [
-	  "general.8ball.EightBall",
+      "general.8ball.EightBall",
       "general.activity.Activity",
       "general.announcements.Announcements",
       "general.botmodtools.BotModTools",
