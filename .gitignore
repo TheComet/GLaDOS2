@@ -1,9 +1,6 @@
-# python compiles files
+# python–specific
 *.pyc
-
-# virtual env
-env/
-env2/
+/*env*/
 
 # tex output
 /tex/*
