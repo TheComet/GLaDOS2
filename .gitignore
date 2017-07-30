@@ -1,18 +1,16 @@
-# python compiles files
+# python–specific
 *.pyc
-
-# virtual env
-env/
-env2/
+/*env*/
 
 # tex output
-tex/
+/tex/*
+!/tex/.gitkeep
 
 # generated files
 *log
 
 # secret settings file
-settings.json
+/settings.json
 
 # IDE files
 .idea/

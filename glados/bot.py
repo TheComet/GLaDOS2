@@ -4,6 +4,7 @@ import json
 import asyncio
 import inspect
 import re
+import math
 from datetime import datetime, timedelta
 from .Log import log
 from .cooldown import Cooldown
@@ -143,11 +144,15 @@ class Bot(object):
 
     def __apply_cooldown(self, message):
         author = message.author.name
-        if not self.__cooldown.punish(author):
-            return ('You are on cooldown.\nYour cooldown will expire in {} seconds.\n'
-                    'You have reached punishment level {}.\n'
-                    'Your punishment level decreases by 1 every 180 seconds.'). \
-                format(self.__cooldown.expires_in(author), self.__cooldown.punishment(author))
+        if not self.__cooldown.check(author):
+            margin, factor, rate = (math.ceil(x)  for x in self.__cooldown.detail_for(author))
+
+            return (
+                'You are on cooldown.  The cooldown will expire in {} seconds.\n'
+                'You have reached punishment level {}.\n'
+                'Your punishment level decreases by 1 every {} seconds.'
+            ).format(margin, factor, rate)
+
         return False
 
     def extract_commands_from_message(self, msg):
