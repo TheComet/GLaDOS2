@@ -6,5 +6,5 @@ class Source(glados.Module):
     
     @glados.Module.commands('source')
     def source(self, message, args):
-        yield from self.client.send_message(message.channel, 'https://github.com/TheComet93/GLaDOS2')
+        yield from self.client.send_message(message.channel, 'https://github.com/TheComet/GLaDOS2')
 
