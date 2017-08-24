@@ -1,5 +1,6 @@
 import gzip
 import json
+from urllib.parse import urlencode
 import urllib.request
 
 import glados
@@ -15,7 +16,13 @@ class StackOverflow(glados.Module):
 
     @glados.Module.commands('so')
     def search(self, message, content):
-        query_string = 'order=desc&sort=activity&site=stackoverflow&pagesize=1&q={}'.format(content.replace(' ', '+'))
+        query_string = urlencode({
+            'order': 'desc',
+            'sort': 'relevance',
+            'site': 'stackoverflow',
+            'pagesize': 1,
+            'q': content
+        })
         result = get_json_response(STACK_EXCHANGE_API + query_string)
         if (not result['items']):
             yield from self.client.send_message(message.channel, 'No questions found :(')
