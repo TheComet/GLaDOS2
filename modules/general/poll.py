@@ -12,6 +12,9 @@ class Poll(glados.Module):
     @glados.Module.commands('poll')
     def handle_poll(self, message, content):
         parts = [x.strip() for x in content.split() if len(x) > 0]
+        if len(parts) == 0:
+            yield from self.provide_help('poll', message)
+            return
         cmd = parts[0]
         if cmd == 'new':
             yield from self.handle_new(message, parts[1:])
