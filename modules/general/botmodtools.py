@@ -28,7 +28,7 @@ class BotModTools(glados.Module):
             '\n'.join(['  + ' + x.name for x in admin_list])
         )
 
-        yield from self.client.send_message(message.channel, text)
+        await self.client.send_message(message.channel, text)
 
     @glados.Module.commands('banlist')
     def banlist(self, message, content):
@@ -52,7 +52,7 @@ class BotModTools(glados.Module):
             text = '**Banned Users**\n{}'.format('\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in banned]))
         else:
             text = 'No one is banned.'
-        yield from self.client.send_message(message.channel, text)
+        await self.client.send_message(message.channel, text)
 
     @glados.Module.commands('blesslist')
     def blesslist(self, message, content):
@@ -66,7 +66,7 @@ class BotModTools(glados.Module):
             text = '**Blessed Users**\n{}'.format('\n'.join(['  + ' + x.name for x in blessed]))
         else:
             text = 'No one is blessed.'
-        yield from self.client.send_message(message.channel, text)
+        await self.client.send_message(message.channel, text)
 
     @glados.Module.commands('optoutlist')
     def optoutlist(self, message, content):
@@ -80,4 +80,4 @@ class BotModTools(glados.Module):
             text = '**Opted-Out Users**\n{}'.format('\n'.join(['  + ' + x.name for x in optouts]))
         else:
             text = 'No one has opted out.'
-        yield from self.client.send_message(message.channel, text)
+        await self.client.send_message(message.channel, text)

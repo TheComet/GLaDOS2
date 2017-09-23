@@ -18,14 +18,13 @@ class Bot(object):
         self.settings = json.loads(open('settings.json').read())
         self.client = discord.Client()
 
-        self.__command_prefix = self.settings['commands']['prefix']
+        self.__command_prefix = self.settings.setdefault('commands', {}).setdefault('prefix', '.')
         self.__callback_tuples = list()  # list of tuples. (module, command_callback)
         self.__cooldown = Cooldown()
         self.load_modules()
 
         @self.client.event
-        @asyncio.coroutine
-        def on_message(message):
+        async def on_message(message):
 
             # disallow direct messages
             if not message.server:
@@ -36,54 +35,53 @@ class Bot(object):
             matches_to_process = self.__get_matches_that_will_be_executed(message)
 
             # Ignore banned users
-            if message.author.id in self.settings['banned']:
-                # See if any of the modules are blessed. If not, punish
-                if not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in commands_to_process) or \
-                   not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in matches_to_process):
-                    if not self.__try_unban_user(message.author):
-                        expiry = self.settings['banned'][message.author.id]
-                        yield from self.client.send_message(message.author,
-                                'You have been banned from using the bot. Your ban expires: {}'.format(expiry))
-                        return
-            else:
+            #if message.author.id in self.settings['banned']:
+            #    # See if any of the modules are blessed. If not, punish
+            #    if not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in commands_to_process) or \
+            #       not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in matches_to_process):
+            #        if not self.__try_unban_user(message.author):
+            #            expiry = self.settings['banned'][message.author.id]
+            #            await self.client.send_message(message.author,
+            #                    'You have been banned from using the bot. Your ban expires: {}'.format(expiry))
+            #            return
+            #else:
+            if 1 == 1:
                 for command, content in commands:
-                    yield from self.__process_core_commands(message, command, content)
+                    await self.__process_core_commands(message, command, content)
 
             if len(commands_to_process) == 0 and len(matches_to_process) == 0:
                 return ()
 
-            if not message.author.id in self.settings['blessed'] \
-                    and not message.author.id in self.settings['moderators']['IDs'] \
-                    and not message.author.id in self.settings['admins']['IDs']:
-                # See if any of the modules are blessed. If not, punish
-                if not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in commands_to_process) or \
-                   not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in matches_to_process):
-                    cooldown = self.__apply_cooldown(message)
-                    if cooldown:
-                        yield from self.client.send_message(message.author, cooldown)
-                        return
+            #if not message.author.id in self.settings['blessed'] \
+            #        and not message.author.id in self.settings['moderators']['IDs'] \
+            #        and not message.author.id in self.settings['admins']['IDs']:
+            #    # See if any of the modules are blessed. If not, punish
+            #    if not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in commands_to_process) or \
+            #       not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in matches_to_process):
+            #        cooldown = self.__apply_cooldown(message)
+            #        if cooldown:
+            #            await self.client.send_message(message.author, cooldown)
+            #            return
 
             for callback, module, content in commands_to_process:
                 module.set_current_server(message.server.id)  # required for server isolation
-                yield from callback(message, content)
+                await callback(message, content)
 
             for callback, module, match in matches_to_process:
                 module.set_current_server(message.server.id)  # required for server isolation
-                yield from callback(message, match)
+                await callback(message, match)
 
         @self.client.event
-        @asyncio.coroutine
-        def on_ready():
-            #yield from self.__auto_join_channels()
+        async def on_ready():
+            #await self.__auto_join_channels()
             log('Running as {}'.format(self.client.user.name))
 
-    @asyncio.coroutine
-    def __auto_join_channels(self):
+    async def __auto_join_channels(self):
         invite_urls = [url for name, url in self.settings['auto join'].items()]
         for url in invite_urls:
             log('Auto-joining {}'.format(url))
             try:
-                yield from self.client.accept_invite(url)
+                await self.client.accept_invite(url)
             except discord.NotFound:
                 log('Invite has expired')
             except discord.HTTPException as e:
@@ -166,12 +164,17 @@ class Bot(object):
                 x.startswith(cmd_prefix)]
 
     def load_modules(self):
-        add_import_paths(self.settings['modules']['paths'])
+        add_import_paths(self.settings.setdefault('modules', {}).setdefault('paths', [
+            'modules'  # all default glados modules are in this folder
+        ]))
         delayed_successes = list()
         delayed_errors = list()
 
         # load global modules
-        for modfullname in self.settings['modules']['names']:
+        for modfullname in self.settings['modules'].setdefault('names', [
+            'bot.ping.Ping',
+            'bot.uptime.UpTime'
+        ]):
             result = self.__import_module(modfullname)
             if not result is None:
                 delayed_errors.append(result)
@@ -179,7 +182,7 @@ class Bot(object):
                 delayed_successes.append('Loaded global module {}'.format(modfullname))
 
         # load server whitelisted modules
-        for server, modlist in self.settings['modules']['server specific'].items():
+        for server, modlist in self.settings['modules'].setdefault('server specific', {}).items():
             for modfullname in modlist:
                 result = self.__import_module(modfullname, server)
                 if not result is None:
@@ -238,19 +241,22 @@ class Bot(object):
         if len(callback_tuples) > 0:
             self.__callback_tuples += callback_tuples
 
-    def __process_core_commands(self, message, command, content):
+    async def __process_core_commands(self, message, command, content):
         # Ignore bots
         if message.author.bot:
             return
 
-        if command == self.settings['commands']['help']:
-            yield from self.__process_help_command(message, content)
-        elif command == self.settings['commands']['modhelp']:
-            yield from self.__process_modhelp_command(message, content)
-        elif command == self.settings['commands']['optout']:
-            yield from self.__process_optout_command(message, content)
-        elif command == self.settings['commands']['optin']:
-            yield from self.__process_optin_command(message, content)
+        if command == self.settings['commands'].setdefault('help', 'help'):
+            await self.__process_help_command(message, content)
+        elif command == self.settings['commands'].setdefault('modhelp', 'modhelp'):
+            await self.__process_modhelp_command(message, content)
+        elif command == self.settings['commands'].setdefault('optout', 'optout'):
+            await self.__process_optout_command(message, content)
+        elif command == self.settings['commands'].setdefault('optin', 'optin'):
+            await self.__process_optin_command(message, content)
+
+        # TODO remove
+        return ()
 
         is_mod = message.author.id in self.settings['moderators']['IDs'] or \
                  len(set(x.name for x in message.author.roles).intersection(set(self.settings['moderators']['roles']))) > 0
@@ -273,34 +279,34 @@ class Bot(object):
         # commands that require moderator privileges
         if command in mod_commands:
             if not is_mod and not is_admin:
-                yield from self.client.send_message(message.author, 'You must be a moderator to use this command')
+                await self.client.send_message(message.author, 'You must be a moderator to use this command')
                 return
         if command == self.settings['commands']['ban']:
-            yield from self.__process_ban_command(message, content)
+            await self.__process_ban_command(message, content)
         elif command == self.settings['commands']['unban']:
-            yield from self.__process_unban_command(message, content)
+            await self.__process_unban_command(message, content)
         elif command == self.settings['commands']['bless']:
-            yield from self.__process_bless_command(message, content)
+            await self.__process_bless_command(message, content)
         elif command == self.settings['commands']['unbless']:
-            yield from self.__process_unbless_command(message, content)
+            await self.__process_unbless_command(message, content)
 
         # Remaining commands require admin privileges
         if command in admin_commands:
             if not is_admin:
-                yield from self.client.send_message(message.author, 'You must be an administrator to use this command')
+                await self.client.send_message(message.author, 'You must be an administrator to use this command')
                 return
         if command == self.settings['commands']['mod']:
-            yield from self.__process_mod_command(message, content)
+            await self.__process_mod_command(message, content)
         elif command == self.settings['commands']['unmod']:
-            yield from self.__process_unmod_command(message, content)
+            await self.__process_unmod_command(message, content)
         elif command == self.settings['commands']['reload']:
-            yield from self.__process_reload_command(message, content)
+            await self.__process_reload_command(message, content)
         elif command == self.settings['commands']['say']:
-            yield from admin_commands[command](message, content)
+            await admin_commands[command](message, content)
         else:
             return None
 
-    def __process_help_command(self, message, content):
+    async def __process_help_command(self, message, content):
         # creates a list of relevant modules
         relevant_modules = set(module for c, module in self.__callback_tuples
                                if len(module.server_whitelist) == 0
@@ -320,17 +326,17 @@ class Bot(object):
         do_announce = False
         for msg in self.__concat_into_valid_message(relevant_help):
             do_announce = True
-            yield from self.client.send_message(message.author, msg)
+            await self.client.send_message(message.author, msg)
         if do_announce:
             if not message.author.id in self.settings['banned']:
-                yield from self.client.send_message(message.channel,
+                await self.client.send_message(message.channel,
                                                     'I\'m sending you a gigantic wall of direct message with a list of commands!')
 
-    def __process_modhelp_command(self, message, content):
+    async def __process_modhelp_command(self, message, content):
         # If the user was banned, don't announce the help sending
         if not message.author.id in self.settings['banned']:
-            yield from self.client.send_message(message.channel, "I just PM'd you the help list!")
-        yield from self.client.send_message(message.author,
+            await self.client.send_message(message.channel, "I just PM'd you the help list!")
+        await self.client.send_message(message.author,
                 "{0}{1} **<user> [hours]** -- Blacklist the specified user from using the bot for the "
                 "specified number of hours. The default number of hours is 24. Specifying a value"
                 " of 0 will cause the user to be perma-banned. The ban is based on user ID.\n"
@@ -345,34 +351,34 @@ class Bot(object):
                     self.settings['commands']['unbless'])
         )
 
-    def __process_optout_command(self, message, content):
+    async def __process_optout_command(self, message, content):
         if message.author.id in self.settings['optout']:
-            yield from self.client.send_message(message.channel, 'User "{}" is already opted out.'.format(message.author.name))
+            await self.client.send_message(message.channel, 'User "{}" is already opted out.'.format(message.author.name))
             return
 
         self.settings['optout'].append(message.author.id)
         self.__save_settings()
 
-        yield from self.client.send_message(message.channel,
+        await self.client.send_message(message.channel,
                         'User "{}" has opted out. The bot will no longer log any of your activity. '
                         'This also means you won\'t be able to use any of the statistic commands, such '
                         'as `.quote` or `.zipf`. If you want your existing data to be deleted, ask the '
                         'bot owner.'.format(message.author.name))
 
-    def __process_optin_command(self, message, content):
+    async def __process_optin_command(self, message, content):
         if not message.author.id in self.settings['optout']:
-            yield from self.client.send_message(message.channel, 'User "{}" is already opted in.'.format(message.author.name))
+            await self.client.send_message(message.channel, 'User "{}" is already opted in.'.format(message.author.name))
             return
 
         self.settings['optout'].remove(message.author.id)
         self.__save_settings()
 
-        yield from self.client.send_message(message.channel, 'User "{}" has opted in. The bot will collect logs on you '
+        await self.client.send_message(message.channel, 'User "{}" has opted in. The bot will collect logs on you '
                         'for commands such as `.quote` or `.zipf` to function correctly.'.format(message.author.name))
 
-    def __process_ban_command(self, message, content):
+    async def __process_ban_command(self, message, content):
         if content == '':
-            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            await self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
             return
 
         args = content.split()
@@ -381,7 +387,7 @@ class Bot(object):
         # If result is a string, then it is an error message.
         results = self.__get_members_from_string(message, author)
         if isinstance(results, str):
-            yield from self.client.send_message(message.channel, results)
+            await self.client.send_message(message.channel, results)
             return
 
         # If you are a moderator, then you can't ban admins
@@ -391,7 +397,7 @@ class Bot(object):
             for member in results:
                 is_admin = member.id in self.settings['admins']['IDs']
                 if is_admin:
-                    yield from self.client.send_message(message.channel, 'Moderators can\'t ban admins')
+                    await self.client.send_message(message.channel, 'Moderators can\'t ban admins')
                     return
 
         # Default ban length is 24 hours
@@ -414,26 +420,26 @@ class Bot(object):
         self.__save_settings()
 
         users_banned = ', '.join([x.name for x in results])
-        yield from self.client.send_message(message.channel, 'User(s) "{}" is banned from using this bot until {}'.format(users_banned, expiry_date))
+        await self.client.send_message(message.channel, 'User(s) "{}" is banned from using this bot until {}'.format(users_banned, expiry_date))
 
-    def __process_unban_command(self, message, content):
+    async def __process_unban_command(self, message, content):
         if content == '':
-            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            await self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
             return
 
         # If result is a string, then it is an error message.
         author = content.split()[0]
         results = self.__get_members_from_string(message, author)
         if isinstance(results, str):
-            yield from self.client.send_message(message.channel, results)
+            await self.client.send_message(message.channel, results)
             return
 
         for member in results:
             if not member.id in self.settings['banned']:
-                yield from self.client.send_message(message.channel, 'User "{}" isn\'t banned'.format(member))
+                await self.client.send_message(message.channel, 'User "{}" isn\'t banned'.format(member))
             else:
                 self.__unban_user(member)
-                yield from self.client.send_message(message.channel, 'Unbanned user "{}"'.format(member))
+                await self.client.send_message(message.channel, 'Unbanned user "{}"'.format(member))
 
     def __try_unban_user(self, member):
         if not member.id in self.settings['banned']:
@@ -452,9 +458,9 @@ class Bot(object):
         del self.settings['banned'][member.id]
         self.__save_settings()
 
-    def __process_bless_command(self, message, content):
+    async def __process_bless_command(self, message, content):
         if content == '':
-            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            await self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
             return
 
         args = content.split(' ', 1)
@@ -463,40 +469,40 @@ class Bot(object):
         # If result is a string, then it is an error message.
         results = self.__get_members_from_string(message, author)
         if isinstance(results, str):
-            yield from self.client.send_message(message.channel, results)
+            await self.client.send_message(message.channel, results)
             return
 
         for member in results:
             if member.id in self.settings['blessed']:
-                yield from self.client.send_message(message.channel, 'User "{}" is already blessed'.format(member))
+                await self.client.send_message(message.channel, 'User "{}" is already blessed'.format(member))
             else:
                 self.settings['blessed'].append(member.id)
-                yield from self.client.send_message(message.channel, 'User "{}" has been blessed.'.format(member))
+                await self.client.send_message(message.channel, 'User "{}" has been blessed.'.format(member))
         self.__save_settings()
 
-    def __process_unbless_command(self, message, content):
+    async def __process_unbless_command(self, message, content):
         if content == '':
-            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            await self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
             return
 
         # If result is a string, then it is an error message.
         author = content.split()[0]
         results = self.__get_members_from_string(message, author)
         if isinstance(results, str):
-            yield from self.client.send_message(message.channel, results)
+            await self.client.send_message(message.channel, results)
             return
 
         for member in results:
             if not member.id in self.settings['blessed']:
-                yield from self.client.send_message(message.channel, 'User "{}" isn\'t blessed'.format(member))
+                await self.client.send_message(message.channel, 'User "{}" isn\'t blessed'.format(member))
             else:
                 self.settings['blessed'].remove(member.id)
-                yield from self.client.send_message(message.channel, 'User "{}" has been unblessed'.format(member))
+                await self.client.send_message(message.channel, 'User "{}" has been unblessed'.format(member))
         self.__save_settings()
 
-    def __process_mod_command(self, message, content):
+    async def __process_mod_command(self, message, content):
         if content == '':
-            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            await self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
             return
 
         args = content.split(' ', 1)
@@ -505,52 +511,52 @@ class Bot(object):
         # If result is a string, then it is an error message.
         results = self.__get_members_from_string(message, author)
         if isinstance(results, str):
-            yield from self.client.send_message(message.channel, results)
+            await self.client.send_message(message.channel, results)
             return
 
         for member in results:
             if member.id in self.settings['moderators']['IDs']:
-                yield from self.client.send_message(message.channel, 'User "{}" is already a moderator'.format(member))
+                await self.client.send_message(message.channel, 'User "{}" is already a moderator'.format(member))
             else:
                 self.settings['moderators']['IDs'].append(member.id)
-                yield from self.client.send_message(message.channel, 'User "{}" is now a bot moderator. Type `.modhelp` to learn about your new powers!'.format(member))
+                await self.client.send_message(message.channel, 'User "{}" is now a bot moderator. Type `.modhelp` to learn about your new powers!'.format(member))
         self.__save_settings()
 
-    def __process_unmod_command(self, message, content):
+    async def __process_unmod_command(self, message, content):
         if content == '':
-            yield from self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
+            await self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
             return
 
         # If result is a string, then it is an error message.
         author = content.split()[0]
         results = self.__get_members_from_string(message, author)
         if isinstance(results, str):
-            yield from self.client.send_message(message.channel, results)
+            await self.client.send_message(message.channel, results)
             return
 
         for member in results:
             if not member.id in self.settings['moderators']['IDs']:
-                yield from self.client.send_message(message.channel, 'User "{}" isn\'t a moderator!'.format(member))
+                await self.client.send_message(message.channel, 'User "{}" isn\'t a moderator!'.format(member))
             else:
                 self.settings['moderators']['IDs'].remove(member.id)
-                yield from self.client.send_message(message.channel, 'User "{}" is no longer a moderator'.format(member))
+                await self.client.send_message(message.channel, 'User "{}" is no longer a moderator'.format(member))
         self.__save_settings()
 
-    def __process_reload_command(self, message, content):
+    async def __process_reload_command(self, message, content):
         self.settings = json.loads(open('settings.json').read())
-        yield from self.client.send_message(message.channel, 'Reloaded settings')
+        await self.client.send_message(message.channel, 'Reloaded settings')
 
-    def __process_say_command(self, message, content):
+    async def __process_say_command(self, message, content):
         parts = content.split(' ', 2)
         if len(parts) < 3:
-            yield from self.client.send_message(message.channel, 'Error: Specify server name or ID, then channel name or ID. Example: ``.say <server> <channel> <message>``')
+            await self.client.send_message(message.channel, 'Error: Specify server name or ID, then channel name or ID. Example: ``.say <server> <channel> <message>``')
             return
 
         # find relevant channel
         for channel in self.client.get_all_channels():
             if channel.server.id == parts[0] or channel.server.name == parts[0]:
                 if channel.id == parts[1] or channel.name.strip('#') == parts[1].strip('#'):
-                    yield from self.client.send_message(channel, parts[2])
+                    await self.client.send_message(channel, parts[2])
                     return
         return tuple()
 
@@ -604,14 +610,20 @@ class Bot(object):
         return [(member, m) for name, member in inspect.getmembers(m, predicate=inspect.ismethod)
                 if hasattr(member, 'commands') or hasattr(member, 'rules') or hasattr(member, 'bot_rules')]
 
-    @asyncio.coroutine
-    def login(self):
+    async def login(self):
         log('Connecting...')
-        if self.settings['login']['method'] == 'token':
-            yield from self.client.login(self.settings['login']['token'])
+        args = list()
+        token = self.settings.setdefault('login', {}).setdefault('token', 'OAuth2 Token')
+        email = self.settings['login'].setdefault('email', 'address')
+        password = self.settings['login'].setdefault('password', 'secretpass')
+        if self.settings['login'].setdefault('method', 'token') == 'token':
+            args.append(token)
         else:
-            yield from self.client.login(self.settings['login']['email'], self.settings['login']['password'])
-        yield from self.client.connect()
+            args.append(email)
+            args.append(password)
+
+        await self.client.login(*args)
+        await self.client.connect()
 
     def run(self):
         loop = asyncio.get_event_loop()
@@ -622,3 +634,4 @@ class Bot(object):
             raise
         finally:
             loop.close()
+            self.__save_settings()

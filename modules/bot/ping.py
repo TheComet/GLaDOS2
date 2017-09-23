@@ -9,5 +9,5 @@ class Ping(glados.Module):
         ]
 
     @glados.Module.commands('ping')
-    def ball(self, message, content):
-        yield from self.client.send_message(message.channel, 'pong')
+    async def ball(self, message, content):
+        await self.client.send_message(message.channel, 'pong')

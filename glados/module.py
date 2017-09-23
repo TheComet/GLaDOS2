@@ -23,7 +23,7 @@ class Module(object):
     def set_settings(self, settings):
         self.settings = settings
         self.__command_prefix = settings['commands']['prefix']
-        self.__config_path = self.settings['modules']['config path']
+        self.__config_path = self.settings['modules'].setdefault('config path', 'data')
 
     def set_current_server(self, server_id):
         self.__server_specific_name = self.full_name + server_id
@@ -62,12 +62,12 @@ class Module(object):
             self.__memories[self.__server_specific_name] = dict()
             self.setup_memory()  # calls derived
 
-    def provide_help(self, command, message):
+    async def provide_help(self, command, message):
         """
         If the user has entered an invalid command, you can call this function to send help to the user.
         Example:
             if user_didnt_use_hello_command_correctly:
-                yield from self.provide_help('hello', client, message)
+                await self.provide_help('hello', client, message)
         :param command: A string specifying the command the user tried to use. This string needs to exist in one of the
         glados.Help objects returned by get_help_list().
         :param client: The discord.client
@@ -76,7 +76,7 @@ class Module(object):
         """
         for hlp in self.get_help_list():
             if hlp.command == command:
-                yield from self.client.send_message(message.channel, self.__command_prefix + hlp.get())
+                await self.client.send_message(message.channel, self.__command_prefix + hlp.get())
 
     def get_help_list(self):
         """
@@ -106,7 +106,7 @@ class Module(object):
             class Hello(glados.Module):
                 @glados.Mdoule.commands('hello', 'hi')
                 def respond_to_hello(self, client, message, content):
-                    yield from client.send_message(message.channel, 'Hi! {}'.format(message.author.name))
+                    await client.send_message(message.channel, 'Hi! {}'.format(message.author.name))
 
         In this case, sending either ".hello" or ".hi" will cause your function respond_to_hello() to be called.
 
@@ -131,7 +131,7 @@ class Module(object):
             class Hello(glados.Module):
                 @glados.Mdoule.rules('^.*(I like books).*$')
                 def respond_to_books(self, client, message, match):
-                    yield from client.send_message(message.channel, 'So you like books, {}?'.format(message.author.name))
+                    await client.send_message(message.channel, 'So you like books, {}?'.format(message.author.name))
 
         In this case, if any message contains the phrase "I like books", then the function respond_to_books() will be
         called.

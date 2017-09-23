@@ -78,10 +78,10 @@ class Sub(glados.Module):
     @glados.Module.commands('sub')
     def subscribe(self, message, regex):
         if regex == '':
-            yield from self.provide_help('sub', message)
+            await self.provide_help('sub', message)
             return
         if len(regex) > 128:
-            yield from self.client.send_message(message.channel, 'Limit of 128 characters exceeded!')
+            await self.client.send_message(message.channel, 'Limit of 128 characters exceeded!')
             return
 
         if len(regex) < 5:
@@ -90,7 +90,7 @@ class Sub(glados.Module):
         try:
             compiled_regex = re.compile(regex, flags=re.IGNORECASE)
         except re.error as e:
-            yield from self.client.send_message(message.channel, str(e))
+            await self.client.send_message(message.channel, str(e))
             return
 
         memory = self.get_memory()
@@ -98,19 +98,19 @@ class Sub(glados.Module):
         if message.author.id not in memory['subs']:
             memory['subs'][message.author.id] = list()
         if len(memory['subs'][message.author.id]) >= 15:
-            yield from self.client.send_message(message.channel, 'Limit of 15 rules exceeded!')
+            await self.client.send_message(message.channel, 'Limit of 15 rules exceeded!')
             return
 
         memory['subs'][message.author.id].append(regex)
         memory['regex'].append((compiled_regex, message.author))
         self.__save_subs()
 
-        yield from self.client.send_message(message.channel, '{} added subscription #{} (``{}``)'.format(message.author.name, len(memory['subs'][message.author.id]), regex))
+        await self.client.send_message(message.channel, '{} added subscription #{} (``{}``)'.format(message.author.name, len(memory['subs'][message.author.id]), regex))
 
     @glados.Module.commands('unsub')
     def unsubscribe(self, message, args):
         if args == '':
-            yield from self.provide_help('unsub', message)
+            await self.provide_help('unsub', message)
             return
 
         if len(message.mentions) > 0:
@@ -118,7 +118,7 @@ class Sub(glados.Module):
                      len(set(x.name for x in message.author.roles).intersection(
                          set(self.settings['moderators']['roles']))) > 0
             if not is_mod and not message.author.id in self.settings['admins']['IDs']:
-                yield from self.client.send_message(message.channel, 'Only botmods can delete subscriptions from other users')
+                await self.client.send_message(message.channel, 'Only botmods can delete subscriptions from other users')
                 return ()
 
             member = message.mentions[0]
@@ -128,7 +128,7 @@ class Sub(glados.Module):
 
         memory = self.get_memory()
         if member.id not in memory['subs']:
-            yield from self.client.send_message(message.channel, '{} has no subscriptions'.format(member.name))
+            await self.client.send_message(message.channel, '{} has no subscriptions'.format(member.name))
             return
 
         try:
@@ -136,7 +136,7 @@ class Sub(glados.Module):
             if any(i > len(memory['subs'][member.id]) or i < 1 for i in indices):
                 raise ValueError('Out of range')
         except ValueError:
-            yield from self.client.send_message(message.channel, 'Invalid parameter! (Is it a number?)')
+            await self.client.send_message(message.channel, 'Invalid parameter! (Is it a number?)')
             return
 
         memory['subs'][member.id] = [x for i, x in enumerate(memory['subs'][member.id])
@@ -146,7 +146,7 @@ class Sub(glados.Module):
         self.__recompile_regex()
         self.__save_subs()
 
-        yield from self.client.send_message(message.channel, '{} unsubscribed from {}'.format(member.name, ', '.join(str(x) for x in indices)))
+        await self.client.send_message(message.channel, '{} unsubscribed from {}'.format(member.name, ', '.join(str(x) for x in indices)))
 
     @glados.Module.commands('subs')
     def toggle_subscription_feature(self, message, args):
@@ -158,7 +158,7 @@ class Sub(glados.Module):
 
         self.__enabled = not self.__enabled
         msg = 'enabled' if self.__enabled else 'disabled'
-        yield from self.client.send_message(message.channel, 'Subscription system {}'.format(msg))
+        await self.client.send_message(message.channel, 'Subscription system {}'.format(msg))
 
     @glados.Module.commands('sublist')
     def list_subscriptions(self, message, user):
@@ -176,18 +176,18 @@ class Sub(glados.Module):
                         member = m
                         break
                 if member is None:
-                    yield from self.client.send_message(message.channel, 'User "{}" not found'.format(user_name))
+                    await self.client.send_message(message.channel, 'User "{}" not found'.format(user_name))
                     return
 
         memory = self.get_memory()
         if member.id not in memory['subs']:
-            yield from self.client.send_message(message.channel, 'User "{}" has no subscriptions'.format(member.name))
+            await self.client.send_message(message.channel, 'User "{}" has no subscriptions'.format(member.name))
             return
 
         msg = '{} is subscribed to\n'.format(member.name)
         for i, regex in enumerate(memory['subs'][member.id]):
             msg += '  #{} `{}`'.format(i+1, regex)
-        yield from self.client.send_message(message.channel, msg)
+        await self.client.send_message(message.channel, msg)
 
     @glados.Module.rules('^((?!\.\w+).*)$')
     def on_message(self, message, match):
@@ -224,7 +224,7 @@ class Sub(glados.Module):
                 match = timeout_match(regex, message.content)
             except TimeoutError:
                 members_to_remove.append(subscribed_author.id)
-                yield from self.client.send_message(message.channel, 'Shit regex detected, removing sublist of {}'.format(subscribed_author.name))
+                await self.client.send_message(message.channel, 'Shit regex detected, removing sublist of {}'.format(subscribed_author.name))
                 continue
             if match is None:
                 continue
@@ -239,7 +239,7 @@ class Sub(glados.Module):
                     pattern = regex.pattern
                     if len(pattern) > 30:
                         pattern = pattern[:30] + '...'
-                    yield from self.client.send_message(subscribed_author, '[sub][{}][{}] (``{}``) ```{}: {}```'.format(message.server.name, message.channel.name, pattern, message.author.name, message.content))
+                    await self.client.send_message(subscribed_author, '[sub][{}][{}] (``{}``) ```{}: {}```'.format(message.server.name, message.channel.name, pattern, message.author.name, message.content))
                     #msg += ' {} (`{}`)'.format(subscribed_author.mention, pattern)
                     memory['times'][subscribed_author.id] = datetime.now()
                 else:
@@ -247,7 +247,7 @@ class Sub(glados.Module):
                     members_to_remove.append(subscribed_author.id)
 
         #if msg != '':
-            #yield from self.client.send_message(message.channel, '[sub]{}'.format(msg))
+            #await self.client.send_message(message.channel, '[sub]{}'.format(msg))
 
         for member_id in members_to_remove:
             try:

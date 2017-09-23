@@ -19,13 +19,13 @@ class IsUp(glados.Module):
         """isup.me website status checker"""
 
         if not site:
-            yield from self.provide_help('isup', message)
+            await self.provide_help('isup', message)
             return
 
         if site[:7] != 'http://' and site[:8] != 'https://':
             if '://' in site:
                 protocol = site.split('://')[0] + '://'
-                yield from self.client.send_message(message.channel, "Try it again without the {}".format(protocol))
+                await self.client.send_message(message.channel, "Try it again without the {}".format(protocol))
                 return
             else:
                 site = 'https://' + site
@@ -36,15 +36,15 @@ class IsUp(glados.Module):
         try:
             response = urllib.request.urlopen(site).read()
         except Exception:
-            yield from self.client.send_message(message.channel, site + ' looks down from here.')
+            await self.client.send_message(message.channel, site + ' looks down from here.')
             return
 
         if response:
-            yield from self.client.send_message(message.channel, site + ' looks fine to me.')
+            await self.client.send_message(message.channel, site + ' looks fine to me.')
         else:
-            yield from self.client.send_message(message.channel, site + ' is down from here.')
+            await self.client.send_message(message.channel, site + ' is down from here.')
 
     @glados.Module.rules(r'(?i).*?(gdnet|gd.net|gamedev|gamedev.net).*?(down\??)')
     def is_gdnet_down(self, message, match):
-        yield from self.isup(message, 'https://gamedev.net')
+        await self.isup(message, 'https://gamedev.net')
     

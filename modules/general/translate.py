@@ -61,11 +61,11 @@ class Translate(glados.Module):
 #        in_lang, out_lang, phrase = match.groups()
 #
 #        if len(phrase) > 350:
-#            yield from self.client.send_message(message.channel, 'Phrase must be under 350 characters.')
+#            await self.client.send_message(message.channel, 'Phrase must be under 350 characters.')
 #            return
 #
 #        if phrase.strip() == '':
-#            yield from self.client.send_message(message.channel, 'You need to specify a string for me to translate!')
+#            await self.client.send_message(message.channel, 'You need to specify a string for me to translate!')
 #            return
 #
 #        in_lang = in_lang or 'auto'
@@ -79,14 +79,14 @@ class Translate(glados.Module):
 #            else:
 #                msg = 'The %s to %s translation failed, are you sure you specified valid language abbreviations?' % (in_lang, out_lang)
 #
-#            yield from self.client.send_message(message.channel, msg)
+#            await self.client.send_message(message.channel, msg)
 #        else:
-#            yield from self.client.send_message(message.channel, 'Language guessing failed, so try suggesting one!')
+#            await self.client.send_message(message.channel, 'Language guessing failed, so try suggesting one!')
 
     @glados.Module.commands('translate', 'tr')
     def tr2(self, message, command):
         if not command:
-            yield from self.provide_help('tr', message)
+            await self.provide_help('tr', message)
             return
 
         def langcode(p):
@@ -104,11 +104,11 @@ class Translate(glados.Module):
         phrase = command
 
         if len(phrase) > 350:
-            yield from self.client.send_message(message.channel, 'Phrase must be under 350 characters.')
+            await self.client.send_message(message.channel, 'Phrase must be under 350 characters.')
             return
 
         if phrase.strip() == '':
-            yield from self.client.send_message(message.channel, 'You need to specify a string for me to translate!')
+            await self.client.send_message(message.channel, 'You need to specify a string for me to translate!')
             return
 
         src, dest = args
@@ -120,6 +120,6 @@ class Translate(glados.Module):
             else:
                 msg = 'The %s to %s translation failed, are you sure you specified valid language abbreviations?' % (src, dest)
 
-            yield from self.client.send_message(message.channel, msg)
+            await self.client.send_message(message.channel, msg)
         else:
-            yield from self.client.send_message(message.channel, 'Language guessing failed, so try suggesting one!')
+            await self.client.send_message(message.channel, 'Language guessing failed, so try suggesting one!')

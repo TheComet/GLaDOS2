@@ -16,7 +16,7 @@ class Fact(glados.Module):
         soup = BeautifulSoup(response, 'lxml')
         fact_div = soup.find('div', {'id': 'z'})
         if len(fact_div.contents) == 0:
-            yield from self.client.send_message(message.channel, 'Something broke.')
+            await self.client.send_message(message.channel, 'Something broke.')
         else:
-            yield from self.client.send_message(message.channel, fact_div.contents[0])
+            await self.client.send_message(message.channel, fact_div.contents[0])
 

@@ -59,7 +59,7 @@ class R9K(glados.Module):
             except KeyError:
                 msg = '{} has never been unoriginal'.format(user_name)
 
-        yield from self.client.send_message(message.channel, msg)
+        await self.client.send_message(message.channel, msg)
 
     # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Module.rules('^((?!\.\w+).*)$')
@@ -86,7 +86,7 @@ class R9K(glados.Module):
                 phrase = match.group(1)
                 if len(phrase) > 40:
                     phrase = phrase[:40] + '...'
-                yield from self.client.send_message(message.channel, '[r9k] The phrase `{}` is unoriginal!'.format(phrase))
+                await self.client.send_message(message.channel, '[r9k] The phrase `{}` is unoriginal!'.format(phrase))
 
             # update scores
             memory['scores'][author]['score'] += 1

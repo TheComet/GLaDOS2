@@ -15,8 +15,8 @@ class ShowIP(glados.Module):
     @glados.Module.commands('showip')
     def showip(self, message, content):
         if content == '':
-            yield from self.provide_help('showip', message)
+            await self.provide_help('showip', message)
             return
 
         ret = check_output(['/usr/local/bin/showip', content]).decode('utf-8')
-        yield from self.client.send_message(message.channel, ret)
+        await self.client.send_message(message.channel, ret)

@@ -27,7 +27,7 @@ class Burn(glados.Module):
         global burns
 
         if content == "":
-            yield from self.provide_help('burn', message)
+            await self.provide_help('burn', message)
             return
 
         user_being_burned = content.strip('@')
@@ -47,4 +47,4 @@ class Burn(glados.Module):
         response = "@{0} {1}\n{2}: {3}\n{4}: {5}".format(user_being_burned, burn,
                                                          user_burning, self.get_memory()['burns'][user_burning][user_being_burned],
                                                          user_being_burned, self.get_memory()['burns'][user_being_burned][user_burning])
-        yield from self.client.send_message(message.channel, response)
+        await self.client.send_message(message.channel, response)

@@ -27,5 +27,5 @@ class Shrug(glados.Module):
     @glados.Module.commands('shrug')
     def shrug(self, message, args):
         shrug = random.choice(shrugs)
-        yield from self.client.send_message(message.channel, shrug)
+        await self.client.send_message(message.channel, shrug)
 

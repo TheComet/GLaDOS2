@@ -23,7 +23,7 @@ class PushNotifier(glados.Module):
         print('started server')
         while True:
             loop = asyncio.get_event_loop()
-            msg = yield from loop.run_in_executor(None, ps.stdout.readline)
+            msg = await loop.run_in_executor(None, ps.stdout.readline)
             msg = msg.decode('utf-8')
             fixed_json = msg.split('127.0.0.1')[0]
             #fixed_json = broken_json.replace('"', '__tmp__').replace('"', "'").replace('__tmp__', "'").replace(': ,', ': "",').replace('True', '"True"').replace('False', '"False"').replace('None', '"None"')
@@ -47,5 +47,5 @@ class PushNotifier(glados.Module):
             msg = '{} pushed to {}: "{}".'.format(author, repo, message)
             for channel in self.client.get_all_channels():
                 if channel.id in self.__channels:
-                    yield from self.client.send_message(channel, msg)
+                    await self.client.send_message(channel, msg)
 

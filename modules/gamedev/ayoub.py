@@ -6,5 +6,5 @@ class Ayoub(glados.Module):
 
     @glados.Module.commands('ayoub')
     def ayoub(self, message, args):
-        yield from self.client.send_file(message.channel, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ayoub.jpg'))
+        await self.client.send_file(message.channel, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ayoub.jpg'))
 

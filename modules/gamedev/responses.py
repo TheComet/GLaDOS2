@@ -20,7 +20,7 @@ class Goto(glados.Module):
 
     @glados.Module.rules('^.*goto.*$')
     def goto(self, message, match):
-        yield from self.client.send_message(message.channel, random.choice(self.responses).format(message.author.name))
+        await self.client.send_message(message.channel, random.choice(self.responses).format(message.author.name))
 
 
 class Singleton(glados.Module):
@@ -41,4 +41,4 @@ class Singleton(glados.Module):
 
     @glados.Module.rules('^.*singleton.*$')
     def singletons(self, message, match):
-        yield from self.client.send_message(message.channel, random.choice(self.responses).format(message.author.name))
+        await self.client.send_message(message.channel, random.choice(self.responses).format(message.author.name))

@@ -131,7 +131,7 @@ class LaTeX(glados.Module):
     def on_message(self, message, content):
 
         if content == '':
-            yield from self.provide_help('math', message)
+            await self.provide_help('math', message)
             return
 
         if any(x in content for x in self.__latex_blacklist):
@@ -142,7 +142,7 @@ class LaTeX(glados.Module):
                 message.server.name,
                 message.channel.name
             ))
-            yield from self.client.send_message(message.channel, "Error: Trying to be naughty, are we?")
+            await self.client.send_message(message.channel, "Error: Trying to be naughty, are we?")
             return
 
         # troll dsm
@@ -152,12 +152,12 @@ class LaTeX(glados.Module):
         fn = self.generate_image(content)
 
         if not fn[0]:
-            yield from self.client.send_message(message.channel, fn[1])
+            await self.client.send_message(message.channel, fn[1])
             return
         if os.path.getsize(fn[1]) > 0:
             try:
-                yield from self.client.send_file(message.channel, fn[1])
+                await self.client.send_file(message.channel, fn[1])
             except discord.errors.Forbidden:
                 error = 'Error: Insufficient permissions to send file files to channel #{}'.format(message.channel.name)
                 glados.log(error)
-                yield from self.client.send_message(message.channel, error)
+                await self.client.send_message(message.channel, error)

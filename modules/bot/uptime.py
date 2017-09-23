@@ -31,6 +31,6 @@ class UpTime(glados.Module):
         ]
 
     @glados.Module.commands('uptime')
-    def uptime(self, message, arg):
+    async def uptime(self, message, arg):
         delta = timedelta(seconds=round((datetime.utcnow() - self.__started).total_seconds()))
-        yield from self.client.send_message(message.channel, random.choice(self.messages).format(delta))
+        await self.client.send_message(message.channel, random.choice(self.messages).format(delta))

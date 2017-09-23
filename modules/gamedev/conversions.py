@@ -19,7 +19,7 @@ class Conversions(glados.Module):
     @glados.Module.commands('bin')
     def bin(self, message, data):
         if data == '':
-            yield from self.provide_help('bin', message)
+            await self.provide_help('bin', message)
             return
 
         data = self.convert_type(data)
@@ -33,12 +33,12 @@ class Conversions(glados.Module):
         else:
             data = 'Interpreted as decimal: ```{}```'.format(bin(data).rjust(8, '0'))
 
-        yield from self.client.send_message(message.channel, data)
+        await self.client.send_message(message.channel, data)
 
     @glados.Module.commands('hex')
     def hex(self, message, data):
         if data == '':
-            yield from self.provide_help('hex', message)
+            await self.provide_help('hex', message)
             return
 
         data = self.convert_type(data)
@@ -52,12 +52,12 @@ class Conversions(glados.Module):
         else:
             data = 'Interpreted as unsigned integer: ```{}```'.format(hex(data).replace('0x', '').rjust(2, '0'))
 
-        yield from self.client.send_message(message.channel, data)
+        await self.client.send_message(message.channel, data)
 
     @glados.Module.commands('dec')
     def dec(self, message, data):
         if data == '':
-            yield from self.provide_help('dec', message)
+            await self.provide_help('dec', message)
             return
 
         if self.is_binary(data):
@@ -65,34 +65,34 @@ class Conversions(glados.Module):
         elif self.is_hex(data):
             data = 'Interpreted as hex: ```{}```'.format(self.hex_to_decimal(data))
         else:
-            yield from self.client.send_message(message.channel, 'Conversion not implemented')
+            await self.client.send_message(message.channel, 'Conversion not implemented')
             return
 
-        yield from self.client.send_message(message.channel, data)
+        await self.client.send_message(message.channel, data)
 
     @glados.Module.commands('b64e')
     def b64e(self, message, data):
         if data == '':
-            yield from self.provide_help('b64e', message)
+            await self.provide_help('b64e', message)
             return
 
         try:
             data = 'Encoded base64: ```{}```'.format(base64.b64encode(str(data).encode()).decode())
         except:
             data = 'Encoding failed.'
-        yield from self.client.send_message(message.channel, data)
+        await self.client.send_message(message.channel, data)
 
     @glados.Module.commands('b64d')
     def b64d(self, message, data):
         if data == '':
-            yield from self.provide_help('b64d', message)
+            await self.provide_help('b64d', message)
             return
 
         try:
             data = 'Decoded base64: ```{}```'.format(base64.b64decode(str(data).encode()).decode())
         except:
             data = 'Decoding failed.'
-        yield from self.client.send_message(message.channel, data)
+        await self.client.send_message(message.channel, data)
 
     @staticmethod
     def convert_type(data):

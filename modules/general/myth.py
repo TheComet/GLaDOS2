@@ -26,13 +26,13 @@ class Myth(glados.Module):
     @glados.Module.commands('addmyth')
     def addmyth(self, message, content):
         if content == '':
-            yield from self.provide_help('addmyth', message)
+            await self.provide_help('addmyth', message)
             return
 
         author = message.author.name
 
         if len(content) < 10:
-            yield from self.client.send_message(message.channel, 'Good myths are longer')
+            await self.client.send_message(message.channel, 'Good myths are longer')
             return ()
 
         new_id = 1
@@ -49,31 +49,31 @@ class Myth(glados.Module):
             content = content.replace('\n', '\\n')
             f.write('{}:{}:{}\n'.format(new_id, content, author))
 
-        yield from self.client.send_message(message.channel, 'Myth #{} added.'.format(new_id))
+        await self.client.send_message(message.channel, 'Myth #{} added.'.format(new_id))
 
     @glados.Module.commands('delmyth')
     def delmyth(self, message, content):
         if content == '':
-            yield from self.provide_help('delmyth', message)
+            await self.provide_help('delmyth', message)
             return
 
         is_mod = message.author.id in self.settings['moderators']['IDs'] or \
                  len(set(x.name for x in message.author.roles).intersection(
                      set(self.settings['moderators']['roles']))) > 0
         if not is_mod and not message.author.id in self.settings['admins']['IDs']:
-            yield from self.client.send_message(message.channel, 'Only botmods can delete myths')
+            await self.client.send_message(message.channel, 'Only botmods can delete myths')
             return ()
 
         memory = self.get_memory()
         if not os.path.isfile(memory['data file']):
-            yield from self.client.send_message(message.channel, 'Myth dB does not exist')
+            await self.client.send_message(message.channel, 'Myth dB does not exist')
             return
 
         with codecs.open(memory['data file'], 'r', encoding='utf-8') as f:
             lines = f.readlines()
             replace_lines = list()
             if len(lines) == 0:
-                yield from self.client.send_message(message.channel, 'All myths have been deleted')
+                await self.client.send_message(message.channel, 'All myths have been deleted')
                 return ()
             for line in lines:
                 parts = self.__extract_parts(line)
@@ -82,7 +82,7 @@ class Myth(glados.Module):
                     continue
                 offender = parts[2]
                 deleter = message.author.name
-                yield from self.client.send_message(message.channel, 'Myth #{} by {} was deleted by {}'.format(
+                await self.client.send_message(message.channel, 'Myth #{} by {} was deleted by {}'.format(
                     parts[0], offender, deleter))
 
         # overwrite with filtered list of lines
@@ -96,7 +96,7 @@ class Myth(glados.Module):
             lines = f.readlines()
 
         if len(lines) == 0:
-            yield from self.client.send_message(message.channel, 'No myths in dB')
+            await self.client.send_message(message.channel, 'No myths in dB')
             return
 
         # Extract a specific ID if you are a botmod
@@ -105,7 +105,7 @@ class Myth(glados.Module):
                      len(set(x.name for x in message.author.roles).intersection(
                          set(self.settings['moderators']['roles']))) > 0
             if not is_mod and not message.author.id in self.settings['admins']['IDs']:
-                yield from self.client.send_message(message.channel, 'Only botmods can pass IDs')
+                await self.client.send_message(message.channel, 'Only botmods can pass IDs')
                 return ()
 
             line = ''
@@ -115,7 +115,7 @@ class Myth(glados.Module):
                     line = l
                     break
             if line == '':
-                yield from self.client.send_message(message.channel, 'Myth #{} does not exist'.format(content.strip()))
+                await self.client.send_message(message.channel, 'Myth #{} does not exist'.format(content.strip()))
                 return
         else:
             line = random.choice(lines)
@@ -123,7 +123,7 @@ class Myth(glados.Module):
         parts = self.__extract_parts(line)
         line = 'Myth #{}: "{}" -- *Submitted by {}*'.format(parts[0], parts[1], parts[2])
 
-        yield from self.client.send_message(message.channel, line)
+        await self.client.send_message(message.channel, line)
 
     @glados.Module.commands('mythstats')
     def mythstats(self, message, content):
@@ -137,9 +137,9 @@ class Myth(glados.Module):
                     last_line = lines[-1]
                     parts = self.__extract_parts(last_line)
                     last_id = int(parts[0])
-            yield from self.client.send_message(message.channel, 'There are {} active myths submitted ({} were deleted)'.format(count, last_id - count))
+            await self.client.send_message(message.channel, 'There are {} active myths submitted ({} were deleted)'.format(count, last_id - count))
         else:
-            yield from self.client.send_message(message.channel, 'No myths.')
+            await self.client.send_message(message.channel, 'No myths.')
 
     def __extract_parts(self, line):
         mentioned_ids = [x.strip('<@!>') for x in re.findall('<@!?[0-9]+>', line)]

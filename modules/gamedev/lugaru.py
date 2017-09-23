@@ -72,7 +72,7 @@ class Lugaru(glados.Module):
     @glados.Module.rules('^(?!\.\w+).*lugaru.*$')
     def lugaru_was_mentioned(self, message, match):
         delta, author, record = self.__get_data()
-        yield from self.client.send_message(message.channel, 'Days since `lugaru` was mentioned: :zero: :zero: :zero: :zero: (record was {} day(s) by {})'.format(record, author))
+        await self.client.send_message(message.channel, 'Days since `lugaru` was mentioned: :zero: :zero: :zero: :zero: (record was {} day(s) by {})'.format(record, author))
 
         mem = self.get_memory()
         mem['db']['record'] = delta.days
@@ -84,5 +84,5 @@ class Lugaru(glados.Module):
     def lugaru(self, message, args):
         delta, author, record = self.__get_data()
         msg = '`Lugaru` was mentioned {} by {} (current record: {} day(s))'.format(readable_timestamp(delta), author, record)
-        yield from self.client.send_message(message.channel, msg)
+        await self.client.send_message(message.channel, msg)
 

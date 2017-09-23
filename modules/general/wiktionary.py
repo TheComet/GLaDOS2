@@ -85,12 +85,12 @@ class Wiktionary(glados.Module):
     def wiktionary(self, message, word):
         """Look up a word on Wiktionary."""
         if word == '':
-            yield from self.provide_help('define', message)
+            await self.provide_help('define', message)
             return
 
         _etymology, definitions = wikt(word)
         if not definitions:
-            yield from self.client.send_message(message.channel, 'Couldn\'t get any definitions for {}.'.format(word))
+            await self.client.send_message(message.channel, 'Couldn\'t get any definitions for {}.'.format(word))
             return
 
         result = format(word, definitions)
@@ -101,4 +101,4 @@ class Wiktionary(glados.Module):
 
         if len(result) > 300:
             result = result[:295] + '[...]'
-        yield from self.client.send_message(message.channel, result)
+        await self.client.send_message(message.channel, result)

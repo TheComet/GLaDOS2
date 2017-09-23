@@ -27,7 +27,7 @@ class PicartoClient(object):
 
     @asyncio.coroutine
     def listen(self):
-        yield from self.discord_client.wait_until_ready()
+        await self.discord_client.wait_until_ready()
 
         discord_channel = None
         for channel in self.discord_client.get_all_channels():
@@ -36,12 +36,12 @@ class PicartoClient(object):
                 break
         if discord_channel is None:
             glados.log('Failed to get discord channel with ID {}'.format(self.discord_channel_id))
-            yield from self.websocket.close()
+            await self.websocket.close()
             return
 
         while True:
             time_started = time.time()
-            data = yield from self.websocket.recv()
+            data = await self.websocket.recv()
             message_type_id = data[0]
             data = data[1:]
             try:
@@ -58,7 +58,7 @@ class PicartoClient(object):
                     success = False
 
                 if success:
-                    yield from self.discord_client.send_message(discord_channel, '<{}> {}'.format(author, content))
+                    await self.discord_client.send_message(discord_channel, '<{}> {}'.format(author, content))
             except:
                 pass
 
@@ -118,4 +118,4 @@ class Picarto(glados.Module):
             picarto_message.message = message.clean_content
             data = picarto_message.SerializeToString()
             data = b'\x00' + data
-            yield from picarto_client.websocket.send(data)
+            await picarto_client.websocket.send(data)

@@ -153,8 +153,8 @@ class Activity(glados.Module):
     @glados.Module.commands('ranks')
     def ranks(self, message, users):
         if self.__cache_is_stale():
-            yield from self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
-            yield from self.__reprocess_cache()
+            await self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
+            await self.__reprocess_cache()
 
         memory = self.get_memory()
         authors = memory['cache']['authors']
@@ -165,7 +165,7 @@ class Activity(glados.Module):
         top5 = list(zip(*sorted(authors_total.items(), key=lambda dv: dv[1], reverse=True)[:5]))[0]
         fmt = '. {}\n'.join(str(x+1) for x in range(5)) + '. {}'
         msg = fmt.format(*top5)
-        yield from self.client.send_message(message.channel, msg)
+        await self.client.send_message(message.channel, msg)
 
     @glados.Module.commands('activity')
     def plot_activity(self, message, users):
@@ -176,8 +176,8 @@ class Activity(glados.Module):
             user_name = users.split(' ', 1)[0].strip('@').split('#')[0]
 
         if self.__cache_is_stale():
-            yield from self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
-            yield from self.__reprocess_cache()
+            await self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
+            await self.__reprocess_cache()
 
         memory = self.get_memory()
         if user_name == '':
@@ -186,12 +186,12 @@ class Activity(glados.Module):
         else:
             authors = memory['cache']['authors']
             if not user_name in authors:
-                yield from self.client.send_message(message.channel, 'Unknown user "{}". Try mentioning him?'.format(user_name))
+                await self.client.send_message(message.channel, 'Unknown user "{}". Try mentioning him?'.format(user_name))
                 return
             user = authors[user_name]
 
         image_file_name = self.__generate_figure(user, user_name)
-        yield from self.client.send_file(message.channel, image_file_name)
+        await self.client.send_file(message.channel, image_file_name)
 
     def __generate_figure(self, user, user_name):
         # Set up figure

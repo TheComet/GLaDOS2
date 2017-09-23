@@ -8,5 +8,5 @@ class Blog(glados.Module):
 
     @glados.Module.commands('blog')
     def blog(self, message, channel):
-        yield from self.client.send_message(message.channel, 'http://gdnetchat.tumblr.com/submit')
+        await self.client.send_message(message.channel, 'http://gdnetchat.tumblr.com/submit')
 

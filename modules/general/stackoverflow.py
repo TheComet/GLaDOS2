@@ -25,9 +25,9 @@ class StackOverflow(glados.Module):
         })
         result = get_json_response(STACK_EXCHANGE_API + query_string)
         if (not result['items']):
-            yield from self.client.send_message(message.channel, 'No questions found :(')
+            await self.client.send_message(message.channel, 'No questions found :(')
         else:
-            yield from self.client.send_message(message.channel, result['items'][0]['link'])
+            await self.client.send_message(message.channel, result['items'][0]['link'])
 
 
 def get_json_response(url):

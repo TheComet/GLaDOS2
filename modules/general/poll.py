@@ -13,27 +13,27 @@ class Poll(glados.Module):
     def handle_poll(self, message, content):
         parts = [x.strip() for x in content.split() if len(x) > 0]
         if len(parts) == 0:
-            yield from self.provide_help('poll', message)
+            await self.provide_help('poll', message)
             return
         cmd = parts[0]
         if cmd == 'new':
-            yield from self.handle_new(message, parts[1:])
+            await self.handle_new(message, parts[1:])
         elif cmd == 'vote':
-            yield from self.handle_vote(message, parts[1:])
+            await self.handle_vote(message, parts[1:])
         elif cmd == 'close':
-            yield from self.handle_close(message, parts[1:])
+            await self.handle_close(message, parts[1:])
         elif cmd == 'show':
-            yield from self.handle_show(message, parts[1:])
+            await self.handle_show(message, parts[1:])
 
     def handle_new(self, message, parts):
         if len(parts) < 2:
-            yield from self.provide_help('poll', message)
+            await self.provide_help('poll', message)
             return
 
         memory = self.get_memory()
         name = parts[0]
         if name in memory:
-            yield from self.client.send_message(message.channel, 'Poll with name "{}" still active'.format(name))
+            await self.client.send_message(message.channel, 'Poll with name "{}" still active'.format(name))
             return
 
         counter = 1
@@ -51,7 +51,7 @@ class Poll(glados.Module):
             counter += 1
 
         if counter < 3:
-            yield from self.client.send_message(message.channel, 'Need at least two options')
+            await self.client.send_message(message.channel, 'Need at least two options')
             return
 
         memory[name] = dict()
@@ -60,46 +60,46 @@ class Poll(glados.Module):
 
         msg = 'Poll "{}" created! Vote with ``.poll vote {} <number>``'.format(name, name)
         msg = msg + '\n  ' + '\n  '.join(options)
-        yield from self.client.send_message(message.channel, msg)
+        await self.client.send_message(message.channel, msg)
 
     def handle_vote(self, message, parts):
         if len(parts) < 2:
-            yield from self.provide_help('poll', message)
+            await self.provide_help('poll', message)
             return
 
         memory = self.get_memory()
         name = parts[0]
         if not name in memory:
-            yield from self.client.send_message(message.channel, 'Unknown poll with name "{}"'.format(name))
+            await self.client.send_message(message.channel, 'Unknown poll with name "{}"'.format(name))
             return
 
         if message.author.id in memory[name]['votes']:
-            yield from self.client.send_message(message.channel, 'You already voted!')
+            await self.client.send_message(message.channel, 'You already voted!')
             return
 
         try:
             vote_id = int(parts[1])
         except ValueError:
-            yield from self.client.send_message(message.channel, 'Failed to parse your value "{}"'.format(parts[1]))
+            await self.client.send_message(message.channel, 'Failed to parse your value "{}"'.format(parts[1]))
             return
 
         if vote_id < 1 or vote_id > len(memory[name]['options']):
-            yield from self.client.send_message(message.channel, 'Invalid option "{}"'.format(vote_id))
+            await self.client.send_message(message.channel, 'Invalid option "{}"'.format(vote_id))
             return
 
         memory[name]['votes'][message.author.id] = vote_id
         vote = memory[name]['options'][vote_id - 1]
-        yield from self.client.send_message(message.channel, '{} voted for {}!'.format(message.author.name, vote))
+        await self.client.send_message(message.channel, '{} voted for {}!'.format(message.author.name, vote))
 
     def handle_close(self, message, parts):
         if len(parts) < 1:
-            yield from self.provide_help('poll', message)
+            await self.provide_help('poll', message)
             return
 
         memory = self.get_memory()
         name = parts[0]
         if not name in memory:
-            yield from self.client.send_message(message.channel, 'Unknown poll "{}"'.format(name))
+            await self.client.send_message(message.channel, 'Unknown poll "{}"'.format(name))
             return
 
         vote_dict = dict()
@@ -114,25 +114,25 @@ class Poll(glados.Module):
         winner_option, winner_votes = sorted(vote_dict.items(), key=lambda kv: kv[1])[-1]
         winner_option_str = memory[name]['options'][winner_option - 1]
         del memory[name]
-        yield from self.client.send_message(message.channel,
+        await self.client.send_message(message.channel,
                 'Poll "{}" closed.\nWinning option is "{}" with {} votes'.format(name, winner_option_str, winner_votes))
 
     def handle_show(self, message, parts):
         if len(parts) < 1:
-            yield from self.provide_help('poll', message)
+            await self.provide_help('poll', message)
             return
 
         memory = self.get_memory()
         name = parts[0]
         if not name in memory:
-            yield from self.client.send_message(message.channel, 'Unknown poll "{}"'.format(name))
+            await self.client.send_message(message.channel, 'Unknown poll "{}"'.format(name))
             return
 
         msg = 'Vote with ``.poll vote {} <number>``'.format(name, name)
         msg = msg + '\n  ' + '\n  '.join(memory[name]['options'])
-        yield from self.client.send_message(message.channel, msg)
+        await self.client.send_message(message.channel, msg)
 
     @glados.Module.commands('polls')
     def show_polls(self, message, content):
         polls = [k for k, v in self.get_memory().items()]
-        yield from self.client.send_message(message.channel, 'Open polls:\n' + '\n  '.join(polls))
+        await self.client.send_message(message.channel, 'Open polls:\n' + '\n  '.join(polls))

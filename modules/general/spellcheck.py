@@ -26,7 +26,7 @@ class SpellCheck(glados.Module):
         it's not.
         """
         if word == '':
-            yield from self.provide_help('spell', message)
+            await self.provide_help('spell', message)
             return
 
         word = word.split(' ', 1)[0]
@@ -36,11 +36,11 @@ class SpellCheck(glados.Module):
         # I don't want to make anyone angry, so I check both American and British English.
         if dictionary_uk.check(word):
             if dictionary.check(word):
-                yield from self.client.send_message(message.channel, word + " is spelled correctly")
+                await self.client.send_message(message.channel, word + " is spelled correctly")
             else:
-                yield from self.client.send_message(message.channel, word + " is spelled correctly (British)")
+                await self.client.send_message(message.channel, word + " is spelled correctly (British)")
         elif dictionary.check(word):
-            yield from self.client.send_message(message.channel, word + " is spelled correctly (American)")
+            await self.client.send_message(message.channel, word + " is spelled correctly (American)")
         else:
             msg = word + " is not spelled correctly. Maybe you want one of these spellings:"
             sugWords = []
@@ -50,11 +50,11 @@ class SpellCheck(glados.Module):
                     sugWords.append(suggested_word)
             for suggested_word in sorted(set(sugWords)):  # removes duplicates
                 msg = msg + " '" + suggested_word + "',"
-            yield from self.client.send_message(message.channel, msg)
+            await self.client.send_message(message.channel, msg)
 
     @glados.Module.rules("^.*?(\\S+)\\s+\((spelling|spell|sp|spellig|selipng)\??\).*$")
     def spelling_in_brackets(self, message, match):
         # this abomination extracts the word before (spelling?) -- in this sentence said word would be "before"
         word = message.clean_content.split('(spelling?)')[0].strip().split()[-1]
         word = match.group(1)
-        yield from self.spellcheck(message, word)
+        await self.spellcheck(message, word)

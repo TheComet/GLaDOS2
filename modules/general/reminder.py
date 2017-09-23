@@ -82,7 +82,7 @@ class Reminder(glados.Module):
         @asyncio.coroutine
         def monitor():
             while True:
-                yield from asyncio.sleep(2.5)
+                await asyncio.sleep(2.5)
 
                 now = int(time.time())
                 unixtimes = [int(key) for key in memory['rdb']]
@@ -122,7 +122,7 @@ class Reminder(glados.Module):
     def remind(self, message, args):
         args = args.split(' ', 1)
         if len(args) < 2:
-            yield from self.provide_help('in', message)
+            await self.provide_help('in', message)
             return
 
         duration = 0
@@ -140,7 +140,7 @@ class Reminder(glados.Module):
                 reminder = reminder + piece
                 stop = True
         if duration == 0:
-            yield from self.client.send_message(message.channel, "Sorry, didn't understand the input.")
+            await self.client.send_message(message.channel, "Sorry, didn't understand the input.")
             return
 
         if duration % 1:

@@ -73,7 +73,7 @@ class IRCBridge(glados.Module):
 
                 else:
                     loop = asyncio.get_event_loop()
-                    msg = yield from loop.run_in_executor(None, self.socket.recv, 2048)
+                    msg = await loop.run_in_executor(None, self.socket.recv, 2048)
                     if not msg:
                         continue
 
@@ -101,7 +101,7 @@ class IRCBridge(glados.Module):
                                 resp = match.group(1)
                                 for channel in self.discord_channels:
                                     try:
-                                        yield from self.client.send_message(channel, resp)
+                                        await self.client.send_message(channel, resp)
                                     except:
                                         yield
                                         continue
@@ -147,7 +147,7 @@ class IRCBridge(glados.Module):
 
         self.bridge_enable = not self.bridge_enable
         msg = 'IRC bridge enabled.' if self.bridge_enable else 'IRC bridge disabled.'
-        yield from self.client.send_message(message.channel, msg)
+        await self.client.send_message(message.channel, msg)
 
     @staticmethod
     def substitute_mentions(message):

@@ -36,4 +36,4 @@ class Hug(glados.Module):
             msg = "(つ≧▽≦)つ" + name
         else:
             msg = "(づ￣ ³￣)づ" + name + " ⊂(´・ω・｀⊂)"
-        yield from self.client.send_message(message.channel, msg)
+        await self.client.send_message(message.channel, msg)

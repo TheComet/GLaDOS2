@@ -102,17 +102,17 @@ class XKCD(glados.Module):
                 if numbered.group(1) == "-":
                     query = -query
                 if query > max_int:
-                    yield from self.client.send_message(message.channel, ("Sorry, comic #{} hasn't been posted yet. "
+                    await self.client.send_message(message.channel, ("Sorry, comic #{} hasn't been posted yet. "
                                                                      "The last comic was #{}").format(query, max_int))
                     return
                 elif query <= -max_int:
-                    yield from self.client.send_message(message.channel, ("Sorry, but there were only {} comics "
+                    await self.client.send_message(message.channel, ("Sorry, but there were only {} comics "
                                                                      "released yet so far").format(max_int))
                     return
                 elif abs(query) == 0:
                     requested = latest
                 elif query == 404 or max_int + query == 404:
-                    yield from self.client.send_message(message.channel, "404 - Not Found")  # don't error on that one
+                    await self.client.send_message(message.channel, "404 - Not Found")  # don't error on that one
                     return
                 elif query > 0:
                     requested = get_info(query)
@@ -126,7 +126,7 @@ class XKCD(glados.Module):
                 else:
                     number = google(query)
                     if not number:
-                        yield from self.client.send_message(message.channel, 'Could not find any comics for that query.')
+                        await self.client.send_message(message.channel, 'Could not find any comics for that query.')
                         return
                     requested = get_info(number)
 
@@ -137,7 +137,7 @@ class XKCD(glados.Module):
 
         response = '{} [{}]'.format(requested['url'], requested['title'])
         try:
-            yield from self.client.send_file(message.channel, img_file)
+            await self.client.send_file(message.channel, img_file)
         except discord.errors.Forbidden:
             pass
-        yield from self.client.send_message(message.channel, response)
+        await self.client.send_message(message.channel, response)

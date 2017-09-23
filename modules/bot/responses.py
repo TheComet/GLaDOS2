@@ -15,13 +15,13 @@ class Hello(glados.Module):
         greeting += random.choice((' No one ever says hi to me... Are you a bot?',
                                    ' I\'m flattered you think I\'m human',
                                    ' Do you always say hi to robots or are you just lonely?'))
-        yield from self.client.send_message(message.channel, greeting)
+        await self.client.send_message(message.channel, greeting)
 
     @glados.Module.rules('^(hi|hello|hey|greetings)$')
     def hello(self, message, match):
         greeting = random.choice(('Hi', 'Hey', 'Hello'))
         punctuation = random.choice(('', '!'))
-        yield from self.client.send_message(message.channel, greeting + ' ' + message.author.name + punctuation)
+        await self.client.send_message(message.channel, greeting + ' ' + message.author.name + punctuation)
 
 
 class Morgen(glados.Module):
@@ -32,7 +32,7 @@ class Morgen(glados.Module):
     def morgen(self, message, match):
         greeting = random.choice(('Heil', 'Tach'))
         punctuation = random.choice(('', '!'))
-        yield from self.client.send_message(message.channel, greeting + ' ' + message.author.name + punctuation)
+        await self.client.send_message(message.channel, greeting + ' ' + message.author.name + punctuation)
 
 
 class Swiss(glados.Module):
@@ -41,7 +41,7 @@ class Swiss(glados.Module):
     @glados.Module.rules(r'.*(grüetzi|grützi|grüessech|grüessich).*')
     def hii(self, message, match):
         greeting = random.choice(('Hoi büebli!', 'Sali!', 'Grüessech wohl', 'Grüessgott', 'S Wätter esch net schlächt hüt, äs chutet e chli'))
-        yield from self.client.send_message(message.channel, greeting)
+        await self.client.send_message(message.channel, greeting)
 
 
 class Insult(glados.Module):
@@ -62,20 +62,20 @@ class Insult(glados.Module):
     def get_help_list(self): return []
 
     def respond(self, message):
-        yield from self.client.send_message(message.channel, self.phrases[self.counter].format(message.author.name))
+        await self.client.send_message(message.channel, self.phrases[self.counter].format(message.author.name))
         self.counter = (self.counter + 1) % len(self.phrases)
 
     @glados.Module.rules("^.*(?=.*shut)(?=.*up)(?=.*glados).*$")
     def shut_up(self, message, match):
-        yield from self.respond(message)
+        await self.respond(message)
 
     @glados.Module.rules("^.*(?=.*fuck)(?=.*glados).*$")
     def fuck_you(self, message, match):
-        yield from self.respond(message)
+        await self.respond(message)
 
     @glados.Module.rules("^.*(?=.*glados)(?=.*cunt).*$")
     def you_cunt(self, message, match):
-        yield from self.respond(message)
+        await self.respond(message)
 
 
 class Hmkay(glados.Module):
@@ -83,4 +83,4 @@ class Hmkay(glados.Module):
 
     @glados.Module.rules("^.*(?=.*hmkay).*$")
     def hmkay(self, message, match):
-        yield from self.client.send_message(message.channel, "HHHMMMMKAAAYYY. DRUGS ARE BAD HHMKAY")
+        await self.client.send_message(message.channel, "HHHMMMMKAAAYYY. DRUGS ARE BAD HHMKAY")

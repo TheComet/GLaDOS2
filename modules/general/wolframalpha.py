@@ -93,7 +93,7 @@ class WolframAlpha(glados.Module):
     @glados.Module.commands('wa')
     def wolfram(self, message, query):
         if query == '':
-            yield from self.provide_help('wolfram', message)
+            await self.provide_help('wolfram', message)
             return
 
         memory = self.get_memory()
@@ -101,7 +101,7 @@ class WolframAlpha(glados.Module):
         try:
             data, info_msg = self.__do_wa_query(query)
         except:
-            yield from self.client.send_message(message.channel, 'Oh oh. Wolfram Alpha has experienced... an accident')
+            await self.client.send_message(message.channel, 'Oh oh. Wolfram Alpha has experienced... an accident')
             return
 
         try:
@@ -117,7 +117,7 @@ class WolframAlpha(glados.Module):
                     image_file_name = os.path.join(memory['cache dir'], message.author.name + '.gif')
                     with open(image_file_name, 'w+b') as f:
                         f.write(img.raw.read())
-                    yield from self.client.send_file(message.channel, image_file_name,
+                    await self.client.send_file(message.channel, image_file_name,
                                                      content='{0}: {1}'.format(message.author.mention, info_msg))
                     return
 
@@ -130,16 +130,16 @@ class WolframAlpha(glados.Module):
                     image_file_name = os.path.join(memory['cache dir'], message.author.name + '.gif')
                     with open(image_file_name, 'w+b') as f:
                         f.write(img.raw.read())
-                    yield from self.client.send_file(message.channel, image_file_name,
+                    await self.client.send_file(message.channel, image_file_name,
                                                      content='{0}: {1}'.format(message.author.mention, info_msg))
                     return
 
-            yield from self.client.send_message(message.channel, "{0} {1}".format(message.author.mention, random.choice(CANNOT_UNDERSTAND)))
+            await self.client.send_message(message.channel, "{0} {1}".format(message.author.mention, random.choice(CANNOT_UNDERSTAND)))
             return
 
         except AttributeError:
-            yield from self.client.send_message(message.channel, "{0} {1}".format(message.author.mention, random.choice(CANNOT_UNDERSTAND)))
+            await self.client.send_message(message.channel, "{0} {1}".format(message.author.mention, random.choice(CANNOT_UNDERSTAND)))
         except Exception as e:
-            yield from self.client.send_message(message.channel, "{0} {1}".format(message.author.mention, random.choice(CANNOT_UNDERSTAND)))
+            await self.client.send_message(message.channel, "{0} {1}".format(message.author.mention, random.choice(CANNOT_UNDERSTAND)))
         except:
-            yield from self.client.send_message(message.channel, "{0} {1}".format(message.author.mention, random.choice(CANNOT_UNDERSTAND)))
+            await self.client.send_message(message.channel, "{0} {1}".format(message.author.mention, random.choice(CANNOT_UNDERSTAND)))

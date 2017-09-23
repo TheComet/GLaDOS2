@@ -10,5 +10,5 @@ class Doot(glados.Module):
 
     @glados.Module.commands(':dootdoot:')
     def ball(self, message, content):
-        yield from self.client.send_message(message.channel, 'http://i2.kym-cdn.com/photos/images/newsfeed/000/376/360/77a.png')
+        await self.client.send_message(message.channel, 'http://i2.kym-cdn.com/photos/images/newsfeed/000/376/360/77a.png')
 

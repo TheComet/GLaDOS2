@@ -34,7 +34,7 @@ class Urban(glados.Module):
     @glados.Module.commands('urban', 'ud')
     def urban(self, message, content):
         if content == '':
-            yield from self.provide_help('urban', message)
+            await self.provide_help('urban', message)
             return
         definition = self.get_def(content)
-        yield from self.client.send_message(message.channel, definition)
+        await self.client.send_message(message.channel, definition)

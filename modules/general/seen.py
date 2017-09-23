@@ -84,21 +84,21 @@ class Seen(glados.Module):
         memory = self.get_memory()
         if content == "":
             # Count how many users in total have been seen
-            yield from self.client.send_message(message.channel, '{} users have been seen saying at least something.'.format(len(memory['dict'])))
+            await self.client.send_message(message.channel, '{} users have been seen saying at least something.'.format(len(memory['dict'])))
             return
 
         author = content.strip('@').split('#')[0]
         key = author.lower()
         if not key in memory['dict']:
             if key == 'glados':
-                yield from self.client.send_message(message.channel, '{0} Do you see me? I see you.')
+                await self.client.send_message(message.channel, '{0} Do you see me? I see you.')
             else:
-                yield from self.client.send_message(message.channel, '{0} has never been seen.'.format(author))
+                await self.client.send_message(message.channel, '{0} has never been seen.'.format(author))
             return
 
         stamp = get_time(memory['dict'][key]['timestamp'])
         elapsed = datetime.now() - stamp
-        yield from self.client.send_message(message.channel, '{0} was last seen {1} in #{2} saying: "{3}"'.format(
+        await self.client.send_message(message.channel, '{0} was last seen {1} in #{2} saying: "{3}"'.format(
             memory['dict'][key]['author'],
             readable_timestamp(elapsed),
             memory['dict'][key]['channel'],

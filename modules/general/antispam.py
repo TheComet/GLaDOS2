@@ -35,8 +35,8 @@ class AntiSpam(glados.Module):
             if message.author.id != '104330175243636736':
                 cdfs_server = self.client.get_server(cdfs_server_id)
                 roles = [role for role in cdfs_server.roles if role.id == mute_role_id]
-                yield from self.client.add_roles(message.author, *roles)
-                yield from self.client.send_message(message.channel, '{} you were muted for spamming. PM an admin if you want to complain'.format(message.author.mention))
-                #yield from self.client.kick(message.author)
+                await self.client.add_roles(message.author, *roles)
+                await self.client.send_message(message.channel, '{} you were muted for spamming. PM an admin if you want to complain'.format(message.author.mention))
+                #await self.client.kick(message.author)
         
         return tuple()

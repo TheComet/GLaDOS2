@@ -81,22 +81,22 @@ class Etymology(glados.Module):
         """Look up the etymology of a word"""
 
         if word == '':
-            yield from self.provide_help('ety', message)
+            await self.provide_help('ety', message)
             return
 
         try:
             result = self.etymology(word)
         except IOError:
             msg = "Can't connect to etymonline.com (%s)" % (self.etyuri % word)
-            yield from self.client.send_message(message.channel, msg)
+            await self.client.send_message(message.channel, msg)
             return
         except (AttributeError, TypeError):
             result = None
 
         if result is not None:
-            yield from self.client.send_message(message.channel, result)
+            await self.client.send_message(message.channel, result)
         else:
             uri = self.etysearch % word
             msg = 'Can\'t find the etymology for "%s". Try %s' % (word, uri)
-            yield from self.client.send_message(message.channel, msg)
+            await self.client.send_message(message.channel, msg)
             return

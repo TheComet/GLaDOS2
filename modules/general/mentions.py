@@ -100,7 +100,7 @@ class Mentions(glados.Module):
         key = author.lower()
 
         if num > max_num:
-            yield from self.client.send_message(message.channel, 'Please, don\'t be an idiot')
+            await self.client.send_message(message.channel, 'Please, don\'t be an idiot')
             return
 
         memory = self.get_memory()
@@ -111,7 +111,7 @@ class Mentions(glados.Module):
         if num == 0:
 
             if key not in memory['last seen']:
-                yield from self.client.send_message(message.channel, '{0} has never been mentioned.'.format(author))
+                await self.client.send_message(message.channel, '{0} has never been mentioned.'.format(author))
                 return
 
             last_seen = dateutil.parser.parse(memory['last seen'][key])
@@ -133,7 +133,7 @@ class Mentions(glados.Module):
                     break
 
         if len(mentions) == 0:
-            yield from self.client.send_message(message.channel, 'No one mentioned you.')
+            await self.client.send_message(message.channel, 'No one mentioned you.')
             return
 
         response = list()
@@ -146,4 +146,4 @@ class Mentions(glados.Module):
 
             response.append(author + strip_timestamp_and_name(msg))
 
-        yield from self.client.send_message(message.channel, '\n'.join(response))
+        await self.client.send_message(message.channel, '\n'.join(response))

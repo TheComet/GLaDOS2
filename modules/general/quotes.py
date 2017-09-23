@@ -70,20 +70,20 @@ class Quotes(glados.Module):
             author = content.strip('@').split('#')[0] if content != '' else message.author.name
             error = self.check_nickname_valid(author.lower())
             if error is not None:
-                yield from self.client.send_message(message.channel, error)
+                await self.client.send_message(message.channel, error)
                 return
 
         lines = self.get_quote_lines(author)
 
         if len(lines) == 0:
-            yield from self.client.send_message(message.channel,
+            await self.client.send_message(message.channel,
                                            '{} hasn\'t delivered any quotes worth mentioning yet'.format(author))
             return
 
         line = random.choice(lines).strip('\n')
         line = self.remove_mentions(line)
 
-        yield from self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
+        await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
 
     @glados.Module.commands('findquote')
     def findquote(self, message, content):
@@ -91,7 +91,7 @@ class Quotes(glados.Module):
             author = message.mentions[0].name
             content = content.replace('@' + author, '')
         elif len(message.mentions) > 1:
-            yield from self.client.send_message(message.channel,
+            await self.client.send_message(message.channel,
                                             'Multiple mentions are not supported. What are you trying to do?')
             return
         else:
@@ -103,14 +103,14 @@ class Quotes(glados.Module):
             lines = [x for x in lines if re.search(r'\b' + search_query + r'\b', x, re.IGNORECASE)]
         
         if len(lines) == 0:
-            yield from self.client.send_message(message.channel,
+            await self.client.send_message(message.channel,
                                             '{} hasn\'t delivered any quotes containing "{}"'.format(author, search_query))
             return
 
         line = random.choice(lines).strip('\n')
         line = self.remove_mentions(line)
 
-        yield from self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
+        await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
 
     def remove_mentions(self, text):
         '''Remove any mentions from the quote and replace them with actual member names'''
@@ -136,7 +136,7 @@ class Quotes(glados.Module):
         author = content.strip('@').split('#')[0]
         error = self.check_nickname_valid(author.lower())
         if not error is None:
-            yield from self.client.send_message(message.channel, error)
+            await self.client.send_message(message.channel, error)
             return tuple()
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
@@ -169,7 +169,7 @@ class Quotes(glados.Module):
             most_common, least_common,
             vocab)
 
-        yield from self.client.send_message(message.channel, response)
+        await self.client.send_message(message.channel, response)
 
     def filter_to_english_words(self, words_list):
         return [word for word in words_list
@@ -179,7 +179,7 @@ class Quotes(glados.Module):
     @glados.Module.commands('grep')
     def grep(self, message, content):
         if content == '':
-            yield from self.provide_help('grep', message)
+            await self.provide_help('grep', message)
             return
 
         content = content.split()
@@ -193,7 +193,7 @@ class Quotes(glados.Module):
             word = ' '.join(content).strip().lower()
             error = self.check_nickname_valid(author.lower())
             if not error is None:
-                yield from self.client.send_message(message.channel, error)
+                await self.client.send_message(message.channel, error)
                 return
 
         quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
@@ -217,7 +217,7 @@ class Quotes(glados.Module):
             response = '{} has never said "{}"'.format(author, word)
         else:
             response = '{0} has said "{1}" {2} times ({3:.2f}‰ of all words)'.format(author, word, found_count, found_count * 1000.0 / total_count)
-        yield from self.client.send_message(message.channel, response)
+        await self.client.send_message(message.channel, response)
 
     @glados.Module.commands('zipf')
     def zipf(self, message, users):
@@ -254,7 +254,7 @@ class Quotes(glados.Module):
         pylab.savefig(image_file_name)
         pylab.gcf().clear()
 
-        yield from self.client.send_file(message.channel, image_file_name)
+        await self.client.send_file(message.channel, image_file_name)
 
     @staticmethod
     def plot_word_frequencies(freq, user):

@@ -7,5 +7,5 @@ class Khawk(glados.Module):
 
     @glados.Module.commands('khawk')
     def khawk(self, message, args):
-        yield from self.client.send_message(message.channel, 'I am not allowed to speak to you. Talk to Khawk about my availability.')
+        await self.client.send_message(message.channel, 'I am not allowed to speak to you. Talk to Khawk about my availability.')
 

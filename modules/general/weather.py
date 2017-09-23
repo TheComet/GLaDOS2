@@ -156,7 +156,7 @@ class Weather(glados.Module):
             try:
                 woeid = memory['woeid db'][key]
             except KeyError:
-                yield from self.client.send_message(message.channel, "I don't know where you live. " +
+                await self.client.send_message(message.channel, "I don't know where you live. " +
                                'Give me a location, like .weather London, or tell me where you live by saying .setlocation London, for example.')
                 return
         else:
@@ -169,7 +169,7 @@ class Weather(glados.Module):
                     woeid = first_result.get('woeid')
 
         if not woeid:
-            yield from self.client.send_message(message.channel, "I don't know where that is.")
+            await self.client.send_message(message.channel, "I don't know where that is.")
             return
 
         query = urllib.parse.quote('select * from weather.forecast where woeid="{}" and u=\'c\''.format(woeid))
@@ -180,25 +180,25 @@ class Weather(glados.Module):
         parsed = xmltodict.parse(body).get('query')
         results = parsed.get('results')
         if results is None:
-            yield from self.client.send_message(message.channel, "No forecast available. Try a more specific location.")
+            await self.client.send_message(message.channel, "No forecast available. Try a more specific location.")
             return
         location = results.get('channel').get('title')
         cover = get_cover(results)
         temp = get_temp(results)
         humidity = get_humidity(results)
         wind = get_wind(results)
-        yield from self.client.send_message(message.channel, u'%s: %s, %s, %s, %s' % (location, cover, temp, humidity, wind))
+        await self.client.send_message(message.channel, u'%s: %s, %s, %s, %s' % (location, cover, temp, humidity, wind))
 
     @glados.Module.commands('setlocation', 'setwoeid')
     def update_woeid(self, message, location):
         """Set your default weather location."""
         if location == '':
-            yield from self.provide_help('setlocation', message)
+            await self.provide_help('setlocation', message)
             return
 
         first_result = woeid_search(location)
         if first_result is None:
-            yield from self.client.send_message(message.channel, "I don't know where that is.")
+            await self.client.send_message(message.channel, "I don't know where that is.")
             return
 
         woeid = first_result.get('woeid')
@@ -219,7 +219,7 @@ class Weather(glados.Module):
         state = first_result.get('admin1').get('#text') or ''
         country = first_result.get('country').get('#text') or ''
 
-        yield from self.client.send_message(message.channel, 'I now have you at WOEID %s (%s%s, %s, %s)' %
+        await self.client.send_message(message.channel, 'I now have you at WOEID %s (%s%s, %s, %s)' %
                                             (woeid, neighborhood, city, state, country))
 
     @glados.Module.commands('location')
@@ -239,10 +239,10 @@ class Weather(glados.Module):
             results = parsed.get('results')
 
             if results is None:
-                yield from self.client.send_message(message.channel, 'Couldn\'t look up location. The WOEID of {} is: {}'.format(user, woeid))
+                await self.client.send_message(message.channel, 'Couldn\'t look up location. The WOEID of {} is: {}'.format(user, woeid))
                 return
 
             location = results.get('channel').get('title')
-            yield from self.client.send_message(message.channel, 'Location of {} is {}'.format(user, location))
+            await self.client.send_message(message.channel, 'Location of {} is {}'.format(user, location))
         except KeyError:
-            yield from self.client.send_message(message.channel, 'No location set. You can use .setlocation to set one')
+            await self.client.send_message(message.channel, 'No location set. You can use .setlocation to set one')

@@ -12,7 +12,7 @@ class Derpi(glados.Module):
     @glados.Module.commands('derpi')
     def derpi(self, message, args):
         if args == '':
-            yield from self.provide_help('derpi', message)
+            await self.provide_help('derpi', message)
             return
 
         args = args.split(' ', 1)
@@ -35,9 +35,9 @@ class Derpi(glados.Module):
                 else:
                     image = next(search.sort_by(derpibooru.sort.RANDOM).query(*tags))
             else:
-                yield from  self.provide_help('derpi', message)
+                await  self.provide_help('derpi', message)
                 return
 
-            yield from self.client.send_message(message.channel, image.url)
+            await self.client.send_message(message.channel, image.url)
         except StopIteration:
-            yield from self.client.send_message(message.channel, "No posts found!")
+            await self.client.send_message(message.channel, "No posts found!")

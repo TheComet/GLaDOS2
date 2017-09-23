@@ -22,8 +22,8 @@ class LMGTFY(glados.Module):
         """Let me just... google that for you."""
         #No input
         if arg == '':
-            yield from self.client.send_message(message.channel, 'http://google.com/')
+            await self.client.send_message(message.channel, 'http://google.com/')
             return
 
         arg = urllib.parse.quote(arg)
-        yield from self.client.send_message(message.channel, 'http://lmgtfy.com/?q=' + arg)
+        await self.client.send_message(message.channel, 'http://lmgtfy.com/?q=' + arg)
