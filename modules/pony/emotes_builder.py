@@ -8,7 +8,6 @@ import urllib.request;
 import sys;
 import threading;
 from PIL import Image;
-import imageio;
 import apng2gif;
 import time;
 

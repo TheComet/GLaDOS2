@@ -123,7 +123,7 @@ class Emotes(glados.Module):
 		else:
 			Sub = self.EmoteList.get(content);
 			if not Sub:
-				Response.sppend("Unknown subreddit.");
+				Response.append("Unknown subreddit.");
 			else:
 				Response.append("List of emotes for "+content);
 				for key, items in Sub.items():
