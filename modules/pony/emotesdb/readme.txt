@@ -1,0 +1,1 @@
+#Add .png of .gif files here to have them be displayed with the .pony command
