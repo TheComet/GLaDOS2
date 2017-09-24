@@ -76,7 +76,9 @@
       "bot.responses.Hello",
       "bot.responses.Rude",
       "bot.responses.Insult",
-      "bot.uptime.UpTime"
+      "bot.uptime.UpTime",
+	  "pony.emotes.Emotes",
+	  "pony.emotes_builder.BuildEmotes"
     ],
     "server specific": {
     },

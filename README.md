@@ -21,6 +21,7 @@ From pip:
  + nltk
  + matplotlib
  + wolframalpha
+ + Pillow
 
 ```
 pip install discord.py python-dateutil requests pyenchant beautifulsoup4 PySocks lxml nltk matplotlib wolframalpha
@@ -45,6 +46,8 @@ $ cd python/
 $ python setup.py install
 $ cp -r build/lib/google ../../env/lib/site-packages/
 ```
+
+The pony emotes_builder module requires apng2gif to be built for python, following the readme instructions in pony/apng2gif on how to build. 
 
 ## Settings
 
