@@ -12,7 +12,7 @@ class BotModTools(glados.Module):
         ]
 
     @glados.Module.commands('modlist')
-    def modlist(self, message, content):
+    async def modlist(self, message, content):
         mod_list = list()
         admin_list = list()
         for member in self.client.get_all_members():

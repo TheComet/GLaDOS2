@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from .Log import log
 from .cooldown import Cooldown
 from .tools.path import add_import_paths
+from .Permissions import Permissions
 
 comment_pattern = re.compile('`(.*?)`')
 
@@ -19,9 +20,17 @@ class Bot(object):
         self.client = discord.Client()
 
         self.__command_prefix = self.settings.setdefault('commands', {}).setdefault('prefix', '.')
-        self.__callback_tuples = list()  # list of tuples. (module, command_callback)
+        self.__callback_tuples = list()  # list of tuples. (callback, module)
         self.__cooldown = Cooldown()
         self.load_modules()
+
+        # The bot needs access to the permissions module for managing things like admins/botmods
+        self.__permissions = Permissions()
+        self.__permissions.set_settings(self.settings)
+        for cb, m in self.__callback_tuples:
+            if m.full_name == 'bot.permissions.Permissions':
+                self.__permissions = m
+                break
 
         @self.client.event
         async def on_message(message):
@@ -31,45 +40,48 @@ class Bot(object):
                 return ()
 
             commands = self.extract_commands_from_message(message.clean_content)
-            commands_to_process = self.__get_commands_that_will_be_executed(message, commands)
-            matches_to_process = self.__get_matches_that_will_be_executed(message)
+            commands_to_process = self.__get_commands_that_could_be_executed(message, commands)
+            commands_to_process += self.__get_matches_that_could_be_executed(message)
 
-            # Ignore banned users
-            #if message.author.id in self.settings['banned']:
-            #    # See if any of the modules are blessed. If not, punish
-            #    if not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in commands_to_process) or \
-            #       not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in matches_to_process):
-            #        if not self.__try_unban_user(message.author):
-            #            expiry = self.settings['banned'][message.author.id]
-            #            await self.client.send_message(message.author,
-            #                    'You have been banned from using the bot. Your ban expires: {}'.format(expiry))
-            #            return
-            #else:
-            if 1 == 1:
+            # required for permission server isolation
+            self.__permissions.set_current_server(message.server.id)
+
+            # If user is not banned, process core commands first
+            if not self.__permissions.is_banned(message.author):
                 for command, content in commands:
                     await self.__process_core_commands(message, command, content)
 
-            if len(commands_to_process) == 0 and len(matches_to_process) == 0:
-                return ()
+            # Apply cooldown to any commands/matches that aren't spammable. Ignore members that are
+            # blessed or mods/admins
+            if not self.__permissions.is_blessed(message.author) \
+                    and not self.__permissions.is_moderator(message.author) \
+                    and not self.__permissions.is_admin(message.author):
+                if not all(hasattr(x[1], 'spamalot') for x in commands_to_process):
+                    cooldown = self.__apply_cooldown(message)
+                    if cooldown:
+                        await self.client.send_message(message.author, cooldown)
+                        return
 
-            #if not message.author.id in self.settings['blessed'] \
-            #        and not message.author.id in self.settings['moderators']['IDs'] \
-            #        and not message.author.id in self.settings['admins']['IDs']:
-            #    # See if any of the modules are blessed. If not, punish
-            #    if not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in commands_to_process) or \
-            #       not all('.'.join((x[1].full_name, x[0].__name__)) in self.settings['modules']['blessed'] for x in matches_to_process):
-            #        cooldown = self.__apply_cooldown(message)
-            #        if cooldown:
-            #            await self.client.send_message(message.author, cooldown)
-            #            return
-
+            punish_checked = False
+            user_is_punished = False
             for callback, module, content in commands_to_process:
+                code = self.__permissions.check_permissions(message.author, callback)
+                if code < 0:
+                    await self.__permissions.inform_author_about_failure(message, code)
+                    continue
+
+                if code == Permissions.PUNISHABLE:
+                    if not punish_checked:
+                        cooldown = self.__apply_cooldown(message)
+                        if cooldown:
+                            user_is_punished = True
+                            await self.client.send_message(message.author, cooldown)
+                        punish_checked = True
+                    if user_is_punished:
+                        continue
+
                 module.set_current_server(message.server.id)  # required for server isolation
                 await callback(message, content)
-
-            for callback, module, match in matches_to_process:
-                module.set_current_server(message.server.id)  # required for server isolation
-                await callback(message, match)
 
         @self.client.event
         async def on_ready():
@@ -90,7 +102,7 @@ class Bot(object):
                 log('Forbidden')
         return tuple()
 
-    def __get_commands_that_will_be_executed(self, message, commands):
+    def __get_commands_that_could_be_executed(self, message, commands):
         ret = list()
 
         # Skip processing normal commands and rules if this message came from a bot
@@ -110,7 +122,7 @@ class Bot(object):
                         ret.append((callback, module, content))
         return ret
 
-    def __get_matches_that_will_be_executed(self, message):
+    def __get_matches_that_could_be_executed(self, message):
         ret = list()
         for callback, module in self.__callback_tuples:
             # Does the module have a server whitelist? If so, make sure this module is allowed.
@@ -173,7 +185,8 @@ class Bot(object):
         # load global modules
         for modfullname in self.settings['modules'].setdefault('names', [
             'bot.ping.Ping',
-            'bot.uptime.UpTime'
+            'bot.uptime.UpTime',
+            'bot.permissions.Permissions'
         ]):
             result = self.__import_module(modfullname)
             if not result is None:
@@ -182,7 +195,9 @@ class Bot(object):
                 delayed_successes.append('Loaded global module {}'.format(modfullname))
 
         # load server whitelisted modules
-        for server, modlist in self.settings['modules'].setdefault('server specific', {}).items():
+        for server, modlist in self.settings['modules'].setdefault('server specific', {
+            'server id': []
+        }).items():
             for modfullname in modlist:
                 result = self.__import_module(modfullname, server)
                 if not result is None:
@@ -441,23 +456,6 @@ class Bot(object):
                 self.__unban_user(member)
                 await self.client.send_message(message.channel, 'Unbanned user "{}"'.format(member))
 
-    def __try_unban_user(self, member):
-        if not member.id in self.settings['banned']:
-            return True
-
-        expiry_date = self.settings['banned'][member.id]
-        if expiry_date == 'never':
-            return False
-        if datetime.now().isoformat() > expiry_date:
-            self.__unban_user(member)
-            return True
-
-        return False
-
-    def __unban_user(self, member):
-        del self.settings['banned'][member.id]
-        self.__save_settings()
-
     async def __process_bless_command(self, message, content):
         if content == '':
             await self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
@@ -634,4 +632,7 @@ class Bot(object):
             raise
         finally:
             loop.close()
-            self.__save_settings()
+            print(json.dumps(self.settings, indent=2, sort_keys=True))
+            #self.__save_settings()
+            for cb, m in self.__callback_tuples:
+                m.shutdown()

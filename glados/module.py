@@ -6,7 +6,7 @@ class Module(object):
 
     def __init__(self):
         self.__command_prefix = None
-        self.__config_path = None
+        self.__data_path = None
         self.__server_specific_config_dir = None
         # this is set externally when the module is loaded. Contains a list of server names where this module should
         # be active. An empty list means it can be active on all servers.
@@ -23,11 +23,11 @@ class Module(object):
     def set_settings(self, settings):
         self.settings = settings
         self.__command_prefix = settings['commands']['prefix']
-        self.__config_path = self.settings['modules'].setdefault('config path', 'data')
+        self.__data_path = self.settings['modules'].setdefault('data', 'data')
 
     def set_current_server(self, server_id):
         self.__server_specific_name = self.full_name + server_id
-        self.__server_specific_config_dir = os.path.join(self.__config_path, server_id)
+        self.__server_specific_config_dir = os.path.join(self.__data_path, server_id)
         self.__may_need_to_setup_memory()
 
     def setup_global(self):
@@ -40,6 +40,13 @@ class Module(object):
         """
         Gets called once during initialisation for every server. This is useful when modules want to create the server
         specific directories and set up memory storage.
+        """
+        pass
+
+    def shutdown(self):
+        """
+        Gets called once when the bot is about to terminate execution. You can do various cleanup
+        stuff here like saving files.
         """
         pass
 
@@ -113,8 +120,7 @@ class Module(object):
         :param command_list: A list of strings of commands to react to when they are issued in Discord.
         """
         def add_attribute(func):
-            if not hasattr(func, "commands"):
-                func.commands = list()
+            func.__dict__.setdefault('commands', list())
             func.commands.extend(command_list)
             return func
         return add_attribute
@@ -139,8 +145,7 @@ class Module(object):
         :param rule_list: A list of strings of regular expression to match messages sent on Discord with.
         """
         def add_attribute(func):
-            if not hasattr(func, "rules"):
-                func.rules = list()
+            func.__dict__.setdefault('rules', list())
             for rule in rule_list:
                 func.rules.append(re.compile(rule, re.IGNORECASE))
             return func
@@ -153,8 +158,7 @@ class Module(object):
         :param rule_list: A list of strings of regular expression to match messages sent on Discord with.
         """
         def add_attribute(func):
-            if not hasattr(func, "bot_rules"):
-                func.bot_rules = list()
+            func.__dict__.setdefault('bot_rules', list())
             for rule in rule_list:
                 func.bot_rules.append(re.compile(rule, re.IGNORECASE))
             return func
