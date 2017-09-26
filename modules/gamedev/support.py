@@ -9,7 +9,7 @@ class GDNIsOffline(glados.Module):
     @glados.Module.rules(r'^\!claim$')
     @glados.Module.rules(r'^\!rules$')
     @glados.Module.rules(r'^\!help$')
-    def respond_if_down(self, message, match):
+    async def respond_if_down(self, message, match):
         Hodge_id = '109587405673091072'
         GDN_id = '188103830360162309'
         GDN_member = message.server.get_member(GDN_id)

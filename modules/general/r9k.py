@@ -35,7 +35,7 @@ class R9K(glados.Module):
             self.memory['hashes'].add(line.strip())
 
     @glados.Module.commands('r9k')
-    def send_scores(self, message, users):
+    async def send_scores(self, message, users):
 
         if users == '':
             msg = '**Top 5 most unoriginal users**\n'
@@ -61,7 +61,7 @@ class R9K(glados.Module):
     # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Permissions.spamalot
     @glados.Module.rules('^((?!\.\w+).*)$')
-    def on_message(self, message, match):
+    async def on_message(self, message, match):
         # Remove anything that is not alphanumeric
         phrase = match.group(1)
         phrase = re.sub('[^A-Za-z0-9]+', '', phrase)
