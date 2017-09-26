@@ -179,7 +179,7 @@ class Bot(object):
             'bot.say.Say'
         ]):
             result = self.__import_module(modfullname)
-            if not result is None:
+            if result is not None:
                 delayed_errors.append(result)
             else:
                 delayed_successes.append('Loaded global module {}'.format(modfullname))
@@ -232,15 +232,11 @@ class Bot(object):
             return 'Error: Module {0} doesn\'t provide any help.'.format(modfullname)
 
         # set server whitelist
-        if not server is None:
+        if server is not None:
             m.server_whitelist.append(server)
 
         # set module properties
-        m.full_name = modfullname
-        m.client = self.client
-        m.bot = self
-        m.set_settings(self.settings)
-        m.setup_global()
+        m.init_module(self, modfullname, self.settings)
 
         # get a list of tuples containing (callback function, module) pairs.
         callback_tuples = self.__get_callback_tuples(m)

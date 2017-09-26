@@ -5,50 +5,117 @@ import os
 class Module(object):
 
     def __init__(self):
-        self.__command_prefix = None
-        self.__data_path = None
-        self.__server_specific_config_dir = None
+        self.__was_initialised = False
+
         # this is set externally when the module is loaded. Contains a list of server names where this module should
         # be active. An empty list means it can be active on all servers.
         self.server_whitelist = list()
-        # this is set externally when the module is loaded. It will be something like "test.foo.Hello".
-        self.full_name = str()
-        # set externally to the discord client object
-        self.client = None
-        self.settings = None
-        self.current_server = None
-        self.bot = None
+        # set when the module is loaded. It will be something like "test.foo.Hello".
+        self.__full_name = str()
+        # the settings dictionary (settings.json)
+        self.__settings = None
+        self.__command_prefix = None
+        self.__data_path = None
+        self.__global_data_dir = None
+        # reference to the bot object, required for getting the client object or a list of all loaded modules
+        self.__bot = None
 
-        self.__server_specific_name = None
+        # Server isolation stuff
+        self.__server_specific_data_dir = None
         self.__memories = dict()
+        self.__current_memory = None
+        self.__current_server = None
 
-    def set_settings(self, settings):
-        self.settings = settings
+    def init_module(self, bot, full_name, settings):
+        self.__bot = bot
+        self.__full_name = full_name
+        self.__settings = settings
         self.__command_prefix = settings['commands']['prefix']
-        self.__data_path = self.settings['modules'].setdefault('data', 'data')
+        self.__data_path = settings['modules'].setdefault('data', 'data')
+        self.__global_data_dir = os.path.join(self.__data_path, 'global_cache')
+
+        if not os.path.isdir(self.__global_data_dir):
+            os.mkdir(self.__global_data_dir)
 
     def set_current_server(self, server_id):
-        self.__server_specific_name = self.full_name + server_id
-        self.__server_specific_config_dir = os.path.join(self.__data_path, server_id)
-        if not os.path.isdir(self.__server_specific_config_dir):
-            os.mkdir(self.__server_specific_config_dir)
-        self.current_server = None
-        for server in self.client.servers:
-            if server.id == server_id:
-                self.current_server = server
-                break
-        self.__may_need_to_setup_memory()
+        self.__current_server = next((server for server in self.client.servers if server.id == server_id))
+        if self.__current_server is None:
+            raise RuntimeError('Failed to set current server to ID: {}'.format(server_id))
+
+        self.__server_specific_data_dir = os.path.join(self.__data_path, server_id)
+        if not os.path.isdir(self.__server_specific_data_dir):
+            os.mkdir(self.__server_specific_data_dir)
+
+        # lazy global init for modules
+        if not self.__was_initialised:
+            self.setup_global()  # calls derived
+            self.__was_initialised = True
+
+        # lazy memory init for modules
+        self.__current_memory = self.__memories.get(self.__current_server.id, None)
+        if self.__current_memory is None:
+            self.__memories[self.__current_server.id] = dict()
+            self.setup_memory()  # calls derived
+
+    @property
+    def settings(self):
+        return self.__settings
+
+    @property
+    def full_name(self):
+        return self.__full_name
+
+    @property
+    def command_prefix(self):
+        return self.__command_prefix
+
+    @property
+    def current_server(self):
+        return self.__current_server
+
+    @property
+    def client(self):
+        return self.__bot.client
+
+    @property
+    def loaded_modules(self):
+        return self.__bot.get_loaded_modules(self.__current_server.id)
+
+    @property
+    def global_data_dir(self):
+        """
+        :return: Returns the path to a directory where modules can store data that is common among all servers.
+        If you want to store data only for specific servers, then use data_dir() instead.
+        """
+        return self.__global_data_dir
+
+    @property
+    def data_dir(self):
+        """
+        Returns the path in which modules can store their data. Modules **must** use this function and not retrieve it
+        from the "settings" dict. It changes depending on which server a message originated from.
+        """
+        return self.__server_specific_data_dir
+
+    @property
+    def memory(self):
+        """
+        Returns the server specific memory. Modules can store whatever they want in here.
+        :return: A dictionary. Store whatever you want
+        """
+        return self.__current_memory
 
     def setup_global(self):
         """
-        Called right after the external module attributes were set. Gets called only once globally.
+        Use this instead of __init__ if possible. This gets called once only, and it gets called on demand (that is, the
+        first time your module is required).
         """
         pass
 
     def setup_memory(self):
         """
-        Gets called once during initialisation for every server. This is useful when modules want to create the server
-        specific directories and set up memory storage.
+        Gets called once for every server on demand. This is useful when modules want to create the server specific
+        directories and set up memory storage.
         """
         pass
 
@@ -58,25 +125,6 @@ class Module(object):
         stuff here like saving files.
         """
         pass
-
-    def get_config_dir(self):
-        """
-        Returns the path in which modules can store their data. Modules **must** use this function and not retrieve it
-        from the "settings" dict. It changes depending on which server a message originated from.
-        """
-        return self.__server_specific_config_dir
-
-    def get_memory(self):
-        """
-        Returns the server specific memory. Modules can store whatever they want in here.
-        :return: A dictionary. Store whatever you want
-        """
-        return self.__memories[self.__server_specific_name]
-
-    def __may_need_to_setup_memory(self):
-        if not self.__server_specific_name in self.__memories:
-            self.__memories[self.__server_specific_name] = dict()
-            self.setup_memory()  # calls derived
 
     async def provide_help(self, command, message):
         """
@@ -110,6 +158,56 @@ class Module(object):
         return an empty list.
         """
         raise RuntimeError('Module doesn\'t provide any command descriptions.')
+
+    def parse_members_roles(self, message, content):
+        """
+        Can be used to extract a list of member names/mentions or role names from a sent message. Typically one would
+        use it as follows:
+
+            members, roles, error = self.get_members_roles(message, content)
+            if error:
+                await self.client.send_message(message.channel, error)
+                return
+            # At this point, you now have a list of mentioned members and roles
+
+        :param message: The discord message object that was sent from the server
+        :param content: The content of the message, minus command
+        :return: If successful, this returns a tuple with a list of members, list of roles, and an empty string
+        (indicating no error). If unsuccessful, the third item in the returned tuple will be a string containing the
+        error message.
+        """
+        members = set()
+        roles = set()
+
+        # Use mentions instead of looking up the name if possible
+        for member in message.mentions:
+            members.add(member)
+        for role in message.role_mentions:
+            roles.add(role)
+        if len(members) > 0 or len(roles) > 0:
+            return members, roles, ''
+
+        # fall back to text based names, in which case we need to look up the member object
+        name = content.split()[0].strip('@').split('#')[0]
+        for member in self.current_server.members:
+            if member.nick == name or member.name == name:
+                members.add(member)
+            # There is currently no way to get a list of all roles, but we can compose one by taking the
+            # roles from all of the members
+            for role in member.roles:
+                if role.name == name:
+                    roles.add(role)
+
+        if len(members) == 0 and len(roles) == 0:
+            return (), (), 0, 'Error: No member or role found with the name "{}"'.format(name)
+        if len(members) > 0 and len(roles) > 0:
+            return (), (), 0, 'Error: One or more member(s) have a name identical to a role name "{}".' \
+                              'Try again by mentioning the user/role'.format(name)
+        if len(members) > 1 or len(roles) > 1:
+            return (), (), 0, 'Error: Multiple members/roles share the name "{}".' \
+                              'Try again by mentioning the user.'.format(name)
+
+        return members, roles, ''
 
     @staticmethod
     def commands(*command_list):

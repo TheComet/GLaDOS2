@@ -12,9 +12,8 @@ class Permissions(glados.Permissions):
         permissions.setdefault('bot owner', '<please enter your discord ID>')
 
     def setup_memory(self):
-        memory = self.get_memory()
-        memory['dict'] = dict()
-        memory['config file'] = os.path.join(self.get_config_dir(), 'permissions.json')
+        self.memory['dict'] = dict()
+        self.memory['config file'] = os.path.join(self.data_dir, 'permissions.json')
         self.__load_dict()
 
     def get_help_list(self):
@@ -82,15 +81,14 @@ class Permissions(glados.Permissions):
 
     @glados.Module.commands('modlist')
     async def modlist(self, message, content):
-        memory = self.get_memory()
         mod_list = list()
         admin_list = list()
         owner = None
         for member in self.current_server.members:
-            if member.id in memory['dict']['moderator']['IDs']:
+            if member.id in self.memory['dict']['moderator']['IDs']:
                 if not member in mod_list:
                     mod_list.append(member)
-            if member.id in memory['dict']['admin']['IDs']:
+            if member.id in self.memory['dict']['admin']['IDs']:
                 if not member in admin_list:
                     admin_list.append(member)
             if member.id == self.settings['permissions']['bot owner']:
@@ -107,7 +105,7 @@ class Permissions(glados.Permissions):
     @glados.Module.commands('banlist')
     async def banlist(self, message, content):
         banned = list()
-        for member in self.client.get_all_members():
+        for member in self.current_server.members:
             if member.id in self.settings['banned']:
                 expiry_date = self.settings['banned'][member.id]
                 if not expiry_date == 'never':
@@ -131,7 +129,7 @@ class Permissions(glados.Permissions):
     @glados.Module.commands('blesslist')
     async def blesslist(self, message, content):
         blessed = list()
-        for member in self.client.get_all_members():
+        for member in self.current_server.members:
             if member.id in self.settings['blessed']:
                 if not member in blessed:
                     blessed.append(member)
@@ -145,7 +143,7 @@ class Permissions(glados.Permissions):
     @glados.Module.commands('optoutlist')
     async def optoutlist(self, message, content):
         optouts = list()
-        for member in self.client.get_all_members():
+        for member in self.current_server.members:
             if member.id in self.settings['optout']:
                 if not member in optouts:
                     optouts.append(member)
@@ -276,38 +274,8 @@ class Permissions(glados.Permissions):
             except ValueError:
                 duration = 24
 
-        members = set()
-        roles = set()
-
-        # Use mentions instead of looking up the name if possible
-        for member in message.mentions:
-            members.add(member)
-        for role in message.role_mentions:
-            roles.add(role)
-        if len(members) > 0 or len(roles) > 0:
-            return members, roles, duration, ''
-
-        # fall back to text based names, in which case we need to look up the member object
-        name = content.split()[0].strip('@').split('#')[0]
-        for member in self.current_server.members:
-            if member.nick == name or member.name == name:
-                members.add(member)
-            # There is currently no way to get a list of all roles, but we can compose one by taking the
-            # roles from all of the members
-            for role in member.roles:
-                if role.name == name:
-                    roles.add(role)
-
-        if len(members) == 0 and len(roles) == 0:
-            return (), (), 0, 'Error: No member or role found with the name "{}"'.format(name)
-        if len(members) > 0 and len(roles) > 0:
-            return (), (), 0, 'Error: One or more member(s) have a name identical to a role name "{}".' \
-                              'Try again by mentioning the user/role'.format(name)
-        if len(members) > 1 or len(roles) > 1:
-            return (), (), 0, 'Error: Multiple members/roles share the name "{}".' \
-                              'Try again by mentioning the user.'.format(name)
-
-        return members, roles, duration, ''
+        members, roles, error = self.parse_members_roles(message, content)
+        return members, roles, duration, error
 
     def __mark_command(self, members, roles, duration, key):
         if duration > 0:
@@ -347,13 +315,12 @@ class Permissions(glados.Permissions):
         return '"{}": No longer {}'.format(', '.join(x.mention for x in unmarked), key)
 
     def __load_dict(self):
-        memory = self.get_memory()
-        if os.path.isfile(memory['config file']):
-            memory['dict'] = json.loads(open(memory['config file']).read())
+        if os.path.isfile(self.memory['config file']):
+            self.memory['dict'] = json.loads(open(self.memory['config file']).read())
 
         # make sure all keys exists
         def add_default(key):
-            memory['dict'].setdefault(key, {
+            self.memory['dict'].setdefault(key, {
                 'IDs': {},
                 'roles': {}
             })
@@ -363,9 +330,8 @@ class Permissions(glados.Permissions):
         add_default('admin')
 
     def __save_dict(self):
-        memory = self.get_memory()
-        with open(memory['config file'], 'w') as f:
-            s = json.dumps(memory['dict'], indent=2, sort_keys=True)
+        with open(self.memory['config file'], 'w') as f:
+            s = json.dumps(self.memory['dict'], indent=2, sort_keys=True)
             print(s)
             f.write(s)
 
@@ -376,7 +342,7 @@ class Permissions(glados.Permissions):
 
         user_name = user_name.strip('@').split('#')[0]
         members = list()
-        for member in self.client.get_all_members():
+        for member in self.current_server.members:
             if member.nick == user_name or member.name == user_name:
                 members.append(member)
         if len(members) == 0:
@@ -386,15 +352,14 @@ class Permissions(glados.Permissions):
         return members
 
     def __is_member_still_marked_as(self, member, key):
-        memory = self.get_memory()
         try:
             expiry_dates = [
-                ('IDs', member.id, memory['dict'][key]['IDs'][member.id])
+                ('IDs', member.id, self.memory['dict'][key]['IDs'][member.id])
             ]
         except KeyError:
             member_role_names = set(x.name for x in member.roles)
-            key_role_names = set(memory['dict'][key]['roles'])
-            expiry_dates = [('roles', x, memory['dict'][key]['roles'][x])
+            key_role_names = set(self.memory['dict'][key]['roles'])
+            expiry_dates = [('roles', x, self.memory['dict'][key]['roles'][x])
                             for x in member_role_names.intersection(key_role_names)]
             if len(expiry_dates) == 0:
                 return False
@@ -418,7 +383,7 @@ class Permissions(glados.Permissions):
             if expiry_date == 'never':
                 continue
             if datetime.now().isoformat() > expiry_date:
-                memory['dict'][key][type_key].pop(item_key)
+                self.memory['dict'][key][type_key].pop(item_key)
                 expiry_dates_len -= 1
 
         if expiry_dates_len < len(expiry_dates):
@@ -434,7 +399,7 @@ class Permissions(glados.Permissions):
             expiry_date = expiry_date.isoformat()
         else:
             expiry_date = 'never'
-        self.get_memory()['dict'][key]['IDs'][member.id] = expiry_date
+        self.memory['dict'][key]['IDs'][member.id] = expiry_date
         self.__save_dict()
 
     def __mark_role_as(self, role_name, key, duration_h=0):
@@ -443,23 +408,22 @@ class Permissions(glados.Permissions):
             expiry_date = expiry_date.isoformat()
         else:
             expiry_date = 'never'
-        self.get_memory()['dict'][key]['roles'][role_name] = expiry_date
+        self.memory['dict'][key]['roles'][role_name] = expiry_date
         self.__save_dict()
 
     def __unmark_member(self, member, key):
-        self.get_memory()['dict'][key]['IDs'].pop(member.id, None)
+        self.memory['dict'][key]['IDs'].pop(member.id, None)
         self.__save_dict()
 
     def __unmark_role(self, role_name, key):
-        self.get_memory()['dict'][key]['roles'].pop(role_name, None)
+        self.memory['dict'][key]['roles'].pop(role_name, None)
         self.__save_dict()
 
     def __get_expiry(self, member, key):
-        memory = self.get_memory()
         try:
-            return memory['dict'][key]['IDs'][member.id]
+            return self.memory['dict'][key]['IDs'][member.id]
         except KeyError:
-            banned_roles = memory['dict']['banned']['roles']
+            banned_roles = self.memory['dict']['banned']['roles']
             for role in member.roles:
                 expiry = banned_roles.get(role.name, '')
                 if expiry:

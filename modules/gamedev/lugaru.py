@@ -1,8 +1,7 @@
 import glados
 import os
 import json
-from datetime import datetime, timedelta
-from time import strptime, strftime
+from datetime import datetime
 
 
 FORMAT = "%Y-%m-%dT%H:%M:%S"
@@ -37,32 +36,28 @@ class Lugaru(glados.Module):
     def get_help_list(self): return [glados.Help('lugaru', '', 'Days since lugaru was mentioned')]
 
     def setup_memory(self):
-        mem = self.get_memory()
-        mem['db file'] = os.path.join(self.get_config_dir(), 'lugaru.json')
-        mem['db'] = dict()
+        self.memory['db file'] = os.path.join(self.data_dir, 'lugaru.json')
+        self.memory['db'] = dict()
         self.__load_db()
 
     def __load_db(self):
-        mem = self.get_memory()
-        if os.path.isfile(mem['db file']):
-            mem['db'] = json.loads(open(mem['db file'], 'r').read())
-        if not 'timestamp' in mem['db']:
-            mem['db']['timestamp'] = datetime.now().strftime(FORMAT)
-        if not 'author' in mem['db']:
-            mem['db']['author'] = '(this is the first mention)'
-        if not 'record' in mem['db']:
-            mem['db']['record'] = 0
+        if os.path.isfile(self.memory['db file']):
+            self.memory['db'] = json.loads(open(self.memory['db file'], 'r').read())
+        if not 'timestamp' in self.memory['db']:
+            self.memory['db']['timestamp'] = datetime.now().strftime(FORMAT)
+        if not 'author' in self.memory['db']:
+            self.memory['db']['author'] = '(this is the first mention)'
+        if not 'record' in self.memory['db']:
+            self.memory['db']['record'] = 0
 
     def __save_db(self):
-        mem = self.get_memory()
-        open(mem['db file'], 'w').write(json.dumps(mem['db']))
+        open(self.memory['db file'], 'w').write(json.dumps(self.memory['db']))
 
     def __get_data(self):
-        mem = self.get_memory()
         now = datetime.now()
-        last_mentioned = datetime.strptime(mem['db']['timestamp'], FORMAT)
-        author = mem['db']['author']
-        record = mem['db']['record']
+        last_mentioned = datetime.strptime(self.memory['db']['timestamp'], FORMAT)
+        author = self.memory['db']['author']
+        record = self.memory['db']['record']
         delta = now - last_mentioned
         if int(record) < delta.days:
             record = delta.days
@@ -70,18 +65,17 @@ class Lugaru(glados.Module):
 
     # Don't match commands
     @glados.Module.rules('^(?!\.\w+).*lugaru.*$')
-    def lugaru_was_mentioned(self, message, match):
+    async def lugaru_was_mentioned(self, message, match):
         delta, author, record = self.__get_data()
         await self.client.send_message(message.channel, 'Days since `lugaru` was mentioned: :zero: :zero: :zero: :zero: (record was {} day(s) by {})'.format(record, author))
 
-        mem = self.get_memory()
-        mem['db']['record'] = delta.days
-        mem['db']['timestamp'] = datetime.now().strftime(FORMAT)
-        mem['db']['author'] = message.author.name
+        self.memory['db']['record'] = delta.days
+        self.memory['db']['timestamp'] = datetime.now().strftime(FORMAT)
+        self.memory['db']['author'] = message.author.name
         self.__save_db()
 
     @glados.Module.commands('lugaru')
-    def lugaru(self, message, args):
+    async def lugaru(self, message, args):
         delta, author, record = self.__get_data()
         msg = '`Lugaru` was mentioned {} by {} (current record: {} day(s))'.format(readable_timestamp(delta), author, record)
         await self.client.send_message(message.channel, msg)

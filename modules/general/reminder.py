@@ -73,25 +73,24 @@ class Reminder(glados.Module):
         return [
             glados.Help('in', '<offset> <reminder>', 'Creates a reminder. Example: ".in 3h45m Go to class"')
         ]
-        
+
     def setup_memory(self):
-        memory = self.get_memory()
-        memory['reminder_file'] = os.path.join(self.get_config_dir(), 'reminders.db')
-        memory['rdb'] = self.__load_database()
+        self.memory['reminder_file'] = os.path.join(self.data_dir, 'reminders.db')
+        self.memory['rdb'] = self.__load_database()
 
         @asyncio.coroutine
-        def monitor():
+        async def monitor():
             while True:
                 await asyncio.sleep(2.5)
 
                 now = int(time.time())
-                unixtimes = [int(key) for key in memory['rdb']]
+                unixtimes = [int(key) for key in self.memory['rdb']]
                 oldtimes = [t for t in unixtimes if t <= now]
                 if not oldtimes:
                     continue
 
                 for oldtime in oldtimes:
-                    for (channel_id, author_id, message) in memory['rdb'][oldtime]:
+                    for (channel_id, author_id, message) in self.memory['rdb'][oldtime]:
                         channel = self.client.get_channel(channel_id)
                         author = self.client.get_member(author_id)
                         if channel is None or author is None:
@@ -101,22 +100,20 @@ class Reminder(glados.Module):
                             self.client.send_message(channel, '{} {}'.format(author.mention, message))
                         else:
                             self.client.send_message(channel, '{}!'.format(author.mention))
-                    del memory['rdb'][oldtime]
+                    del self.memory['rdb'][oldtime]
                 self.__dump_database()
 
         asyncio.ensure_future(monitor)
 
     def __load_database(self):
-        memory = self.get_memory()
         data = {}
-        if os.path.isfile(memory['reminder_file']):
-            data = json.loads(codecs.open(memory['reminder_file'], 'r', encoding='utf-8').read())
+        if os.path.isfile(self.memory['reminder_file']):
+            data = json.loads(codecs.open(self.memory['reminder_file'], 'r', encoding='utf-8').read())
         return data
 
     def __dump_database(self):
-        memory = self.get_memory()
-        with codecs.open(memory['reminder_file'], 'w', encoding='utf-8') as f:
-            f.write(json.dumps(memory['rdb']))
+        with codecs.open(self.memory['reminder_file'], 'w', encoding='utf-8') as f:
+            f.write(json.dumps(self.memory['rdb']))
 
     @glados.Module.commands('in')
     def remind(self, message, args):
@@ -148,7 +145,6 @@ class Reminder(glados.Module):
         else:
             duration = int(duration)
 
-        memory = self.get_memory()
         timezone = get_timezone(
             bot.db, bot.config, None, trigger.nick, trigger.sender)
         create_reminder(bot, trigger, duration, reminder, timezone)
@@ -208,11 +204,11 @@ class Reminder(glados.Module):
         t = int(time.time()) + duration
         reminder = (trigger.sender, trigger.nick, message)
         try:
-            memory['rdb'][t].append(reminder)
+            self.memory['rdb'][t].append(reminder)
         except KeyError:
-            memory['rdb'][t] = [reminder]
+            self.memory['rdb'][t] = [reminder]
 
-        dump_database(bot.rfn, memory['rdb'])
+        dump_database(bot.rfn, self.memory['rdb'])
 
         if duration >= 60:
             remind_at = datetime.utcfromtimestamp(t)

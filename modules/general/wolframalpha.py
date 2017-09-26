@@ -34,10 +34,9 @@ class WolframAlpha(glados.Module):
         self.__wolfram_client = wolframalpha.Client(key)
 
     def setup_memory(self):
-        memory = self.get_memory()
-        memory['cache dir'] = os.path.join(self.get_config_dir(), 'wolfram')
-        if not os.path.exists(memory['cache dir']):
-            os.makedirs(memory['cache dir'])
+        self.memory['cache dir'] = os.path.join(self.data_dir, 'wolfram')
+        if not os.path.exists(self.memory['cache dir']):
+            os.makedirs(self.memory['cache dir'])
 
     def get_help_list(self):
         return [glados.Help('wolfram', '<query>', 'Query Wolfram Alpha')]
@@ -96,8 +95,6 @@ class WolframAlpha(glados.Module):
             await self.provide_help('wolfram', message)
             return
 
-        memory = self.get_memory()
-
         try:
             data, info_msg = self.__do_wa_query(query)
         except:
@@ -114,7 +111,7 @@ class WolframAlpha(glados.Module):
                     img = requests.get(subpod['img']['@src'], stream=True)
                     img.raw.decode_content = True
 
-                    image_file_name = os.path.join(memory['cache dir'], message.author.name + '.gif')
+                    image_file_name = os.path.join(self.memory['cache dir'], message.author.name + '.gif')
                     with open(image_file_name, 'w+b') as f:
                         f.write(img.raw.read())
                     await self.client.send_file(message.channel, image_file_name,
@@ -127,7 +124,7 @@ class WolframAlpha(glados.Module):
                     img = requests.get(subpod['img']['@src'], stream=True)
                     img.raw.decode_content = True
 
-                    image_file_name = os.path.join(memory['cache dir'], message.author.name + '.gif')
+                    image_file_name = os.path.join(self.memory['cache dir'], message.author.name + '.gif')
                     with open(image_file_name, 'w+b') as f:
                         f.write(img.raw.read())
                     await self.client.send_file(message.channel, image_file_name,

@@ -8,12 +8,11 @@ import random
 class Myth(glados.Module):
 
     def setup_memory(self):
-        memory = self.get_memory()
-        memory['data path'] = os.path.join(self.get_config_dir(), 'myths')
-        if not os.path.exists(memory['data path']):
-            os.makedirs(memory['data path'])
+        self.memory['data path'] = os.path.join(self.data_dir, 'myths')
+        if not os.path.exists(self.memory['data path']):
+            os.makedirs(self.memory['data path'])
 
-        memory['data file'] = os.path.join(memory['data path'], 'myths.txt')
+        self.memory['data file'] = os.path.join(self.memory['data path'], 'myths.txt')
 
     def get_help_list(self):
         return [
@@ -36,16 +35,15 @@ class Myth(glados.Module):
             return ()
 
         new_id = 1
-        memory = self.get_memory()
-        if os.path.isfile(memory['data file']):
-            with codecs.open(memory['data file'], 'r', encoding='utf-8') as f:
+        if os.path.isfile(self.memory['data file']):
+            with codecs.open(self.memory['data file'], 'r', encoding='utf-8') as f:
                 lines = [x for x in f.readlines() if len(x) > 2]
                 if len(lines) > 0:
                     last_line = lines[-1]
                     parts = self.__extract_parts(last_line)
                     new_id = int(parts[0]) + 1
 
-        with codecs.open(memory['data file'], 'a', encoding='utf-8') as f:
+        with codecs.open(self.memory['data file'], 'a', encoding='utf-8') as f:
             content = content.replace('\n', '\\n')
             f.write('{}:{}:{}\n'.format(new_id, content, author))
 
@@ -64,12 +62,11 @@ class Myth(glados.Module):
             await self.client.send_message(message.channel, 'Only botmods can delete myths')
             return ()
 
-        memory = self.get_memory()
-        if not os.path.isfile(memory['data file']):
+        if not os.path.isfile(self.memory['data file']):
             await self.client.send_message(message.channel, 'Myth dB does not exist')
             return
 
-        with codecs.open(memory['data file'], 'r', encoding='utf-8') as f:
+        with codecs.open(self.memory['data file'], 'r', encoding='utf-8') as f:
             lines = f.readlines()
             replace_lines = list()
             if len(lines) == 0:
@@ -86,13 +83,12 @@ class Myth(glados.Module):
                     parts[0], offender, deleter))
 
         # overwrite with filtered list of lines
-        with codecs.open(memory['data file'], 'w', encoding='utf-8') as f:
+        with codecs.open(self.memory['data file'], 'w', encoding='utf-8') as f:
             f.writelines(replace_lines)
 
     @glados.Module.commands('myth')
     async def myth(self, message, content):
-        memory = self.get_memory()
-        with codecs.open(memory['data file'], 'r', encoding='utf-8') as f:
+        with codecs.open(self.memory['data file'], 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
         if len(lines) == 0:
@@ -127,9 +123,8 @@ class Myth(glados.Module):
 
     @glados.Module.commands('mythstats')
     async def mythstats(self, message, content):
-        memory = self.get_memory()
-        if os.path.isfile(memory['data file']):
-            with codecs.open(memory['data file'], 'r', encoding='utf-8') as f:
+        if os.path.isfile(self.memory['data file']):
+            with codecs.open(self.memory['data file'], 'r', encoding='utf-8') as f:
                 lines = [x for x in f.readlines() if len(x) > 2]
                 count = len(lines)
                 last_id = count
@@ -144,7 +139,7 @@ class Myth(glados.Module):
     def __extract_parts(self, line):
         mentioned_ids = [x.strip('<@!>') for x in re.findall('<@!?[0-9]+>', line)]
         for id in mentioned_ids:
-            for member in self.client.get_all_members():
+            for member in self.current_server.members:
                 if member.id == id:
                     line = line.replace('<@{}>'.format(id), member.name).replace('<@!{}>'.format(id), member.name)
                     break

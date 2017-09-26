@@ -12,8 +12,7 @@ import enchant
 
 class Quotes(glados.Module):
     def setup_memory(self):
-        memory = self.get_memory()
-        memory['quotes path'] = os.path.join(self.get_config_dir(), 'quotes')
+        memory['quotes path'] = os.path.join(self.data_dir, 'quotes')
         if not os.path.exists(memory['quotes path']):
             os.makedirs(memory['quotes path'])
 
@@ -47,7 +46,7 @@ class Quotes(glados.Module):
         return None
 
     def quotes_file_name(self, author):
-        return os.path.join(self.get_memory()['quotes path'], author) + '.txt'
+        return os.path.join(self.memory['quotes path'], author) + '.txt'
 
     # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Permissions.spamalot
@@ -117,7 +116,7 @@ class Quotes(glados.Module):
         '''Remove any mentions from the quote and replace them with actual member names'''
         mentioned_ids = [x.strip('<@!>') for x in re.findall('<@!?[0-9]+>', text)]
         for mentioned_id in mentioned_ids:
-            for member in self.client.get_all_members():
+            for member in self.current_server.members:
                 if member.id == mentioned_id:
                     text = text.replace('<@{}>'.format(id), member.name).replace('<@!{}>'.format(id), member.name)
                     break
@@ -174,7 +173,7 @@ class Quotes(glados.Module):
 
     def filter_to_english_words(self, words_list):
         return [word for word in words_list
-                    if any(d.check(word) for d in self.get_memory()['dictionaries'])
+                    if any(d.check(word) for d in self.memory['dictionaries'])
                     and (len(word) > 1 or len(word) == 1 and word in 'aAI')]
 
     @glados.Module.commands('grep')

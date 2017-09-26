@@ -5,24 +5,22 @@ from datetime import datetime
 
 class Log(glados.Module):
     def setup_memory(self):
-        memory = self.get_memory()
-        memory['log path'] = os.path.join(self.get_config_dir(), 'log')
-        if not os.path.exists(memory['log path']):
-            os.makedirs(memory['log path'])
+        self.memory['log path'] = os.path.join(self.data_dir, 'log')
+        if not os.path.exists(self.memory['log path']):
+            os.makedirs(self.memory['log path'])
 
-        memory['date'] = datetime.now().strftime('%Y-%m-%d')
-        memory['log file'] = open(os.path.join(memory['log path'], 'chanlog-{}'.format(memory['date'])), 'a')
+        self.memory['date'] = datetime.now().strftime('%Y-%m-%d')
+        self.memory['log file'] = open(os.path.join(self.memory['log path'], 'chanlog-{}'.format(self.memory['date'])), 'a')
 
     def get_help_list(self):
         return list()
 
     def __open_new_log_if_necessary(self):
-        memory = self.get_memory()
         date = datetime.now().strftime('%Y-%m-%d')
-        if not memory['date'] == date:
-            memory['log file'].close()
-            memory['date'] = date
-            memory['log file'] = open(os.path.join(memory['log path'], 'chanlog-{}'.format(memory['date'])), 'a')
+        if not self.memory['date'] == date:
+            self.memory['log file'].close()
+            self.memory['date'] = date
+            self.memory['log file'] = open(os.path.join(self.memory['log path'], 'chanlog-{}'.format(self.memory['date'])), 'a')
 
     @glados.Permissions.spamalot
     @glados.Module.rules('^.*$')
@@ -39,7 +37,6 @@ class Log(glados.Module):
                                                     message.author.name,
                                                     message.clean_content)
 
-        memory = self.get_memory()
-        memory['log file'].write(info)
-        memory['log file'].flush()
+        self.memory['log file'].write(info)
+        self.memory['log file'].flush()
         return tuple()
