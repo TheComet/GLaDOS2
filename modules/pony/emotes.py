@@ -154,7 +154,7 @@ class emotes(glados.Module):
 				if css_transform:
 					flip = True #this is real dumb right now, but later i hope to actually parse and see if there is any interesting transform affects on emotes, but for now xScale seems to be the most common.
 				self.tag_list[subreddit][name] = ""
-				tags = jtagdata.get(key);
+				tags = jtagdata.get(key)
 				if tags:
 					for tag in tags:
 						if not self.tag_list.get(tag):
@@ -328,13 +328,13 @@ class emotes(glados.Module):
 					temp += " | " + key
 				i += 1
 				if i == per_line:
-					response.append(temp+"\n")
+					response.append("``" + temp + "``")
 					i = 0
 			if i != 0:
-				response.append(temp)
+				response.append("``" + temp + "``")
 		else:
 			tags = content.split()
-			response.append("List of emotes which have any of the tags: " + content)
+			response.append("List of emotes which have any of the tags: " + content+"")
 			for t in tags:
 				tag_list = self.tag_list.get(t)
 				if not tag_list:
@@ -346,11 +346,11 @@ class emotes(glados.Module):
 						temp += " | " + key
 					i += 1
 					if i == per_line:
-						response.append(temp+"\n")
+						response.append("``" + temp + "``")
 						i = 0
 			if i != 0:
-				response.append(temp)
-		response.append('\n\n')
+				response.append("``" + temp + "``")
+		response.append('')
 		rlist = self.__concat_into_valid_message(response)
 		for msg in rlist:
 			yield from self.client.send_message(message.author, msg)
