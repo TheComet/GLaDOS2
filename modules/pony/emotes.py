@@ -199,7 +199,7 @@ class emotes(glados.Module):
 			l  += len(s)
 			if l >= max_length:
 				ret.append('\n'.join(temp))
-				l = 0
+				l = len(s)
 				temp = list()
 			temp.append(s)
 		ret.append('\n'.join(temp))
@@ -317,7 +317,7 @@ class emotes(glados.Module):
 	def get_pony_list(self, message, content):
 		response = []
 		temp = ""
-		per_line = 10
+		per_line = 25
 		i = 0
 		if not content:
 			response.append("List of available tags to search through:")
@@ -328,7 +328,7 @@ class emotes(glados.Module):
 					temp += " | " + key
 				i += 1
 				if i == per_line:
-					response.append(temp)
+					response.append(temp+"\n")
 					i = 0
 			if i != 0:
 				response.append(temp)
@@ -346,7 +346,8 @@ class emotes(glados.Module):
 						temp += " | " + key
 					i += 1
 					if i == per_line:
-						response.append(temp)
+						response.append(temp+"\n")
+						i = 0
 			if i != 0:
 				response.append(temp)
 
