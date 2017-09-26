@@ -6,6 +6,7 @@ class Permissions(Module):
     BANNED = -1
     NEED_MODERATOR = -2
     NEED_ADMIN = -3
+    NEED_OWNER = -4
 
     SPAMABLE = 1
     PUNISHABLE = 2
@@ -23,19 +24,19 @@ class Permissions(Module):
     def is_blessed(self, member):
         return False
 
-    def is_moderator(self, member):
+    def require_moderator(self, member):
         return False
 
-    def is_admin(self, member):
+    def require_admin(self, member):
         return False
 
-    def unban(self, member):
-        pass
+    def require_owner(self, member):
+        return False
 
     def get_ban_expiry(self, member):
         raise NotImplementedError()
 
-    async def inform_author_about_failure(self, message, permission_code):
+    async def inform_about_failure(self, message, permission_code):
         """
         If check_permissions() doesn't return OK, then you can call this to send a direct message to the user informing
         him why it failed. The returned permission code from check_permissions() needs to be passed to this method.
@@ -47,9 +48,14 @@ class Permissions(Module):
             await self.client.send_message(message.author,
                     'You have been banned from using the bot. Your ban expires: {}'.format(expiry))
         elif permission_code == self.NEED_MODERATOR:
-            pass
+            await self.client.send_message(message.channel,
+                    'You need to be a moderator to use this command.')
         elif permission_code == self.NEED_ADMIN:
-            pass
+            await self.client.send_message(message.channel,
+                    'You need to be an admin to use this command.')
+        elif permission_code == self.NEED_OWNER:
+            await self.client.send_message(message.channel,
+                    'You need to be the bot owner to use this command.')
 
     def check_permissions(self, member, callback_function):
         """
@@ -63,17 +69,23 @@ class Permissions(Module):
             return self.SPAMABLE
 
         # Admins always have permission
-        if self.is_admin(member):
+        if self.require_admin(member):
             return self.SPAMABLE
 
         # If member is banned -- even if member is a moderator -- member doesn't have permission
         if self.is_banned(member):
             return self.BANNED
 
-        if hasattr(callback_function, 'moderator') and not self.is_moderator(member):
-            return self.NEED_MODERATOR
-        if hasattr(callback_function, 'admin'):
+        if hasattr(callback_function, 'owner') and not self.require_owner(member):
+            return self.NEED_OWNER
+        if hasattr(callback_function, 'admin') and not self.require_admin(member):
             return self.NEED_ADMIN
+        if hasattr(callback_function, 'moderator') and not self.require_moderator(member):
+            return self.NEED_MODERATOR
+
+        # If member is blessed, then they can spam
+        if self.is_blessed(member):
+            return self.SPAMABLE
 
         return self.PUNISHABLE
 
@@ -84,14 +96,20 @@ class Permissions(Module):
         cooldown. This is for things like logging functions or other functions that don't directly interact with
         the user but need to monitor lots of chat messages.
         """
-        func['spamalot'] = True
+        func.__dict__['spamalot'] = True
+        return func
+
+    @staticmethod
+    def owner(func):
+        func.__dict__['owner'] = True
         return func
 
     @staticmethod
     def admin(func):
-        func['admin'] = True
+        func.__dict__['admin'] = True
         return func
 
     @staticmethod
     def moderator(func):
-        func['moderator'] = True
+        func.__dict__['moderator'] = True
+        return func

@@ -28,6 +28,8 @@ class Module(object):
     def set_current_server(self, server_id):
         self.__server_specific_name = self.full_name + server_id
         self.__server_specific_config_dir = os.path.join(self.__data_path, server_id)
+        if not os.path.isdir(self.__server_specific_config_dir):
+            os.mkdir(self.__server_specific_config_dir)
         self.__may_need_to_setup_memory()
 
     def setup_global(self):

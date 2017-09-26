@@ -5,7 +5,6 @@ import asyncio
 import inspect
 import re
 import math
-from datetime import datetime, timedelta
 from .Log import log
 from .cooldown import Cooldown
 from .tools.path import add_import_paths
@@ -46,32 +45,20 @@ class Bot(object):
             # required for permission server isolation
             self.__permissions.set_current_server(message.server.id)
 
-            # If user is not banned, process core commands first
-            if not self.__permissions.is_banned(message.author):
-                for command, content in commands:
-                    await self.__process_core_commands(message, command, content)
-
-            # Apply cooldown to any commands/matches that aren't spammable. Ignore members that are
-            # blessed or mods/admins
-            if not self.__permissions.is_blessed(message.author) \
-                    and not self.__permissions.is_moderator(message.author) \
-                    and not self.__permissions.is_admin(message.author):
-                if not all(hasattr(x[1], 'spamalot') for x in commands_to_process):
-                    cooldown = self.__apply_cooldown(message)
-                    if cooldown:
-                        await self.client.send_message(message.author, cooldown)
-                        return
-
             punish_checked = False
             user_is_punished = False
             for callback, module, content in commands_to_process:
                 code = self.__permissions.check_permissions(message.author, callback)
                 if code < 0:
-                    await self.__permissions.inform_author_about_failure(message, code)
+                    cooldown = self.__apply_cooldown(message)
+                    if cooldown:
+                        await self.client.send_message(message.author, cooldown)
+                    else:
+                        await self.__permissions.inform_about_failure(message, code)
                     continue
 
                 if code == Permissions.PUNISHABLE:
-                    if not punish_checked:
+                    if not punish_checked and not hasattr(callback, 'spamalot'):
                         cooldown = self.__apply_cooldown(message)
                         if cooldown:
                             user_is_punished = True
@@ -85,6 +72,7 @@ class Bot(object):
 
         @self.client.event
         async def on_ready():
+            # TODO this doesn't seem to work, bots don't have permission to just join servers
             #await self.__auto_join_channels()
             log('Running as {}'.format(self.client.user.name))
 
@@ -347,25 +335,6 @@ class Bot(object):
                 await self.client.send_message(message.channel,
                                                     'I\'m sending you a gigantic wall of direct message with a list of commands!')
 
-    async def __process_modhelp_command(self, message, content):
-        # If the user was banned, don't announce the help sending
-        if not message.author.id in self.settings['banned']:
-            await self.client.send_message(message.channel, "I just PM'd you the help list!")
-        await self.client.send_message(message.author,
-                "{0}{1} **<user> [hours]** -- Blacklist the specified user from using the bot for the "
-                "specified number of hours. The default number of hours is 24. Specifying a value"
-                " of 0 will cause the user to be perma-banned. The ban is based on user ID.\n"
-                "{0}{2} **<user>** -- Allow a banned user to use the bot again.\n"
-                "{0}{3} **<user>** -- Allow the specified user to evade the punishment system. "
-                "This allows the user to excessively use the bot without consequences.\n"
-                "{0}{4} **<user>** -- Prevents spam from this user by putting him through the punishment system.\n".format(
-                    self.__command_prefix,
-                    self.settings['commands']['ban'],
-                    self.settings['commands']['unban'],
-                    self.settings['commands']['bless'],
-                    self.settings['commands']['unbless'])
-        )
-
     async def __process_optout_command(self, message, content):
         if message.author.id in self.settings['optout']:
             await self.client.send_message(message.channel, 'User "{}" is already opted out.'.format(message.author.name))
@@ -390,71 +359,6 @@ class Bot(object):
 
         await self.client.send_message(message.channel, 'User "{}" has opted in. The bot will collect logs on you '
                         'for commands such as `.quote` or `.zipf` to function correctly.'.format(message.author.name))
-
-    async def __process_ban_command(self, message, content):
-        if content == '':
-            await self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
-            return
-
-        args = content.split()
-        author = args[0]
-
-        # If result is a string, then it is an error message.
-        results = self.__get_members_from_string(message, author)
-        if isinstance(results, str):
-            await self.client.send_message(message.channel, results)
-            return
-
-        # If you are a moderator, then you can't ban admins
-        is_mod = message.author.id in self.settings['moderators']['IDs'] or \
-                 len(set(x.name for x in message.author.roles).intersection(set(self.settings['moderators']['roles']))) > 0
-        if is_mod:
-            for member in results:
-                is_admin = member.id in self.settings['admins']['IDs']
-                if is_admin:
-                    await self.client.send_message(message.channel, 'Moderators can\'t ban admins')
-                    return
-
-        # Default ban length is 24 hours
-        if len(args) < 2:
-            hours = 24
-        else:
-            try:
-                hours = float(args[-1])
-            except ValueError:
-                hours = 24
-
-        if hours > 0:
-            expiry_date = datetime.now() + timedelta(hours / 24.0)
-            for member in results:
-                self.settings['banned'][member.id] = expiry_date.isoformat()
-        else:
-            for member in results:
-                self.settings['banned'][member.id] = 'never'
-            expiry_date = 'forever'
-        self.__save_settings()
-
-        users_banned = ', '.join([x.name for x in results])
-        await self.client.send_message(message.channel, 'User(s) "{}" is banned from using this bot until {}'.format(users_banned, expiry_date))
-
-    async def __process_unban_command(self, message, content):
-        if content == '':
-            await self.client.send_message(message.channel, 'Invalid syntax. Type `.modhelp` if you need help.')
-            return
-
-        # If result is a string, then it is an error message.
-        author = content.split()[0]
-        results = self.__get_members_from_string(message, author)
-        if isinstance(results, str):
-            await self.client.send_message(message.channel, results)
-            return
-
-        for member in results:
-            if not member.id in self.settings['banned']:
-                await self.client.send_message(message.channel, 'User "{}" isn\'t banned'.format(member))
-            else:
-                self.__unban_user(member)
-                await self.client.send_message(message.channel, 'Unbanned user "{}"'.format(member))
 
     async def __process_bless_command(self, message, content):
         if content == '':
