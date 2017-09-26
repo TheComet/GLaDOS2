@@ -38,7 +38,7 @@ class EightBall(glados.Module):
         ]
 
     @glados.Module.commands('8', '8ball')
-    def ball(self, message, content):
+    async def ball(self, message, content):
         if content == '':
             await self.provide_help('8', message)
             return

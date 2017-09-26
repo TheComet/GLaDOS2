@@ -17,6 +17,7 @@ class Module(object):
         self.client = None
         self.settings = None
         self.current_server = None
+        self.bot = None
 
         self.__server_specific_name = None
         self.__memories = dict()

@@ -15,7 +15,7 @@ class Youtube(glados.Module):
         ]
 
     @glados.Module.commands('youtube', 'yt')
-    def random_youtube(self, message, content):
+    async def random_youtube(self, message, content):
         # no arguments
         if content == '':
             await self.provide_help('youtube', message)

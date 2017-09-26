@@ -151,7 +151,7 @@ class Activity(glados.Module):
             f.write(json.dumps(memory['cache']))
 
     @glados.Module.commands('ranks')
-    def ranks(self, message, users):
+    async def ranks(self, message, users):
         if self.__cache_is_stale():
             await self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
             await self.__reprocess_cache()
@@ -168,7 +168,7 @@ class Activity(glados.Module):
         await self.client.send_message(message.channel, msg)
 
     @glados.Module.commands('activity')
-    def plot_activity(self, message, users):
+    async def plot_activity(self, message, users):
         # Mentions have precedence
         if len(message.mentions) > 0:
             user_name = message.mentions[0].name

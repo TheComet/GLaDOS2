@@ -10,7 +10,7 @@ class Google(glados.Module):
         ]
 
     @glados.Module.commands('google')
-    def google(self, message, term):
+    async def google(self, message, term):
         if term == '':
             await self.provide_help('google', message)
             return

@@ -13,7 +13,7 @@ class ShowIP(glados.Module):
         ]
 
     @glados.Module.commands('showip')
-    def showip(self, message, content):
+    async def showip(self, message, content):
         if content == '':
             await self.provide_help('showip', message)
             return

@@ -82,7 +82,7 @@ class Wiktionary(glados.Module):
         ]
 
     @glados.Module.commands('wt', 'define', 'dict')
-    def wiktionary(self, message, word):
+    async def wiktionary(self, message, word):
         """Look up a word on Wiktionary."""
         if word == '':
             await self.provide_help('define', message)

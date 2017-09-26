@@ -65,8 +65,8 @@ class XKCD(glados.Module):
         super(XKCD, self).__init__()
         self.__tmp_dir = None
 
-    def setup_global(self):
-        self.__tmp_dir = os.path.join(self.settings['modules']['config path'], 'xkcd')
+    def setup_memory(self):
+        self.__tmp_dir = os.path.join(self.get_config_dir(), 'xkcd')
         if not os.path.exists(self.__tmp_dir):
             os.makedirs(self.__tmp_dir)
 
@@ -77,7 +77,7 @@ class XKCD(glados.Module):
         ]
 
     @glados.Module.commands('xkcd')
-    def xkcd(self, message, query):
+    async def xkcd(self, message, query):
         """
         .xkcd - Finds an xkcd comic strip. Takes one of 3 inputs:
         If no input is provided it will return a random comic

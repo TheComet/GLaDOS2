@@ -77,7 +77,7 @@ class Etymology(glados.Module):
         return sentence + ' - ' + (self.etyuri % word)
 
     @glados.Module.commands('ety')
-    def f_etymology(self, message, word):
+    async def f_etymology(self, message, word):
         """Look up the etymology of a word"""
 
         if word == '':

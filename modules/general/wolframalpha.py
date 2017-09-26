@@ -30,7 +30,7 @@ class WolframAlpha(glados.Module):
         self.__wolfram_client = None
 
     def setup_global(self):
-        key = self.settings['wolfram alpha']['key']
+        key = self.settings.setdefault('wolfram alpha', {}).setdefault('key', '<please enter WA key>')
         self.__wolfram_client = wolframalpha.Client(key)
 
     def setup_memory(self):
@@ -91,7 +91,7 @@ class WolframAlpha(glados.Module):
 
     @glados.Module.commands('wolfram')
     @glados.Module.commands('wa')
-    def wolfram(self, message, query):
+    async def wolfram(self, message, query):
         if query == '':
             await self.provide_help('wolfram', message)
             return

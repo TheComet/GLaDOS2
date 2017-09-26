@@ -32,7 +32,7 @@ class Urban(glados.Module):
         return definition
 
     @glados.Module.commands('urban', 'ud')
-    def urban(self, message, content):
+    async def urban(self, message, content):
         if content == '':
             await self.provide_help('urban', message)
             return

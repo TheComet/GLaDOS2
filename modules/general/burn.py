@@ -23,7 +23,7 @@ class Burn(glados.Module):
         ]
 
     @glados.Module.commands("burn")
-    def burn_user(self, message, content):
+    async def burn_user(self, message, content):
         global burns
 
         if content == "":

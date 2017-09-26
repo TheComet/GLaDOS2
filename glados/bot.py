@@ -172,9 +172,11 @@ class Bot(object):
 
         # load global modules
         for modfullname in self.settings['modules'].setdefault('names', [
+            'bot.permissions.Permissions',
+            'bot.help.Help',
             'bot.ping.Ping',
             'bot.uptime.UpTime',
-            'bot.permissions.Permissions'
+            'bot.say.Say'
         ]):
             result = self.__import_module(modfullname)
             if not result is None:
@@ -236,6 +238,7 @@ class Bot(object):
         # set module properties
         m.full_name = modfullname
         m.client = self.client
+        m.bot = self
         m.set_settings(self.settings)
         m.setup_global()
 
@@ -244,184 +247,17 @@ class Bot(object):
         if len(callback_tuples) > 0:
             self.__callback_tuples += callback_tuples
 
-    async def __process_core_commands(self, message, command, content):
-        # Ignore bots
-        if message.author.bot:
-            return
-
-        if command == self.settings['commands'].setdefault('help', 'help'):
-            await self.__process_help_command(message, content)
-        elif command == self.settings['commands'].setdefault('modhelp', 'modhelp'):
-            await self.__process_modhelp_command(message, content)
-        elif command == self.settings['commands'].setdefault('optout', 'optout'):
-            await self.__process_optout_command(message, content)
-        elif command == self.settings['commands'].setdefault('optin', 'optin'):
-            await self.__process_optin_command(message, content)
-
-        # TODO remove
-        return ()
-
-        is_mod = message.author.id in self.settings['moderators']['IDs'] or \
-                 len(set(x.name for x in message.author.roles).intersection(set(self.settings['moderators']['roles']))) > 0
-        is_admin = message.author.id in self.settings['admins']['IDs']
-
-        mod_commands = {
-            self.settings['commands']['ban']: self.__process_ban_command,
-            self.settings['commands']['unban']: self.__process_unban_command,
-            self.settings['commands']['bless']: self.__process_bless_command,
-            self.settings['commands']['unbless']: self.__process_unbless_command,
-        }
-
-        admin_commands = {
-            self.settings['commands']['mod']: self.__process_mod_command,
-            self.settings['commands']['unmod']: self.__process_unmod_command,
-            self.settings['commands']['reload']: self.__process_reload_command,
-            self.settings['commands']['say']: self.__process_say_command
-        }
-
-        # commands that require moderator privileges
-        if command in mod_commands:
-            if not is_mod and not is_admin:
-                await self.client.send_message(message.author, 'You must be a moderator to use this command')
-                return
-        if command == self.settings['commands']['ban']:
-            await self.__process_ban_command(message, content)
-        elif command == self.settings['commands']['unban']:
-            await self.__process_unban_command(message, content)
-        elif command == self.settings['commands']['bless']:
-            await self.__process_bless_command(message, content)
-        elif command == self.settings['commands']['unbless']:
-            await self.__process_unbless_command(message, content)
-
-        # Remaining commands require admin privileges
-        if command in admin_commands:
-            if not is_admin:
-                await self.client.send_message(message.author, 'You must be an administrator to use this command')
-                return
-        if command == self.settings['commands']['mod']:
-            await self.__process_mod_command(message, content)
-        elif command == self.settings['commands']['unmod']:
-            await self.__process_unmod_command(message, content)
-        elif command == self.settings['commands']['reload']:
-            await self.__process_reload_command(message, content)
-        elif command == self.settings['commands']['say']:
-            await admin_commands[command](message, content)
-        else:
-            return None
-
-    async def __process_help_command(self, message, content):
-        # creates a list of relevant modules
-        relevant_modules = set(module for c, module in self.__callback_tuples
-                               if len(module.server_whitelist) == 0
-                               or message.server and message.server.name in module.server_whitelist)
-        # Filter relevant modules if the user is requesting a specific command
-        if len(content) > 0:
-            relevant_modules = set(module for module in relevant_modules
-                                   if any(True for x in content.split()
-                                          if any(True for hlp in module.get_help_list()
-                                                 if x.lower() in hlp.command)))
-        # generates a list of help strings from the modules
-        relevant_help = sorted([self.__command_prefix + hlp.get()
-                                for mod in relevant_modules
-                                for hlp in mod.get_help_list()])
-
-        # If the user was banned, don't announce the help sending, but send the help anyway
-        do_announce = False
-        for msg in self.__concat_into_valid_message(relevant_help):
-            do_announce = True
-            await self.client.send_message(message.author, msg)
-        if do_announce:
-            if not message.author.id in self.settings['banned']:
-                await self.client.send_message(message.channel,
-                                                    'I\'m sending you a gigantic wall of direct message with a list of commands!')
-
-    async def __process_optout_command(self, message, content):
-        if message.author.id in self.settings['optout']:
-            await self.client.send_message(message.channel, 'User "{}" is already opted out.'.format(message.author.name))
-            return
-
-        self.settings['optout'].append(message.author.id)
-        self.__save_settings()
-
-        await self.client.send_message(message.channel,
-                        'User "{}" has opted out. The bot will no longer log any of your activity. '
-                        'This also means you won\'t be able to use any of the statistic commands, such '
-                        'as `.quote` or `.zipf`. If you want your existing data to be deleted, ask the '
-                        'bot owner.'.format(message.author.name))
-
-    async def __process_optin_command(self, message, content):
-        if not message.author.id in self.settings['optout']:
-            await self.client.send_message(message.channel, 'User "{}" is already opted in.'.format(message.author.name))
-            return
-
-        self.settings['optout'].remove(message.author.id)
-        self.__save_settings()
-
-        await self.client.send_message(message.channel, 'User "{}" has opted in. The bot will collect logs on you '
-                        'for commands such as `.quote` or `.zipf` to function correctly.'.format(message.author.name))
+    def get_loaded_modules(self, server):
+        return set(module for c, module in self.__callback_tuples
+                        if len(module.server_whitelist) == 0
+                        or server and server.name in module.server_whitelist)
 
     async def __process_reload_command(self, message, content):
         self.settings = json.loads(open('settings.json').read())
         await self.client.send_message(message.channel, 'Reloaded settings')
 
-    async def __process_say_command(self, message, content):
-        parts = content.split(' ', 2)
-        if len(parts) < 3:
-            await self.client.send_message(message.channel, 'Error: Specify server name or ID, then channel name or ID. Example: ``.say <server> <channel> <message>``')
-            return
-
-        # find relevant channel
-        for channel in self.client.get_all_channels():
-            if channel.server.id == parts[0] or channel.server.name == parts[0]:
-                if channel.id == parts[1] or channel.name.strip('#') == parts[1].strip('#'):
-                    await self.client.send_message(channel, parts[2])
-                    return
-        return tuple()
-
     def __save_settings(self):
         open('settings.json', 'w').write(json.dumps(self.settings, indent=2, sort_keys=True))
-
-    def __get_members_from_string(self, message, user_name):
-        # Use mentions instead of looking up the name if possible
-        if len(message.mentions) > 0:
-            return message.mentions
-
-        user_name = user_name.strip('@').split('#')[0]
-        members = list()
-        for member in self.client.get_all_members():
-            if member.nick == user_name or member.name == user_name:
-                members.append(member)
-        if len(members) == 0:
-            return 'Error: No member found with the name "{}"'.format(user_name)
-        if len(members) > 1:
-            return 'Error: Multiple members share the name "{}". Try again by mentioning the user.'.format(user_name)
-        return members
-
-    @staticmethod
-    def __concat_into_valid_message(list_of_strings):
-        """
-        Takes a list of strings and cats them such that the maximum discord limit is not exceeded. Strings are joined
-        with a newline.
-        :param list_of_strings:
-        :return: Returns a list of strings. Each string will be small enough to be sent in a discord message.
-        """
-        ret = list()
-        temp = list()
-        l = 0
-        max_length = 1000
-
-        if len(list_of_strings) == 0:
-            return ret
-
-        for s in list_of_strings:
-            l += len(s)
-            if l >= max_length:
-                ret.append('\n'.join(temp))
-                l = len(s)
-                temp = list()
-            temp.append(s)
-        ret.append('\n'.join(temp))
-        return ret
 
     @staticmethod
     def __get_callback_tuples(m):
@@ -452,7 +288,6 @@ class Bot(object):
             raise
         finally:
             loop.close()
-            print(json.dumps(self.settings, indent=2, sort_keys=True))
-            #self.__save_settings()
             for cb, m in self.__callback_tuples:
                 m.shutdown()
+            self.__save_settings()

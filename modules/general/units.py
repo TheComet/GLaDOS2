@@ -39,7 +39,7 @@ class Units(glados.Module):
         ]
 
     @glados.Module.commands('temp')
-    def temperature(self, message, arg):
+    async def temperature(self, message, arg):
         """
         Convert temperatures
         """
@@ -64,7 +64,7 @@ class Units(glados.Module):
 
 
     @glados.Module.commands('length', 'distance')
-    def distance(self, message, arg):
+    async def distance(self, message, arg):
         """
         Convert distances
         """
@@ -135,7 +135,7 @@ class Units(glados.Module):
         await self.client.send_message(message.channel, '{} = {}'.format(metric_part, stupid_part))
 
     @glados.Module.commands('weight', 'mass')
-    def mass(self, message, arg):
+    async def mass(self, message, arg):
         """
         Convert mass
         """

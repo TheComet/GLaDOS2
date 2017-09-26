@@ -11,7 +11,7 @@ class Fact(glados.Module):
         ]
 
     @glados.Module.commands('fact')
-    def fact(self, message, args):
+    async def fact(self, message, args):
         response = urllib.request.urlopen('http://randomfactgenerator.net/').read().decode('utf-8')
         soup = BeautifulSoup(response, 'lxml')
         fact_div = soup.find('div', {'id': 'z'})

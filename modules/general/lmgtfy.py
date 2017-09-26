@@ -18,7 +18,7 @@ class LMGTFY(glados.Module):
         ]
 
     @glados.Module.commands('lmgtfy', 'lmgify', 'gify', 'gtfy')
-    def googleit(self, message, arg):
+    async def googleit(self, message, arg):
         """Let me just... google that for you."""
         #No input
         if arg == '':

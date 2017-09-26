@@ -145,7 +145,7 @@ class Weather(glados.Module):
         ]
 
     @glados.Module.commands('weather', 'wea')
-    def weather(self, message, location):
+    async def weather(self, message, location):
         """.weather location - Show the weather at the given location."""
 
         woeid = ''
@@ -190,7 +190,7 @@ class Weather(glados.Module):
         await self.client.send_message(message.channel, u'%s: %s, %s, %s, %s' % (location, cover, temp, humidity, wind))
 
     @glados.Module.commands('setlocation', 'setwoeid')
-    def update_woeid(self, message, location):
+    async def update_woeid(self, message, location):
         """Set your default weather location."""
         if location == '':
             await self.provide_help('setlocation', message)
@@ -223,7 +223,7 @@ class Weather(glados.Module):
                                             (woeid, neighborhood, city, state, country))
 
     @glados.Module.commands('location')
-    def get_woeid(self, message, user):
+    async def get_woeid(self, message, user):
         if user == '':
             user = message.author.name
 

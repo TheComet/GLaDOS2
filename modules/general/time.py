@@ -10,5 +10,5 @@ class Time(glados.Module):
         ]
 
     @glados.Module.commands('time')
-    def time(self, message, arg):
+    async def time(self, message, arg):
         await self.client.send_message(message.channel, 'It is currently {}'.format(strftime('%H:%M:%S', gmtime())))

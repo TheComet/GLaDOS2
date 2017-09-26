@@ -21,7 +21,7 @@ class Wikipedia(glados.Module):
         ]
 
     @glados.Module.commands('w', 'wiki', 'wik')
-    def wikipedia(self, message, query):
+    async def wikipedia(self, message, query):
 
         if query == '':
             await self.provide_help('w', message)
@@ -82,7 +82,7 @@ def mw_snippet(server, query):
     return snippet['extract']
 
 
-def say_snippet(client, message, server, query, show_url=True):
+async def say_snippet(client, message, server, query, show_url=True):
     page_name = query.replace('_', ' ')
     query = query.replace(' ', '_')
     snippet = mw_snippet(server, query)

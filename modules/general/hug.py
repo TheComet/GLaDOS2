@@ -9,7 +9,7 @@ class Hug(glados.Module):
         ]
 
     @glados.Module.commands('hug')
-    def hug(self, message, intensity):
+    async def hug(self, message, intensity):
         """Because everyone likes hugs
         Up to 10 intensity levels."""
         name = " *" + message.author.name + "*"

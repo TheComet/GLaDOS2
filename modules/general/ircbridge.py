@@ -123,6 +123,7 @@ class IRCBridge(glados.Module):
     def get_help_list(self):
         return list()
 
+    @glados.Permissions.spamalot
     @glados.Module.rules('^.*$')
     def on_discord_message(self, message, match):
         if isinstance(message.channel, discord.Object):

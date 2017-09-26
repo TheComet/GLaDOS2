@@ -20,7 +20,7 @@ class SpellCheck(glados.Module):
         ]
 
     @glados.Module.commands('spellcheck', 'spell')
-    def spellcheck(self, message, word):
+    async def spellcheck(self, message, word):
         """
         Says whether the given word is spelled correctly, and gives suggestions if
         it's not.
@@ -53,7 +53,7 @@ class SpellCheck(glados.Module):
             await self.client.send_message(message.channel, msg)
 
     @glados.Module.rules("^.*?(\\S+)\\s+\((spelling|spell|sp|spellig|selipng)\??\).*$")
-    def spelling_in_brackets(self, message, match):
+    async def spelling_in_brackets(self, message, match):
         # this abomination extracts the word before (spelling?) -- in this sentence said word would be "before"
         word = message.clean_content.split('(spelling?)')[0].strip().split()[-1]
         word = match.group(1)

@@ -24,6 +24,7 @@ class Log(glados.Module):
             memory['date'] = date
             memory['log file'] = open(os.path.join(memory['log path'], 'chanlog-{}'.format(memory['date'])), 'a')
 
+    @glados.Permissions.spamalot
     @glados.Module.rules('^.*$')
     def on_message(self, message, match):
         # If user has opted out, don't log

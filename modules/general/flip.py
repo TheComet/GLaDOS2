@@ -10,7 +10,7 @@ class Flip(glados.Module):
         ]
 
     @glados.Module.commands('flip')
-    def flip(self, message, user):
+    async def flip(self, message, user):
         """Flips a coin... or a user.
         Defaults to coin.
         """

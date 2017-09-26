@@ -50,6 +50,7 @@ class Quotes(glados.Module):
         return os.path.join(self.get_memory()['quotes path'], author) + '.txt'
 
     # matches everything except strings beginning with a ".xxx" to ignore commands
+    @glados.Permissions.spamalot
     @glados.Module.rules('^((?!\.\w+).*)$')
     def record(self, message, match):
         # If user has opted out, don't log
@@ -63,7 +64,7 @@ class Quotes(glados.Module):
         return tuple()
 
     @glados.Module.commands('quote')
-    def quote(self, message, content):
+    async def quote(self, message, content):
         if len(message.mentions) > 0:
             author = message.mentions[0].name
         else:
@@ -86,7 +87,7 @@ class Quotes(glados.Module):
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
 
     @glados.Module.commands('findquote')
-    def findquote(self, message, content):
+    async def findquote(self, message, content):
         if len(message.mentions) == 1:
             author = message.mentions[0].name
             content = content.replace('@' + author, '')
@@ -101,7 +102,7 @@ class Quotes(glados.Module):
         lines = self.get_quote_lines(author)
         if search_query:
             lines = [x for x in lines if re.search(r'\b' + search_query + r'\b', x, re.IGNORECASE)]
-        
+
         if len(lines) == 0:
             await self.client.send_message(message.channel,
                                             '{} hasn\'t delivered any quotes containing "{}"'.format(author, search_query))
@@ -129,7 +130,7 @@ class Quotes(glados.Module):
         return [x for x in lines if len(x) >= 20]
 
     @glados.Module.commands('quotestats')
-    def quotestats(self, message, content):
+    async def quotestats(self, message, content):
         if content == '':
             content = message.author.name
 
@@ -177,7 +178,7 @@ class Quotes(glados.Module):
                     and (len(word) > 1 or len(word) == 1 and word in 'aAI')]
 
     @glados.Module.commands('grep')
-    def grep(self, message, content):
+    async def grep(self, message, content):
         if content == '':
             await self.provide_help('grep', message)
             return
@@ -220,7 +221,7 @@ class Quotes(glados.Module):
         await self.client.send_message(message.channel, response)
 
     @glados.Module.commands('zipf')
-    def zipf(self, message, users):
+    async def zipf(self, message, users):
         source_user = message.author.name
         source_user = source_user.strip('@').split('#')[0]
 

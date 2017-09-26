@@ -65,6 +65,7 @@ class Seen(glados.Module):
             glados.Help('seen', '<user>', 'Find the last message a user wrote, where he wrote it, and what it said')
         ]
 
+    @glados.Permissions.spamalot
     @glados.Module.rules('^.*$')
     def on_message(self, message, match):
         author = message.author.name
@@ -80,7 +81,7 @@ class Seen(glados.Module):
         return tuple()
 
     @glados.Module.commands('seen')
-    def on_seen(self, message, content):
+    async def on_seen(self, message, content):
         memory = self.get_memory()
         if content == "":
             # Count how many users in total have been seen

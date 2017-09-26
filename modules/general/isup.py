@@ -15,7 +15,7 @@ class IsUp(glados.Module):
         ]
 
     @glados.Module.commands('isup')
-    def isup(self, message, site):
+    async def isup(self, message, site):
         """isup.me website status checker"""
 
         if not site:
@@ -45,6 +45,5 @@ class IsUp(glados.Module):
             await self.client.send_message(message.channel, site + ' is down from here.')
 
     @glados.Module.rules(r'(?i).*?(gdnet|gd.net|gamedev|gamedev.net).*?(down\??)')
-    def is_gdnet_down(self, message, match):
+    async def is_gdnet_down(self, message, match):
         await self.isup(message, 'https://gamedev.net')
-    

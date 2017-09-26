@@ -24,7 +24,7 @@ class Myth(glados.Module):
         ]
 
     @glados.Module.commands('addmyth')
-    def addmyth(self, message, content):
+    async def addmyth(self, message, content):
         if content == '':
             await self.provide_help('addmyth', message)
             return
@@ -52,7 +52,7 @@ class Myth(glados.Module):
         await self.client.send_message(message.channel, 'Myth #{} added.'.format(new_id))
 
     @glados.Module.commands('delmyth')
-    def delmyth(self, message, content):
+    async def delmyth(self, message, content):
         if content == '':
             await self.provide_help('delmyth', message)
             return
@@ -90,7 +90,7 @@ class Myth(glados.Module):
             f.writelines(replace_lines)
 
     @glados.Module.commands('myth')
-    def myth(self, message, content):
+    async def myth(self, message, content):
         memory = self.get_memory()
         with codecs.open(memory['data file'], 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -126,7 +126,7 @@ class Myth(glados.Module):
         await self.client.send_message(message.channel, line)
 
     @glados.Module.commands('mythstats')
-    def mythstats(self, message, content):
+    async def mythstats(self, message, content):
         memory = self.get_memory()
         if os.path.isfile(memory['data file']):
             with codecs.open(memory['data file'], 'r', encoding='utf-8') as f:

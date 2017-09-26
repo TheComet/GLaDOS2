@@ -76,7 +76,7 @@ class Sub(glados.Module):
             f.write(json.dumps(memory['subs']))
 
     @glados.Module.commands('sub')
-    def subscribe(self, message, regex):
+    async def subscribe(self, message, regex):
         if regex == '':
             await self.provide_help('sub', message)
             return
@@ -108,7 +108,7 @@ class Sub(glados.Module):
         await self.client.send_message(message.channel, '{} added subscription #{} (``{}``)'.format(message.author.name, len(memory['subs'][message.author.id]), regex))
 
     @glados.Module.commands('unsub')
-    def unsubscribe(self, message, args):
+    async def unsubscribe(self, message, args):
         if args == '':
             await self.provide_help('unsub', message)
             return
@@ -149,7 +149,7 @@ class Sub(glados.Module):
         await self.client.send_message(message.channel, '{} unsubscribed from {}'.format(member.name, ', '.join(str(x) for x in indices)))
 
     @glados.Module.commands('subs')
-    def toggle_subscription_feature(self, message, args):
+    async def toggle_subscription_feature(self, message, args):
         is_mod = message.author.id in self.settings['moderators']['IDs'] or \
                  len(set(x.name for x in message.author.roles).intersection(
                      set(self.settings['moderators']['roles']))) > 0
@@ -161,7 +161,7 @@ class Sub(glados.Module):
         await self.client.send_message(message.channel, 'Subscription system {}'.format(msg))
 
     @glados.Module.commands('sublist')
-    def list_subscriptions(self, message, user):
+    async def list_subscriptions(self, message, user):
         if user == '':
             member = message.author
         else:
@@ -189,8 +189,9 @@ class Sub(glados.Module):
             msg += '  #{} `{}`'.format(i+1, regex)
         await self.client.send_message(message.channel, msg)
 
+    @glados.Permissions.spamalot
     @glados.Module.rules('^((?!\.\w+).*)$')
-    def on_message(self, message, match):
+    async def on_message(self, message, match):
         if not self.__enabled:
             return tuple()
 

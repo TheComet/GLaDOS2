@@ -18,7 +18,7 @@ class Movie(glados.Module):
         ]
 
     @glados.Module.commands('movie', 'imdb')
-    def movie(self, message, movie):
+    async def movie(self, message, movie):
         """
         Returns some information about a movie, like Title, Year, Rating, Genre and IMDB Link.
         """

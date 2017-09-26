@@ -26,7 +26,7 @@ LATEX_FRAMEWORK = r"""
 \DeclarePairedDelimiter\norm{\lVert}{\rVert}%
 
 % Swap the definition of \abs* and \norm*, so that \abs
-% and \norm resizes the size of the brackets, and the 
+% and \norm resizes the size of the brackets, and the
 % starred version does not.
 \makeatletter
 \let\oldabs\abs
@@ -128,7 +128,7 @@ class LaTeX(glados.Module):
         return True, png_file
 
     @glados.Module.commands('math')
-    def on_message(self, message, content):
+    async def on_message(self, message, content):
 
         if content == '':
             await self.provide_help('math', message)

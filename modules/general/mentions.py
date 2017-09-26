@@ -68,6 +68,7 @@ class Mentions(glados.Module):
         with open(memory['seen file'], 'w') as f:
             f.write(json.dumps(memory['last seen']))
 
+    @glados.Permissions.spamalot
     @glados.Module.rules('^((?!\.\w+).*)$')
     def record(self, message, match):
         # If user has opted out, don't log
@@ -86,7 +87,7 @@ class Mentions(glados.Module):
         return tuple()
 
     @glados.Module.commands('mentions')
-    def on_seen(self, message, arg):
+    async def on_seen(self, message, arg):
         glados.log('Looking for mentions for author {}'.format(message.author.name))
 
         try:
