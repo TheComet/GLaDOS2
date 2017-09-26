@@ -18,7 +18,13 @@ class Permissions(glados.Permissions):
         self.__load_dict()
 
     def get_help_list(self):
-        return [glados.Help('modhelp', '', 'Moderator/Admin commands for the bot')]
+        return [
+            glados.Help('modhelp', '', 'Moderator/Admin commands for the bot'),
+            glados.Help('modlist', '', 'Displays which users are bot moderators'),
+            glados.Help('banlist', '', 'Displays which users are banned'),
+            glados.Help('blesslist', '', 'Displays which users are blessed'),
+            glados.Help('optoutlist', '', 'Displays which users don\'t want to be logged by the bot')
+        ]
 
     def is_banned(self, member):
         return self.__is_member_still_marked_as(member, 'banned')
@@ -73,6 +79,82 @@ class Permissions(glados.Permissions):
                    'bless',
                    'unbless')
         )
+
+    @glados.Module.commands('modlist')
+    async def modlist(self, message, content):
+        memory = self.get_memory()
+        mod_list = list()
+        admin_list = list()
+        owner = None
+        for member in self.current_server.members:
+            if member.id in memory['dict']['moderator']['IDs']:
+                if not member in mod_list:
+                    mod_list.append(member)
+            if member.id in memory['dict']['admin']['IDs']:
+                if not member in admin_list:
+                    admin_list.append(member)
+            if member.id == self.settings['permissions']['bot owner']:
+                owner = member
+
+        text = '**Moderators:**\n{}\n**Administrators:**\n{}\n**Owner:** {}'.format(
+            '\n'.join(['  + ' + str(x) for x in mod_list]),
+            '\n'.join(['  + ' + str(x) for x in admin_list]),
+            owner
+        )
+
+        await self.client.send_message(message.channel, text)
+
+    @glados.Module.commands('banlist')
+    async def banlist(self, message, content):
+        banned = list()
+        for member in self.client.get_all_members():
+            if member.id in self.settings['banned']:
+                expiry_date = self.settings['banned'][member.id]
+                if not expiry_date == 'never':
+                    expiry_date = dateutil.parser.parse(expiry_date)
+                    now = datetime.now()
+                    if expiry_date > now:
+                        time_to_expiry = expiry_date - now
+                        time_to_expiry = '{0:.1f} hour(s)'.format(time_to_expiry.seconds / 3600.0)
+                    else:
+                        time_to_expiry = '0 hour(s)'
+                else:
+                    time_to_expiry = 'forever'
+                banned.append((member, time_to_expiry))
+
+        if len(banned) > 0:
+            text = '**Banned Users**\n{}'.format('\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in banned]))
+        else:
+            text = 'No one is banned.'
+        await self.client.send_message(message.channel, text)
+
+    @glados.Module.commands('blesslist')
+    async def blesslist(self, message, content):
+        blessed = list()
+        for member in self.client.get_all_members():
+            if member.id in self.settings['blessed']:
+                if not member in blessed:
+                    blessed.append(member)
+
+        if len(blessed) > 0:
+            text = '**Blessed Users**\n{}'.format('\n'.join(['  + ' + x.name for x in blessed]))
+        else:
+            text = 'No one is blessed.'
+        await self.client.send_message(message.channel, text)
+
+    @glados.Module.commands('optoutlist')
+    async def optoutlist(self, message, content):
+        optouts = list()
+        for member in self.client.get_all_members():
+            if member.id in self.settings['optout']:
+                if not member in optouts:
+                    optouts.append(member)
+
+        if len(optouts) > 0:
+            text = '**Opted-Out Users**\n{}'.format('\n'.join(['  + ' + x.name for x in optouts]))
+        else:
+            text = 'No one has opted out.'
+        await self.client.send_message(message.channel, text)
 
     @glados.Permissions.moderator
     @glados.Module.commands('ban')
@@ -206,14 +288,15 @@ class Permissions(glados.Permissions):
             return members, roles, duration, ''
 
         # fall back to text based names, in which case we need to look up the member object
-        name = content.split().strip('@').split('#')[0]
-        for member in self.client.get_all_members():
+        name = content.split()[0].strip('@').split('#')[0]
+        for member in self.current_server.members:
             if member.nick == name or member.name == name:
                 members.add(member)
             # There is currently no way to get a list of all roles, but we can compose one by taking the
             # roles from all of the members
             for role in member.roles:
-                roles.add(role)
+                if role.name == name:
+                    roles.add(role)
 
         if len(members) == 0 and len(roles) == 0:
             return (), (), 0, 'Error: No member or role found with the name "{}"'.format(name)

@@ -68,20 +68,18 @@ class Permissions(Module):
         if hasattr(callback_function, 'spamalot'):
             return self.SPAMABLE
 
-        # Admins always have permission
-        if self.require_admin(member):
-            return self.SPAMABLE
-
-        # If member is banned -- even if member is a moderator -- member doesn't have permission
-        if self.is_banned(member):
-            return self.BANNED
-
-        if hasattr(callback_function, 'owner') and not self.require_owner(member):
+        owner = self.require_owner(member)
+        admin = self.require_admin(member)
+        moderator = self.require_moderator(member)
+        if hasattr(callback_function, 'owner') and not owner:
             return self.NEED_OWNER
-        if hasattr(callback_function, 'admin') and not self.require_admin(member):
+        if hasattr(callback_function, 'admin') and not admin:
             return self.NEED_ADMIN
-        if hasattr(callback_function, 'moderator') and not self.require_moderator(member):
+        if hasattr(callback_function, 'moderator') and not moderator:
             return self.NEED_MODERATOR
+
+        if self.is_banned(member) and not owner:
+            return self.BANNED
 
         # If member is blessed, then they can spam
         if self.is_blessed(member):

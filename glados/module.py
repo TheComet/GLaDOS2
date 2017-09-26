@@ -16,6 +16,7 @@ class Module(object):
         # set externally to the discord client object
         self.client = None
         self.settings = None
+        self.current_server = None
 
         self.__server_specific_name = None
         self.__memories = dict()
@@ -30,6 +31,11 @@ class Module(object):
         self.__server_specific_config_dir = os.path.join(self.__data_path, server_id)
         if not os.path.isdir(self.__server_specific_config_dir):
             os.mkdir(self.__server_specific_config_dir)
+        self.current_server = None
+        for server in self.client.servers:
+            if server.id == server_id:
+                self.current_server = server
+                break
         self.__may_need_to_setup_memory()
 
     def setup_global(self):
