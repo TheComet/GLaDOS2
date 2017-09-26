@@ -42,7 +42,7 @@ class emotes(glados.Module):
 			glados.Help('pony', '<emote>', 'Shows a pony with the specified emotion. '
                                            'Search https://ponymotes.net/view/ to find an emote or use ponylist command(note: not all emotes are supported)'),
 			glados.Help('ponydel', '<emote>', 'Deletes the specified pony emote from the database, only a mod or admin can run this command.'),
-			glados.Help('ponylist', '<subreddit>', "pm's you a list of emotes in the specefied subreddits, or sends a list of all subreddits if empty.")
+			glados.Help('ponylist', '<subreddit>', "pm's you a list of emotes in the specefied subreddits, or sends a list of all subreddits if empty.  passing reload as a subreddit will cause the pony list to be rebuilt(only mod runnable)")
 		]
 		
 	def spellcheck_emote_name(self, emote):
