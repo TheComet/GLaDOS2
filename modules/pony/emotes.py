@@ -13,7 +13,7 @@ class emotes(glados.Module):
 		self.configdb_path = 'modules/pony/dbconfig/'
 		self.emote_list = {}
 		self.raw_emote_list = []
-		self.is_running = True;
+		self.is_running = True
 		thread = threading.Thread(target=self.build_emote_db, args=())
 		thread.start()
 		return
@@ -34,7 +34,7 @@ class emotes(glados.Module):
 				if path:
 					self.emote_list[subreddit][name] = name
 					self.raw_emote_list.append(name)
-		self.is_running = False;
+		self.is_running = False
 		print("Finished building emote db.")
 	
 	def get_help_list(self):
@@ -80,12 +80,6 @@ class emotes(glados.Module):
 			return path + ".gif"
 		return ""
 		
-	def ModOnly(self, message):
-		if message.author.id not in self.settings['moderators']['IDs'] and message.author.id not in self.settings['admins']['IDs']:
-			yield from self.client.send_message(message.channel, "This command can only be ran by a mod, or admin.")
-			return False
-		return True
-		
 	
 	@glados.Module.commands('pony')
 	def request_pony_emote(self, message, content):
@@ -106,7 +100,10 @@ class emotes(glados.Module):
 
 	@glados.Module.commands('ponydel')
 	def delete_pony_emote(self, message, content):
-		if not self.ModOnly(message):
+		if message.author.id not in self.settings['moderators']['IDs'] and message.author.id not in self.settings['admins']['IDs']:
+			yield from self.client.send_message(message.channel, "This command can only be ran by a mod, or admin.")
+			return
+		if not is_mod:
 			return
 		if not content:
 			yield from self.provide_help('ponydel', message)
@@ -144,7 +141,8 @@ class emotes(glados.Module):
 				response.append(temp)
 		else:
 			if content=="reload":
-				if not self.ModOnly(message):
+				if message.author.id not in self.settings['moderators']['IDs'] and message.author.id not in self.settings['admins']['IDs']:
+					yield from self.client.send_message(message.channel, "This command can only be ran by a mod, or admin.")
 					return
 				if self.is_running:
 					yield from self.client.send_message(message.channel, "Already rebuilding db.")
