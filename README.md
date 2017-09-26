@@ -22,9 +22,9 @@ From pip:
  + matplotlib
  + wolframalpha
  + Pillow
-
+ + APNGLib
 ```
-pip install discord.py python-dateutil requests pyenchant beautifulsoup4 PySocks lxml nltk matplotlib wolframalpha
+pip install discord.py python-dateutil requests pyenchant beautifulsoup4 PySocks lxml nltk matplotlib wolframalpha APNGLib
 ```
 
 The picarto module requires google's protobuf to be built from source.
@@ -46,8 +46,6 @@ $ cd python/
 $ python setup.py install
 $ cp -r build/lib/google ../../env/lib/site-packages/
 ```
-
-The pony emotes_builder module requires apng2gif to be built for python, following the readme instructions in pony/apng2gif on how to build. 
 
 ## Settings
 

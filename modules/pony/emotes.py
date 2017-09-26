@@ -1,39 +1,38 @@
 import glados
 import os
 from os import listdir
-from os.path import isfile, join
-import json;
-import difflib;
+from os.path import isfile
+import json
+import difflib
+import threading
 
-class Emotes(glados.Module):
-	emotes_path = 'modules/pony/emotesdb/';
-	configdb_path = 'modules/pony/dbconfig/';
-	EmoteList = {};
-	RawEmoteList = [];
+class emotes(glados.Module):
 	
-	def __init__(self):
-		super(Emotes, self).__init__();
-		Files = [f for f in listdir(self.configdb_path) if isfile(join(self.configdb_path, f))];
-		for f in Files:
-			Subreddit = os.path.splitext(f)[0];
-			JSON_File = open(self.configdb_path+f).read();
-			JSON = json.loads(JSON_File);
-			self.EmoteList[Subreddit] = {};
-			for key, items in JSON.items():
-				Name = key[1:].replace('/','').replace('\\','').replace('.','');
-				Found = False; #Check we actually have it.
-				Path = self.emotes_path+Name;
-				if isfile(Path+".png"):
-					Path = Path+".png";
-					Found = True;
-				if not Found and isfile(Path+".gif"):
-					Path = Path+".gif";
-					Found=True;
-				if Found is True:
-					self.EmoteList[Subreddit][Name] = Name;
-					self.RawEmoteList.append(Name);
-		return;
-		
+	def setup_global(self):
+		self.emotes_path = 'modules/pony/emotesdb/'
+		self.configdb_path = 'modules/pony/dbconfig/'
+		self.emote_list = {}
+		self.raw_emote_list = []
+		thread = threading.Thread(target=self.build_emote_db, args=())
+		thread.start()
+		return
+	
+	def build_emote_db(self):
+		files = [f for f in listdir(self.configdb_path) if isfile(self.configdb_path + f)]
+		for f in files:
+			subreddit = os.path.splitext(f)[0]
+			json_file = open(self.configdb_path + f).read()
+			jdata = json.loads(json_file)
+			self.emote_list[subreddit] = {}
+			for key, items in jdata.items():
+				#check emote actually exists.
+				name = key[1:]
+				path = self.find_emote_path(name)
+				if path:
+					self.emote_list[subreddit][name] = name
+					self.raw_emote_list.append(name)
+		print("Finished building emote db.")
+	
 	def get_help_list(self):
 		return [
 			glados.Help('pony', '<emote>', 'Shows a pony with the specified emotion. '
@@ -42,13 +41,11 @@ class Emotes(glados.Module):
 			glados.Help('ponylist', '<subreddit>', "pm's you a list of emotes in the specefied subreddits, or sends a list of all subreddits if empty.")
 		]
 		
-	def EvaluateEmotePath(self, Emote):
-		Closest = "";
-		CloseDis = 0;
-		r = difflib.get_close_matches(Emote, self.RawEmoteList, 1, 0.2);
+	def spellcheck_emote_name(self, emote):
+		r = difflib.get_close_matches(emote, self.raw_emote_list, 1, 0.2)
 		if len(r)>0:
-			return r[0];
-		return "";
+			return r[0]
+		return ""
 
 	@staticmethod
 	def __concat_into_valid_message(list_of_strings):
@@ -61,7 +58,7 @@ class Emotes(glados.Module):
 			return ret
 
 		for s in list_of_strings:
-			l += len(s)
+			l  += len(s)
 			if l >= max_length:
 				ret.append('\n'.join(temp))
 				l = 0
@@ -69,65 +66,89 @@ class Emotes(glados.Module):
 			temp.append(s)
 		ret.append('\n'.join(temp))
 		return ret
-		
+	
+	def find_emote_path(self, emotename):
+		#we use replace to strip any symbols that'd allow file naviagation.
+		path = self.emotes_path + emotename.replace('/','').replace('\\','').replace('.','')
+		if isfile(path + ".png"):
+			return path + ".png"
+		if isfile(path + ".gif"):
+			return path + ".gif"
+		return ""
+	
 	@glados.Module.commands('pony')
 	def request_pony_emote(self, message, content):
-		Path = self.emotes_path+content.replace('/','').replace('\\','').replace('.','');
-		Found = False;
-		if content == '':
+		
+		if not content:
 			yield from self.provide_help('pony', message)
 			return
-		if isfile(Path+".png"):
-			Path = Path+".png";
-			Found = True;
-		if not Found and isfile(Path+".gif"):
-			Path = Path+".gif";
-			Found=True;
-		if not Found:
-			Name = self.EvaluateEmotePath(content);
-			if Name!='':
-				yield from self.client.send_message(message.channel, 'Unknown emoticon (did you mean: '+Name+"?)")
+		path = self.find_emote_path(content)
+		if not path:
+			name = self.spellcheck_emote_name(content)
+			if name:
+				yield from self.client.send_message(message.channel, 'Unknown emoticon (did you mean: ' + name + "?)")
 			else:
-				yield from self.client.send_message(message.channel, 'Unknown emoticon.');
+				yield from self.client.send_message(message.channel, 'Unknown emoticon.')
 			return
 		
-		yield from self.client.send_file(message.channel, Path)
+		yield from self.client.send_file(message.channel, path)
 
 	@glados.Module.commands('ponydel')
 	def delete_pony_emote(self, message, content):
-		Path = self.emotes_path+content.replace('/','').replace('\\','').replace('.','');
-		Found = False;
-		if(content==''):
-			yield from self.provide_help('ponydel', message);
-			return;
-		if isfile(Path+".png"):
-			Path = Path+".png";
-			Found = True;
-		if not Found and isfile(Path+".gif"):
-			Path = Path+".gif";
-			Found=True;
-		if not Found:
-			Name, Res = self.EvaluateEmotePath(content);
-			yield from self.client.send_message(message.channel, 'Unknown emoticon (did you mean: '+Name+"?)")
+		if message.author.id not in self.settings['moderators']['IDs'] and message.author.id not in self.settings['admins']['IDs']:
+			yield from self.client.send_message(message.channel, "This command can only be ran by a mod, or admin.")
 			return
-		os.remove(Path);
-		yield from self.client.send_message(message.channel, 'Deleted emote from db.');
+		if not content:
+			yield from self.provide_help('ponydel', message)
+			return
+		path = self.find_emote_path(content)
+		
+		if not path:
+			name = self.spellcheck_emote_name(content)
+			if name:
+				yield from self.client.send_message(message.channel, 'Unknown emoticon (did you mean: ' + name + "?)")
+			else:
+				yield from self.client.send_message(message.channel, 'Unknown emoticon.')
+			return
+		os.remove(path)
+		yield from self.client.send_message(message.channel, 'Deleted emote from db.')
 		
 	@glados.Module.commands('ponylist')
 	def get_pony_list(self, message, content):
-		Response = [];
-		if content=='':
-			Response.append("List of available subreddits:");
-			for key, items in self.EmoteList.items():
-				Response.append(key);
+		response = []
+		temp = ""
+		per_line = 10
+		i = 0
+		if not content:
+			response.append("List of available subreddits:")
+			for key, items in self.emote_list.items():
+				if i == 0:
+					temp = key
+				else:
+					temp += " | "+key
+				i += 1
+				if i == per_line:
+					response.append(temp)
+					i = 0
+			if i != 0:
+				response.append(temp)
 		else:
-			Sub = self.EmoteList.get(content);
-			if not Sub:
-				Response.sppend("Unknown subreddit.");
+			sub = self.emote_list.get(content)
+			if not sub:
+				response.append("Unknown subreddit.")
 			else:
-				Response.append("List of emotes for "+content);
-				for key, items in Sub.items():
-					Response.append(key);
-		List = self.__concat_into_valid_message(Response);
-		for msg in List:
-			yield from self.client.send_message(message.author, msg);
+				response.append("List of emotes for " + content)
+				for key, items in sub.items():
+					if i == 0:
+						temp = key
+					else:
+						temp += " | "+key
+					i += 1
+					if i == per_line:
+						response.append(temp)
+						i = 0
+				if i != 0:
+					response.append(temp)
+		rlist = self.__concat_into_valid_message(response)
+		for msg in rlist:
+			yield from self.client.send_message(message.author, msg)
