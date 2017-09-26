@@ -337,7 +337,7 @@ class emotes(glados.Module):
 			response.append("List of emotes which have any of the tags: " + content)
 			for t in tags:
 				tag_list = self.tag_list.get(t)
-				if not t:
+				if not tag_list:
 					continue
 				for key, items in tag_list.items():
 					if i==0:
@@ -350,7 +350,7 @@ class emotes(glados.Module):
 						i = 0
 			if i != 0:
 				response.append(temp)
-
+		response.append('\n\n')
 		rlist = self.__concat_into_valid_message(response)
 		for msg in rlist:
 			yield from self.client.send_message(message.author, msg)
