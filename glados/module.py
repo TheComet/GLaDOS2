@@ -29,11 +29,10 @@ class Module(object):
         self.__current_memory = None
         self.__current_server = None
 
-    def init_module(self, bot, full_name, settings, permissions):
+    def init_module(self, bot, full_name, settings):
         self.__bot = bot
         self.__full_name = full_name
         self.__settings = settings
-        self.__permissions = permissions
         self.__command_prefix = settings['commands']['prefix']
         self.__data_path = settings['modules'].setdefault('data', 'data')
         self.__global_data_dir = os.path.join(self.__data_path, 'global_cache')
@@ -305,7 +304,7 @@ class Module(object):
         """
         def add_attribute(func):
             func.__dict__.setdefault('commands', list())
-            func.command.append((command, argument_list_str, description))
+            func.commands.append((command, argument_list_str, description))
             return func
         return add_attribute
 
@@ -330,7 +329,7 @@ class Module(object):
         """
         def add_attribute(func):
             func.__dict__.setdefault('rules', list())
-            func.rule.append(re.compile(rule, re.IGNORECASE))
+            func.rules.append(re.compile(rule, re.IGNORECASE))
             return func
         return add_attribute
 
@@ -342,6 +341,6 @@ class Module(object):
         """
         def add_attribute(func):
             func.__dict__.setdefault('bot_rules', list())
-            func.bot_rule.append(re.compile(rule, re.IGNORECASE))
+            func.bot_rules.append(re.compile(rule, re.IGNORECASE))
             return func
         return add_attribute

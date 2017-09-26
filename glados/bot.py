@@ -24,11 +24,10 @@ class Bot(object):
         self.load_modules()
 
         # The bot needs access to the permissions module for managing things like admins/botmods
-        self.__permissions = Permissions()
-        self.__permissions.set_settings(self.settings)
+        self.permissions = Permissions(self, 'DummyPermissions', self.settings)
         for cb, m in self.__callback_tuples:
             if m.full_name == 'bot.permissions.Permissions':
-                self.__permissions = m
+                self.permissions = m
                 break
 
         @self.client.event
@@ -239,7 +238,7 @@ class Bot(object):
             m.server_whitelist.append(server)
 
         # set module properties
-        m.init_module(self, modfullname, self.settings, self.__permissions)
+        m.init_module(self, modfullname, self.settings)
 
         # get a list of tuples containing (callback function, module) pairs.
         callback_tuples = self.__get_callback_tuples(m)

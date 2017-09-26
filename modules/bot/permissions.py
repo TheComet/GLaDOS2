@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 
 
 class Permissions(glados.Permissions):
+    def __init__(self):
+        pass
 
     def setup_global(self):
         # Create an entry in the global config file with the default command names
@@ -49,27 +51,6 @@ class Permissions(glados.Permissions):
 
     def get_ban_expiry(self, member):
         return self.__get_expiry(member, 'banned')
-
-    @glados.Module.command('modhelp', '', )
-    async def modhelp(self, message, content):
-        # If the user was banned, don't announce the help sending
-        if self.is_banned(message.author):
-            await self.client.send_message(message.channel, "I just PM'd you the help list!")
-
-        await self.client.send_message(message.author,
-               "{0}{1} **<user> [hours]** -- Blacklist the specified user from using the bot for the "
-               "specified number of hours. The default number of hours is 24. Specifying a value"
-               " of 0 will cause the user to be perma-banned. The ban is based on user ID.\n"
-               "{0}{2} **<user>** -- Allow a banned user to use the bot again.\n"
-               "{0}{3} **<user>** -- Allow the specified user to evade the punishment system. "
-               "This allows the user to excessively use the bot without consequences.\n"
-               "{0}{4} **<user>** -- Prevents spam from this user by putting him through the punishment system.\n".format(
-                   self.settings['commands']['prefix'],
-                   'ban',
-                   'unban',
-                   'bless',
-                   'unbless')
-        )
 
     @glados.Module.command('modlist', '', 'Displays which users are bot moderators')
     async def modlist(self, message, content):

@@ -11,12 +11,9 @@ class Permissions(Module):
     SPAMABLE = 1
     PUNISHABLE = 2
 
-    def __init__(self):
+    def __init__(self, bot, full_name, settings):
         super(Permissions, self).__init__()
-        self.full_name = 'DummyPermissions'
-
-    def get_help_list(self):
-        return list()
+        self.init_module(bot, full_name, settings)
 
     def is_banned(self, member):
         return False

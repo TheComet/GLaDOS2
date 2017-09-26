@@ -13,13 +13,8 @@ import glados
 
 class SpellCheck(glados.Module):
 
-    def get_help_list(self):
-        return [
-            glados.Help('spell', '<word>', 'Says whether the given word is spelled correctly, '
-                                           'and gives suggestions if it\'s not')
-        ]
-
-    @glados.Module.command('spellcheck', 'spell')
+    @glados.Module.command('spell', '<word>', 'Says whether the given word is spelled correctly, and gives suggestions '
+                           'if it\'s not')
     async def spellcheck(self, message, word):
         """
         Says whether the given word is spelled correctly, and gives suggestions if

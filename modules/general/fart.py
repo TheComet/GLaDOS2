@@ -18,7 +18,7 @@ fart_sounds = [
 
 
 class Fart(glados.Module):
-    @glados.Module.command("fart")
+    @glados.Module.command('fart', '', 'Why is this a command')
     async def fart(self, message, content):
         global fart_counter
         global fart_sounds
