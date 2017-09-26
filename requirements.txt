@@ -8,3 +8,4 @@ PySocks
 lxml
 nltk
 matplotlib
+Pillow
