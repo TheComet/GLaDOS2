@@ -19,6 +19,8 @@ class Module(object):
         self.__global_data_dir = None
         # reference to the bot object, required for getting the client object or a list of all loaded modules
         self.__bot = None
+        # reference to permission module (or dummy, if not loaded)
+        self.__permissions = None
 
         # Server isolation stuff
         self.__server_specific_data_dir = None
@@ -26,10 +28,11 @@ class Module(object):
         self.__current_memory = None
         self.__current_server = None
 
-    def init_module(self, bot, full_name, settings):
+    def init_module(self, bot, full_name, settings, permissions):
         self.__bot = bot
         self.__full_name = full_name
         self.__settings = settings
+        self.__permissions = permissions
         self.__command_prefix = settings['commands']['prefix']
         self.__data_path = settings['modules'].setdefault('data', 'data')
         self.__global_data_dir = os.path.join(self.__data_path, 'global_cache')
@@ -59,26 +62,45 @@ class Module(object):
 
     @property
     def settings(self):
+        """
+        :return: Reference to global settings.json file. You can write things back into it. Changes will be saved when
+        the bot shuts down.
+        """
         return self.__settings
 
     @property
     def full_name(self):
+        """
+        :return: The full name of this module. Typically it's something like path.filename.classname
+        """
         return self.__full_name
 
     @property
     def command_prefix(self):
+        """
+        :return: Returns the configured command prefix character(s) for commands.
+        """
         return self.__command_prefix
 
     @property
     def current_server(self):
+        """
+        :return: A reference to the currently active discord server object (from which the message originated).
+        """
         return self.__current_server
 
     @property
     def client(self):
+        """
+        :return: A reference to the discord client object.
+        """
         return self.__bot.client
 
     @property
     def loaded_modules(self):
+        """
+        :return: Generates a list of all of the loaded modules that are active on the current server.
+        """
         return self.__bot.get_loaded_modules(self.__current_server.id)
 
     @property
@@ -125,6 +147,46 @@ class Module(object):
         stuff here like saving files.
         """
         pass
+
+    def is_banned(self, member):
+        """
+        Checks if the specified member is banned or not.
+        :param member: A discord member object.
+        :return: True if banned, False if otherwise
+        """
+        return self.__permissions.is_banned(member)
+
+    def is_blessed(self, member):
+        """
+        Checks if the specified member is blessed or not.
+        :param member: A discord member object.
+        :return: True if blessed, False if otherwise
+        """
+        return self.__permissions.is_blessed(member)
+
+    def require_moderator(self, member):
+        """
+        Checks if the specified member has moderator privileges or higher.
+        :param member: A discord member object.
+        :return: True if so, False if otherwise.
+        """
+        return self.__permissions.require_moderator(member)
+
+    def require_admin(self, member):
+        """
+        Checks if the specified member has administrator privileges or higher.
+        :param member: A discord member object.
+        :return: True if so, False if otherwise.
+        """
+        return self.__permissions.require_admin(member)
+
+    def require_owner(self, member):
+        """
+        Checks if the specified member has owner privileges.
+        :param member: A discord member object.
+        :return: True if so, False if otherwise.
+        """
+        return self.__permissions.require_owner(member)
 
     async def provide_help(self, command, message):
         """

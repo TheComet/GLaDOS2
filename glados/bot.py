@@ -236,7 +236,7 @@ class Bot(object):
             m.server_whitelist.append(server)
 
         # set module properties
-        m.init_module(self, modfullname, self.settings)
+        m.init_module(self, modfullname, self.settings, self.__permissions)
 
         # get a list of tuples containing (callback function, module) pairs.
         callback_tuples = self.__get_callback_tuples(m)
