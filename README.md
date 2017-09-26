@@ -22,9 +22,14 @@ From pip:
  + matplotlib
  + wolframalpha
  + Pillow
+<<<<<<< HEAD
  + APNGLib
 ```
 pip install discord.py python-dateutil requests pyenchant beautifulsoup4 PySocks lxml nltk matplotlib wolframalpha APNGLib
+=======
+```
+pip install discord.py python-dateutil requests pyenchant beautifulsoup4 PySocks lxml nltk matplotlib wolframalpha Pillow
+>>>>>>> origin/master
 ```
 
 The picarto module requires google's protobuf to be built from source.
