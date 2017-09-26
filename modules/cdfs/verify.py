@@ -22,8 +22,7 @@ class Verify(glados.Module):
 
     def setup_global(self):
         @self.client.event
-        @asyncio.coroutine
-        def on_member_remove(member):
+        async def on_member_remove(member):
             if member.server is None or member.server.id != cdfs_server_id:
                 return tuple()
             channel = self.client.get_channel(off_topic_channel_id)
@@ -32,8 +31,8 @@ class Verify(glados.Module):
                 return tuple()
             await self.client.send_message(channel, "{} left the server!".format(member.name))
 
-    @glados.Module.commands('verify')
-    def verify(self, message, arg):
+    @glados.Module.command('verify', '', '')
+    async def verify(self, message, arg):
         if message.channel.id != welcome_channel_id:
             return tuple()
 
@@ -57,8 +56,7 @@ class Verify(glados.Module):
 
         await self.client.send_message(off_topic_channel, '{} joined the server! If you are especially kinky, contact an admin for access to the #fetish channel. Type ``.help`` for a list of bot commands.'.format(message.author.mention))
 
-    @asyncio.coroutine
-    def clean_up_shit_messages(self):
+    async def clean_up_shit_messages(self):
         welcome_channel = self.client.get_channel(welcome_channel_id)
         if welcome_channel is None:
             glados.log('ERROR: Failed to retrieve welcome channel')
@@ -67,7 +65,8 @@ class Verify(glados.Module):
         await asyncio.sleep(15)  # allow people to read the message
         await self.client.purge_from(welcome_channel, check=check_message_for_deletion)
 
-    @glados.Module.rules('^.*$')
-    def delete_this(self, message, match):
+    @glados.Permissions.spamalot
+    @glados.Module.rule('^.*$')
+    async def delete_this(self, message, match):
         asyncio.ensure_future(self.clean_up_shit_messages())
         return tuple()

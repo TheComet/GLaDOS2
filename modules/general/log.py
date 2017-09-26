@@ -12,9 +12,6 @@ class Log(glados.Module):
         self.memory['date'] = datetime.now().strftime('%Y-%m-%d')
         self.memory['log file'] = open(os.path.join(self.memory['log path'], 'chanlog-{}'.format(self.memory['date'])), 'a')
 
-    def get_help_list(self):
-        return list()
-
     def __open_new_log_if_necessary(self):
         date = datetime.now().strftime('%Y-%m-%d')
         if not self.memory['date'] == date:
@@ -23,7 +20,7 @@ class Log(glados.Module):
             self.memory['log file'] = open(os.path.join(self.memory['log path'], 'chanlog-{}'.format(self.memory['date'])), 'a')
 
     @glados.Permissions.spamalot
-    @glados.Module.rules('^.*$')
+    @glados.Module.rule('^.*$')
     def on_message(self, message, match):
         # If user has opted out, don't log
         if message.author.id in self.settings['optout']:

@@ -1,5 +1,6 @@
 import re
 import os
+import inspect
 
 
 class Module(object):
@@ -200,26 +201,36 @@ class Module(object):
         :param message: The discord.message object
         :return: Returns a generator, must be yielded (asyncio coroutine).
         """
-        for hlp in self.get_help_list():
-            if hlp.command == command:
-                await self.client.send_message(message.channel, self.__command_prefix + hlp.get())
+        command_list = list()
+        for name, member in inspect.getmembers(self, predicate=inspect.ismethod):
+            if not hasattr(member, 'commands') or not any(x[0] == command for x in member.commands):
+                continue
+            for command, argument_list_str, description in member.commands:
+                if argument_list_str:
+                    command_list.append('{}{} **{}** -- *{}*'.format(self.__command_prefix, command, argument_list_str, description))
+                else:
+                    command_list.append('{}{} -- *{}*'.format(self.__command_prefix, command, description))
+        await self.client.send_message(message.channel, '\n'.join(command_list))
 
-    def get_help_list(self):
-        """
-        The inheriting modules should return a list of glados.Help objects describing what each command in the class
-        does.
+    def get_casual_help_strings(self):
+        for name, member in inspect.getmembers(self, predicate=inspect.ismethod):
+            if not hasattr(member, 'commands') or any(hasattr(member, x) for x in ('owner', 'admin', 'moderator')):
+                continue
+            for command, argument_list_str, description in member.commands:
+                if argument_list_str:
+                    yield '{}{} **{}** -- *{}*'.format(self.__command_prefix, command, argument_list_str, description)
+                else:
+                    yield '{}{} -- *{}*'.format(self.__command_prefix, command, description)
 
-        For example:
-
-            def get_help_list(self):
-                return [
-                    glados.Help('hello', '<name>', 'Says hello to the user with the specified name')
-                ]
-
-        :return: A list of glados.Help objects. If no help exists (because your module has no commands), you can also
-        return an empty list.
-        """
-        raise RuntimeError('Module doesn\'t provide any command descriptions.')
+    def get_privileged_help_strings(self):
+        for name, member in inspect.getmembers(self, predicate=inspect.ismethod):
+            if not hasattr(member, 'commands') or all(not hasattr(member, x) for x in ('owner', 'admin', 'moderator')):
+                continue
+            for command, argument_list_str, description in member.commands:
+                if argument_list_str:
+                    yield '{}{} **{}** -- *{}*'.format(self.__command_prefix, command, argument_list_str, description)
+                else:
+                    yield '{}{} -- *{}*'.format(self.__command_prefix, command, description)
 
     def parse_members_roles(self, message, content):
         """
@@ -272,30 +283,34 @@ class Module(object):
         return members, roles, ''
 
     @staticmethod
-    def commands(*command_list):
+    def command(command, argument_list_str, description):
         """
         This should be used as a decorator for your module member functions that handle commands. You can specify
-        a list of commands you wish to react to.
+        a command, a string showing the arguments that need to be passed, and a description string (the last two
+        arguments are used to generate help text).
 
         Example:
 
             class Hello(glados.Module):
-                @glados.Mdoule.commands('hello', 'hi')
+                @glados.Mdoule.commands('hello', '[member]', 'Makes the bot say hello to someone')
                 def respond_to_hello(self, client, message, content):
                     await client.send_message(message.channel, 'Hi! {}'.format(message.author.name))
 
-        In this case, sending either ".hello" or ".hi" will cause your function respond_to_hello() to be called.
+        In this case, sending either ".hello" will cause your function respond_to_hello() to be called.
 
-        :param command_list: A list of strings of commands to react to when they are issued in Discord.
+        :param command: A string for the command that triggers a callback to your method.
+        :param argument_list_str: A string that shows the possible arguments that should be passed to your method (this
+        is used to generate help)
+        :param description: A string containing a description of what the command does (used for help).
         """
         def add_attribute(func):
             func.__dict__.setdefault('commands', list())
-            func.commands.extend(command_list)
+            func.command.append((command, argument_list_str, description))
             return func
         return add_attribute
 
     @staticmethod
-    def rules(*rule_list):
+    def rule(rule):
         """
         This should be used as a decorator for your module member functions that handle responding to specific patterns
         in messages. You can specify a list of regular expressions as arguments. If a message posted on Discord matches
@@ -311,24 +326,22 @@ class Module(object):
         In this case, if any message contains the phrase "I like books", then the function respond_to_books() will be
         called.
 
-        :param rule_list: A list of strings of regular expression to match messages sent on Discord with.
+        :param rule: A regular expression to match messages sent on Discord with.
         """
         def add_attribute(func):
             func.__dict__.setdefault('rules', list())
-            for rule in rule_list:
-                func.rules.append(re.compile(rule, re.IGNORECASE))
+            func.rule.append(re.compile(rule, re.IGNORECASE))
             return func
         return add_attribute
 
     @staticmethod
-    def bot_rules(*rule_list):
+    def bot_rule(rule):
         """
         Same as rules(), except only messages that originate from bots (that aren't our own) are passed.
-        :param rule_list: A list of strings of regular expression to match messages sent on Discord with.
+        :param rule: A regular expression to match messages sent on Discord with.
         """
         def add_attribute(func):
             func.__dict__.setdefault('bot_rules', list())
-            for rule in rule_list:
-                func.bot_rules.append(re.compile(rule, re.IGNORECASE))
+            func.bot_rule.append(re.compile(rule, re.IGNORECASE))
             return func
         return add_attribute

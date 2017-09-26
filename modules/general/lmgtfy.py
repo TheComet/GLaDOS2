@@ -11,13 +11,10 @@ import urllib.parse
 
 
 class LMGTFY(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('lmgtfy', '<search term>', 'Generates a "Let me google that for you" link')
-        ]
-
-    @glados.Module.commands('lmgtfy', 'lmgify', 'gify', 'gtfy')
+    @glados.Module.command('lmgtfy', '<search term>', 'Generates a "Let me google that for you" link')
+    @glados.Module.command('lmgify', '', '')
+    @glados.Module.command('gify', '', '')
+    @glados.Module.command('gtfy', '', '')
     async def googleit(self, message, arg):
         """Let me just... google that for you."""
         #No input

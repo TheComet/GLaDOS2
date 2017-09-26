@@ -8,13 +8,7 @@ import urllib.request
 
 
 class IsUp(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('isup', '<website>', 'Checks whether a website is up or not.')
-        ]
-
-    @glados.Module.commands('isup')
+    @glados.Module.command('isup', '<website>', 'Checks whether a website is up or not.')
     async def isup(self, message, site):
         """isup.me website status checker"""
 
@@ -44,6 +38,6 @@ class IsUp(glados.Module):
         else:
             await self.client.send_message(message.channel, site + ' is down from here.')
 
-    @glados.Module.rules(r'(?i).*?(gdnet|gd.net|gamedev|gamedev.net).*?(down\??)')
+    @glados.Module.rule(r'(?i).*?(gdnet|gd.net|gamedev|gamedev.net).*?(down\??)')
     async def is_gdnet_down(self, message, match):
         await self.isup(message, 'https://gamedev.net')

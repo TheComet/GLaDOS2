@@ -30,15 +30,7 @@ def k_to_c(temp):
 
 
 class Units(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('temp', '<100F/C/K>', 'Converts between all 3 units of temperature'),
-            glados.Help('distance', '<42m/cm/km/miles/inch/feet/yards/ly/au/parsec>', 'Converts between units of distance'),
-            glados.Help('weight', '<kg/g/lb/pounds/oz/ounces>', 'Convert between units of weight')
-        ]
-
-    @glados.Module.commands('temp')
+    @glados.Module.command('temp', '<100F/C/K>', 'Converts between all 3 units of temperature')
     async def temperature(self, message, arg):
         """
         Convert temperatures
@@ -63,7 +55,8 @@ class Units(glados.Module):
         await self.client.send_message(message.channel, "{:.2f}°C = {:.2f}°F = {:.2f}K".format(celsius, fahrenheit, kelvin))
 
 
-    @glados.Module.commands('length', 'distance')
+    @glados.Module.command('distance', '<42m/cm/km/miles/inch/feet/yards/ly/au/parsec>', 'Converts between units of distance')
+    @glados.Module.command('length', '<42m/cm/km/miles/inch/feet/yards/ly/au/parsec>', 'Converts between units of distance')
     async def distance(self, message, arg):
         """
         Convert distances
@@ -134,7 +127,8 @@ class Units(glados.Module):
 
         await self.client.send_message(message.channel, '{} = {}'.format(metric_part, stupid_part))
 
-    @glados.Module.commands('weight', 'mass')
+    @glados.Module.command('weight', '<kg/g/lb/pounds/oz/ounces>', 'Convert between units of weight')
+    @glados.Module.command('mass', '<kg/g/lb/pounds/oz/ounces>', 'Convert between units of weight')
     async def mass(self, message, arg):
         """
         Convert mass

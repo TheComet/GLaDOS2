@@ -2,13 +2,7 @@ import glados
 
 
 class Hug(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('hug', '[intensity]', 'The bot hugs you. Intensity is optional, goes from 1 to 10')
-        ]
-
-    @glados.Module.commands('hug')
+    @glados.Module.command('hug', '[intensity]', 'The bot hugs you. Intensity is optional, goes from 1 to 10')
     async def hug(self, message, intensity):
         """Because everyone likes hugs
         Up to 10 intensity levels."""

@@ -1,4 +1,4 @@
-from willie import module
+import glados
 from random import randint
 
 fart_counter = 0
@@ -16,10 +16,11 @@ fart_sounds = [
     "is insane in the methane",
     "gassed the room"]
 
-@module.commands("fart")
-def fart(bot, trigger):
-    global fart_counter
-    global fart_sounds
-    bot.say(trigger.nick + ": " + fart_sounds[fart_counter])
-    fart_counter = randint(0, len(fart_sounds) - 1)
-    
+
+class Fart(glados.Module):
+    @glados.Module.command("fart")
+    async def fart(self, message, content):
+        global fart_counter
+        global fart_sounds
+        await self.client.send_message(message.author.nick + ": " + fart_sounds[fart_counter])
+        fart_counter = randint(0, len(fart_sounds) - 1)

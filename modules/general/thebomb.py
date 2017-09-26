@@ -14,7 +14,7 @@ colours = [
 hot_colour = None
 cut_wires = list()
 
-@module.commands('plant')
+@module.command('plant')
 def plant_bomb(bot, trigger):
     global hot_colour
     global cut_wires
@@ -27,7 +27,7 @@ def plant_bomb(bot, trigger):
     cut_wires = list()
     bot.say('{0} has planted the bomb! Attempt to diffuse with ".cut {1}"'.format(trigger.nick, '/'.join(colours)))
 
-@module.commands('cut')
+@module.command('cut')
 def cut(bot, trigger):
     global hot_colour
     global cut_wires

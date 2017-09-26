@@ -3,8 +3,6 @@ import random
 
 
 class Goto(glados.Module):
-    def get_help_list(self): return list()
-
     responses = (
         '{}, wtf? Don\'t ever use goto it sucks.',
         '{}, if you have the option of using goto or punching yourself in the face I recommend you go with the latter.',
@@ -18,14 +16,12 @@ class Goto(glados.Module):
         '{}, your use of goto just shows how stupid you really are.'
     )
 
-    @glados.Module.rules('^.*goto.*$')
+    @glados.Module.rule('^.*goto.*$')
     async def goto(self, message, match):
         await self.client.send_message(message.channel, random.choice(self.responses).format(message.author.name))
 
 
 class Singleton(glados.Module):
-    def get_help_list(self): return list()
-
     responses = (
         'Singleton? That\'s just disgusting crazy talk. Christ, {}, get a grip on yourself.',
         'Yeah, singletons are a hack, and they\'re wrong, and we should figure out how to do it right',
@@ -39,6 +35,6 @@ class Singleton(glados.Module):
         '{}: WHAT? NONE OF WHAT YOU SAY MAKES ANY SENSE.'
     )
 
-    @glados.Module.rules('^.*singleton.*$')
+    @glados.Module.rule('^.*singleton.*$')
     async def singletons(self, message, match):
         await self.client.send_message(message.channel, random.choice(self.responses).format(message.author.name))

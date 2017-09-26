@@ -3,13 +3,7 @@ import urllib.parse
 
 
 class Google(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('google', '<term>', 'Generate a google link')
-        ]
-
-    @glados.Module.commands('google')
+    @glados.Module.command('google', '<term>', 'Generate a google link')
     async def google(self, message, term):
         if term == '':
             await self.provide_help('google', message)

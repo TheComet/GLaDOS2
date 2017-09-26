@@ -6,9 +6,6 @@ import json
 
 
 class R9K(glados.Module):
-    def get_help_list(self):
-        return [glados.Help('r9k', '', 'ROBOT9000 tells you how many original comments you\'ve made')]
-
     def setup_memory(self):
         # Copy active channels from settings file into memory
         self.memory['channels'] = set()
@@ -34,7 +31,7 @@ class R9K(glados.Module):
         for line in open(db_file):
             self.memory['hashes'].add(line.strip())
 
-    @glados.Module.commands('r9k')
+    @glados.Module.command('r9k', '', 'ROBOT9000 tells you how many original comments you\'ve made')
     async def send_scores(self, message, users):
 
         if users == '':
@@ -60,7 +57,7 @@ class R9K(glados.Module):
 
     # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Permissions.spamalot
-    @glados.Module.rules('^((?!\.\w+).*)$')
+    @glados.Module.rule('^((?!\.\w+).*)$')
     async def on_message(self, message, match):
         # Remove anything that is not alphanumeric
         phrase = match.group(1)

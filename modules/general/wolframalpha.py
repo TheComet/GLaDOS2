@@ -38,9 +38,6 @@ class WolframAlpha(glados.Module):
         if not os.path.exists(self.memory['cache dir']):
             os.makedirs(self.memory['cache dir'])
 
-    def get_help_list(self):
-        return [glados.Help('wolfram', '<query>', 'Query Wolfram Alpha')]
-
     @staticmethod
     def __format_info(spellcheck, delimiters, reinterpret):
         if (spellcheck is None) and (delimiters is None) and (reinterpret is None):
@@ -88,8 +85,8 @@ class WolframAlpha(glados.Module):
 
         return data, self.__format_info(spellcheck, delimiters, reinterpret)
 
-    @glados.Module.commands('wolfram')
-    @glados.Module.commands('wa')
+    @glados.Module.command('wolfram', '<query>', 'Query Wolfram Alpha')
+    @glados.Module.command('wa', '', '')
     async def wolfram(self, message, query):
         if query == '':
             await self.provide_help('wolfram', message)

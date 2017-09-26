@@ -2,13 +2,10 @@ import glados
 
 
 class GDNIsOffline(glados.Module):
-    def get_help_list(self):
-        return tuple()
-
-    @glados.Module.rules(r'^\!profile.*$')
-    @glados.Module.rules(r'^\!claim$')
-    @glados.Module.rules(r'^\!rules$')
-    @glados.Module.rules(r'^\!help$')
+    @glados.Module.rule(r'^\!profile.*$')
+    @glados.Module.rule(r'^\!claim$')
+    @glados.Module.rule(r'^\!rules$')
+    @glados.Module.rule(r'^\!help$')
     async def respond_if_down(self, message, match):
         Hodge_id = '109587405673091072'
         GDN_id = '188103830360162309'

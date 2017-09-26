@@ -70,13 +70,7 @@ class XKCD(glados.Module):
         if not os.path.exists(self.__tmp_dir):
             os.makedirs(self.__tmp_dir)
 
-    def get_help_list(self):
-        return [
-            glados.Help('xkcd', '[query]', 'Either return random comic or search for a comic. '
-                                           'Query can also be a number')
-        ]
-
-    @glados.Module.commands('xkcd')
+    @glados.Module.command('xkcd', '[query]', 'Either return random comic or search for a comic. Query can also be a number')
     async def xkcd(self, message, query):
         """
         .xkcd - Finds an xkcd comic strip. Takes one of 3 inputs:

@@ -95,13 +95,6 @@ C = [
 
 
 class Insult(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('insult', '', 'Generate a random insult.'),
-            glados.Help('insult', '<user>', 'Generate a random insult and direct it at a user.')
-        ]
-
     @staticmethod
     def gen_insult():
         words = list()
@@ -113,9 +106,9 @@ class Insult(glados.Module):
         words.append(random.choice(C))
         return ' '.join(words)
 
-    @glados.Module.commands("insult")
-    def insult(self, message, content):
-        if content == "":
+    @glados.Module.command('insult', '[user]', 'Generate a random insult and direct it at a user.')
+    async def insult(self, message, content):
+        if not content:
             await self.client.send_message(message.channel, 'You {}!'.format(self.gen_insult()))
         else:
             await self.client.send_message(message.channel, '{0}: You {1}!'.format(content, self.gen_insult()))

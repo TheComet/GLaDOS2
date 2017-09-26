@@ -50,12 +50,6 @@ class Mentions(glados.Module):
         self.memory['last seen'] = dict()
         self.__load_seen_timestamps()
 
-    def get_help_list(self):
-        return [
-            glados.Help('mentions', '[num]', 'Returns all messages in which you were mentioned since you were last seen.'
-                                             ' If you provide a number, it will return the last [num] messages instead.')
-        ]
-
     def __load_seen_timestamps(self):
         glados.log('loading seen timestamps for .mentions')
         if os.path.isfile(self.memory['seen file']):
@@ -66,7 +60,7 @@ class Mentions(glados.Module):
             f.write(json.dumps(self.memory['last seen']))
 
     @glados.Permissions.spamalot
-    @glados.Module.rules('^((?!\.\w+).*)$')
+    @glados.Module.rule('^((?!\.\w+).*)$')
     def record(self, message, match):
         # If user has opted out, don't log
         if message.author.id in self.settings['optout']:
@@ -82,7 +76,8 @@ class Mentions(glados.Module):
 
         return tuple()
 
-    @glados.Module.commands('mentions')
+    @glados.Module.command('mentions', '[num]', 'Returns all messages in which you were mentioned since you were last '
+                           'seen. If you provide a number, it will return the last [num] messages instead.')
     async def on_seen(self, message, arg):
         glados.log('Looking for mentions for author {}'.format(message.author.name))
 

@@ -75,13 +75,7 @@ def format(result, definitions, number=2):
 
 
 class Wiktionary(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('define', '<word>', 'Look up a word on wiktionary')
-        ]
-
-    @glados.Module.commands('wt', 'define', 'dict')
+    @glados.Module.command('define', '<word>', 'Look up a word on wiktionary')
     async def wiktionary(self, message, word):
         """Look up a word on Wiktionary."""
         if word == '':

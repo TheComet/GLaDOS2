@@ -14,11 +14,7 @@ class PushNotifier(glados.Module):
         self.__channels = self.settings['git']['push notifier']['channels']
         asyncio.ensure_future(self.run())
 
-    def get_help_list(self):
-        return list()
-
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
         ps = subprocess.Popen(('/home/cometbot/discord/GLaDOS2/github_webhook.py',), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         print('started server')
         while True:

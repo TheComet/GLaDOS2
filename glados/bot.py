@@ -67,6 +67,15 @@ class Bot(object):
                     if user_is_punished:
                         continue
 
+                # Convenient: If the help string of the command contains brackets, check that the user has supplied the
+                # correct number of arguments. If not, provide help instead of executing the command.
+                if hasattr(callback, 'commands'):
+                    arg_string = callback.commands[0][1]  # first command (if more than one), argument list string
+                    required_arg_count = len(arg_string.split('<'))
+                    if len(content.split()) < required_arg_count:
+                        await module.provide_help(callback[0][0])
+                        continue
+
                 module.set_current_server(message.server.id)  # required for server isolation
                 await callback(message, content)
 
@@ -106,7 +115,7 @@ class Bot(object):
             # check if any issued commands match anything in the loaded callbacks
             if hasattr(callback, 'commands'):
                 for command, content in commands:
-                    if command in callback.commands:
+                    if command in callback.command:
                         ret.append((callback, module, content))
         return ret
 
@@ -120,7 +129,7 @@ class Bot(object):
 
             # process bot messages
             if message.author.bot and hasattr(callback, 'bot_rules'):
-                for rule in callback.bot_rules:
+                for rule in callback.bot_rule:
                     match = rule.match(message.content)
                     if match is None:
                         continue
@@ -132,7 +141,7 @@ class Bot(object):
 
             # process message responses
             if hasattr(callback, 'rules'):
-                for rule in callback.rules:
+                for rule in callback.rule:
                     match = rule.match(message.content)
                     if match is None:
                         continue
@@ -224,12 +233,6 @@ class Bot(object):
         except ImportError:
             return 'Error: Failed to import module {0}\n{1}'.format(modfullname,
                                                                     traceback.print_exc())
-
-        # get the module's help list for the global .help command
-        try:
-            modhelp = [self.__command_prefix + x.get() for x in m.get_help_list()]
-        except RuntimeError:
-            return 'Error: Module {0} doesn\'t provide any help.'.format(modfullname)
 
         # set server whitelist
         if server is not None:

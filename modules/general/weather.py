@@ -131,17 +131,8 @@ class Weather(glados.Module):
         with open(self.memory['woeid db file'], 'w') as f:
             f.write(json.dumps(self.memory['woeid db']))
 
-    def get_help_list(self):
-        return [
-            glados.Help('weather', '[location]', 'Returns the weather. If the location is not specified, then your '
-                                                 'location (from .setlocation) is used'),
-            glados.Help('setlocation', '<location>', 'Sets your location. The .weather command can use your location '
-                                                     'to look up weather.'),
-            glados.Help('location', '[User]', 'Returns the location of a user, or your location if no user was '
-                                              'specified.')
-        ]
-
-    @glados.Module.commands('weather', 'wea')
+    @glados.Module.command('weather', '[location]', 'Returns the weather. If the location is not specified, then your '
+                           'location (from .setlocation) is used')
     async def weather(self, message, location):
         """.weather location - Show the weather at the given location."""
 
@@ -185,7 +176,8 @@ class Weather(glados.Module):
         wind = get_wind(results)
         await self.client.send_message(message.channel, u'%s: %s, %s, %s, %s' % (location, cover, temp, humidity, wind))
 
-    @glados.Module.commands('setlocation', 'setwoeid')
+    @glados.Module.command('setlocation', '<location>', 'Sets your location. The .weather command can use your '
+                           'location to look up weather.')
     async def update_woeid(self, message, location):
         """Set your default weather location."""
         if location == '':
@@ -218,13 +210,14 @@ class Weather(glados.Module):
         await self.client.send_message(message.channel, 'I now have you at WOEID %s (%s%s, %s, %s)' %
                                             (woeid, neighborhood, city, state, country))
 
-    @glados.Module.commands('location')
+    @glados.Module.command('location', '[user]', 'Returns the location of a user, or your location if no user was '
+                                              'specified.')
     async def get_woeid(self, message, user):
         if user == '':
             user = message.author.name
 
         try:
-            woeid = self.self.memory['woeid db'][user.lower()]
+            woeid = self.memory['woeid db'][user.lower()]
 
             query = urllib.parse.quote('select * from weather.forecast where woeid="{}" and u=\'c\''.format(woeid))
             query = 'http://query.yahooapis.com/v1/public/yql?q=' + query

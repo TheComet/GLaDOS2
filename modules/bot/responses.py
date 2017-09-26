@@ -5,11 +5,8 @@ import glados
 
 
 class Hello(glados.Module):
-
-    def get_help_list(self): return []
-
-    @glados.Module.rules(r'(?i)(hi|hello|hey|greetings),? glados.*$')
-    def respond_hello(self, message, match):
+    @glados.Module.rule(r'(?i)(hi|hello|hey|greetings),? glados.*$')
+    async def respond_hello(self, message, match):
         greeting = random.choice(('Hi ', 'Hey ', 'Hello '))
         greeting += message.author.name + random.choice(('', '!'))
         greeting += random.choice((' No one ever says hi to me... Are you a bot?',
@@ -17,29 +14,24 @@ class Hello(glados.Module):
                                    ' Do you always say hi to robots or are you just lonely?'))
         await self.client.send_message(message.channel, greeting)
 
-    @glados.Module.rules('^(hi|hello|hey|greetings)$')
-    def hello(self, message, match):
+    @glados.Module.rule('^(hi|hello|hey|greetings)$')
+    async def hello(self, message, match):
         greeting = random.choice(('Hi', 'Hey', 'Hello'))
         punctuation = random.choice(('', '!'))
         await self.client.send_message(message.channel, greeting + ' ' + message.author.name + punctuation)
 
 
 class Morgen(glados.Module):
-    
-    def get_help_list(self): return []
-
-    @glados.Module.rules('^.*(morgen|abend|abendgruss).*$')
-    def morgen(self, message, match):
+    @glados.Module.rule('^.*(morgen|abend|abendgruss).*$')
+    async def morgen(self, message, match):
         greeting = random.choice(('Heil', 'Tach'))
         punctuation = random.choice(('', '!'))
         await self.client.send_message(message.channel, greeting + ' ' + message.author.name + punctuation)
 
 
 class Swiss(glados.Module):
-    def get_help_list(self): return list()
-
-    @glados.Module.rules(r'.*(grüetzi|grützi|grüessech|grüessich).*')
-    def hii(self, message, match):
+    @glados.Module.rule(r'.*(grüetzi|grützi|grüessech|grüessich).*')
+    async def hii(self, message, match):
         greeting = random.choice(('Hoi büebli!', 'Sali!', 'Grüessech wohl', 'Grüessgott', 'S Wätter esch net schlächt hüt, äs chutet e chli'))
         await self.client.send_message(message.channel, greeting)
 
@@ -59,28 +51,24 @@ class Insult(glados.Module):
     ]
     counter = 0
 
-    def get_help_list(self): return []
-
-    def respond(self, message):
+    async def respond(self, message):
         await self.client.send_message(message.channel, self.phrases[self.counter].format(message.author.name))
         self.counter = (self.counter + 1) % len(self.phrases)
 
-    @glados.Module.rules("^.*(?=.*shut)(?=.*up)(?=.*glados).*$")
-    def shut_up(self, message, match):
+    @glados.Module.rule("^.*(?=.*shut)(?=.*up)(?=.*glados).*$")
+    async def shut_up(self, message, match):
         await self.respond(message)
 
-    @glados.Module.rules("^.*(?=.*fuck)(?=.*glados).*$")
-    def fuck_you(self, message, match):
+    @glados.Module.rule("^.*(?=.*fuck)(?=.*glados).*$")
+    async def fuck_you(self, message, match):
         await self.respond(message)
 
-    @glados.Module.rules("^.*(?=.*glados)(?=.*cunt).*$")
-    def you_cunt(self, message, match):
+    @glados.Module.rule("^.*(?=.*glados)(?=.*cunt).*$")
+    async def you_cunt(self, message, match):
         await self.respond(message)
 
 
 class Hmkay(glados.Module):
-    def get_help_list(self): return []
-
-    @glados.Module.rules("^.*(?=.*hmkay).*$")
-    def hmkay(self, message, match):
+    @glados.Module.rule("^.*(?=.*hmkay).*$")
+    async def hmkay(self, message, match):
         await self.client.send_message(message.channel, "HHHMMMMKAAAYYY. DRUGS ARE BAD HHMKAY")

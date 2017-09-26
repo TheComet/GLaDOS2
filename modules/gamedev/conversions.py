@@ -5,19 +5,8 @@ import base64
 
 
 class Conversions(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('bin', '<data>', 'Convert a number or string to a binary representation'),
-            glados.Help('hex', '<data>', 'Convert a number or string to a hexadecimal representation'),
-            glados.Help('dec', '<data>', 'Convert a number or string to a decimal representation'),
-            glados.Help('oct', '<data>', 'Convert a number or string to an octal representation'),
-            glados.Help('b64e', '<data>', 'Encode base64'),
-            glados.Help('b64d', '<data>', 'Decode base64'),
-        ]
-
-    @glados.Module.commands('bin')
-    def bin(self, message, data):
+    @glados.Module.command('bin', '<data>', 'Convert a number or string to a binary representation')
+    async def bin(self, message, data):
         if data == '':
             await self.provide_help('bin', message)
             return
@@ -35,8 +24,8 @@ class Conversions(glados.Module):
 
         await self.client.send_message(message.channel, data)
 
-    @glados.Module.commands('hex')
-    def hex(self, message, data):
+    @glados.Module.command('hex', '<data>', 'Convert a number or string to a hexadecimal representation')
+    async def hex(self, message, data):
         if data == '':
             await self.provide_help('hex', message)
             return
@@ -54,8 +43,8 @@ class Conversions(glados.Module):
 
         await self.client.send_message(message.channel, data)
 
-    @glados.Module.commands('dec')
-    def dec(self, message, data):
+    @glados.Module.command('dec', '<data>', 'Convert a number or string to a decimal representation')
+    async def dec(self, message, data):
         if data == '':
             await self.provide_help('dec', message)
             return
@@ -70,8 +59,8 @@ class Conversions(glados.Module):
 
         await self.client.send_message(message.channel, data)
 
-    @glados.Module.commands('b64e')
-    def b64e(self, message, data):
+    @glados.Module.command('b64e', '<data>', 'Encode base64')
+    async def b64e(self, message, data):
         if data == '':
             await self.provide_help('b64e', message)
             return
@@ -82,8 +71,8 @@ class Conversions(glados.Module):
             data = 'Encoding failed.'
         await self.client.send_message(message.channel, data)
 
-    @glados.Module.commands('b64d')
-    def b64d(self, message, data):
+    @glados.Module.command('b64d', '<data>', 'Decode base64')
+    async def b64d(self, message, data):
         if data == '':
             await self.provide_help('b64d', message)
             return

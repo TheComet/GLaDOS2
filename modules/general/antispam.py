@@ -16,11 +16,12 @@ class AntiSpam(glados.Module):
 
     def get_help_list(self):
         return tuple()
-   
-    @glados.Module.rules('^.*$')
-    def on_message(self, message, match):
+
+    @glados.Permissions.spamalot
+    @glados.Module.rule('^.*$')
+    async def on_message(self, message, match):
         author = message.author.id
-        if not author in self.__times:
+        if author not in self.__times:
             self.__times[author] = collections.deque([datetime.now()], maxlen=BUFFER_LEN)
             return tuple()
 
@@ -29,7 +30,7 @@ class AntiSpam(glados.Module):
         if len(d) < BUFFER_LEN:
             return tuple()
 
-        diffs = [d[i] - d[i-1] for i in range(1,len(d))]
+        diffs = [d[i] - d[i-1] for i in range(1, len(d))]
         s = sum(x.total_seconds() for x in diffs)
         if s < TIME_THRESHOLD * BUFFER_LEN:
             if message.author.id != '104330175243636736':
@@ -38,5 +39,5 @@ class AntiSpam(glados.Module):
                 await self.client.add_roles(message.author, *roles)
                 await self.client.send_message(message.channel, '{} you were muted for spamming. PM an admin if you want to complain'.format(message.author.mention))
                 #await self.client.kick(message.author)
-        
+
         return tuple()

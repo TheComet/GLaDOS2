@@ -11,18 +11,9 @@ class Myth(glados.Module):
         self.memory['data path'] = os.path.join(self.data_dir, 'myths')
         if not os.path.exists(self.memory['data path']):
             os.makedirs(self.memory['data path'])
-
         self.memory['data file'] = os.path.join(self.memory['data path'], 'myths.txt')
 
-    def get_help_list(self):
-        return [
-            glados.Help('myth', '[ID]', 'Returns a random myth. Botmods can specify an ID.'),
-            glados.Help('addmyth', '<text>', 'Adds a myth to the mythical database'),
-            glados.Help('delmyth', '<ID> [ID 2] [ID 3]...', 'Delete offending myths'),
-            glados.Help('mythstats', '', 'Displays statistics on myths')
-        ]
-
-    @glados.Module.commands('addmyth')
+    @glados.Module.command('addmyth', '<text>', 'Adds a myth to the mythical database')
     async def addmyth(self, message, content):
         if content == '':
             await self.provide_help('addmyth', message)
@@ -49,16 +40,13 @@ class Myth(glados.Module):
 
         await self.client.send_message(message.channel, 'Myth #{} added.'.format(new_id))
 
-    @glados.Module.commands('delmyth')
+    @glados.Module.command('delmyth', '<ID> [ID 2] [ID 3]...', 'Delete offending myths')
     async def delmyth(self, message, content):
         if content == '':
             await self.provide_help('delmyth', message)
             return
 
-        is_mod = message.author.id in self.settings['moderators']['IDs'] or \
-                 len(set(x.name for x in message.author.roles).intersection(
-                     set(self.settings['moderators']['roles']))) > 0
-        if not is_mod and not message.author.id in self.settings['admins']['IDs']:
+        if not self.require_moderator(message.author):
             await self.client.send_message(message.channel, 'Only botmods can delete myths')
             return ()
 
@@ -86,7 +74,7 @@ class Myth(glados.Module):
         with codecs.open(self.memory['data file'], 'w', encoding='utf-8') as f:
             f.writelines(replace_lines)
 
-    @glados.Module.commands('myth')
+    @glados.Module.command('myth', '[ID]', 'Returns a random myth. Botmods can specify an ID.')
     async def myth(self, message, content):
         with codecs.open(self.memory['data file'], 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -97,10 +85,7 @@ class Myth(glados.Module):
 
         # Extract a specific ID if you are a botmod
         if len(content) > 0:
-            is_mod = message.author.id in self.settings['moderators']['IDs'] or \
-                     len(set(x.name for x in message.author.roles).intersection(
-                         set(self.settings['moderators']['roles']))) > 0
-            if not is_mod and not message.author.id in self.settings['admins']['IDs']:
+            if not self.require_moderator(message.author):
                 await self.client.send_message(message.channel, 'Only botmods can pass IDs')
                 return ()
 
@@ -121,7 +106,7 @@ class Myth(glados.Module):
 
         await self.client.send_message(message.channel, line)
 
-    @glados.Module.commands('mythstats')
+    @glados.Module.command('mythstats', '', 'Displays statistics on myths')
     async def mythstats(self, message, content):
         if os.path.isfile(self.memory['data file']):
             with codecs.open(self.memory['data file'], 'r', encoding='utf-8') as f:

@@ -30,11 +30,6 @@ class Etymology(glados.Module):
     t_sentence = r'^.*?(?<!%s)(?:\.(?= [A-Z0-9]|\Z)|\Z)'
     r_sentence = re.compile(t_sentence % ')(?<!'.join(abbrs))
 
-    def get_help_list(self):
-        return [
-            glados.Help('ety', '<word>', 'Looks up the etymology of a word.')
-        ]
-
     def unescape(self, s):
         s = s.replace('&gt;', '>')
         s = s.replace('&lt;', '<')
@@ -76,13 +71,9 @@ class Etymology(glados.Module):
         sentence = '"' + sentence.replace('"', "'") + '"'
         return sentence + ' - ' + (self.etyuri % word)
 
-    @glados.Module.commands('ety')
+    @glados.Module.command('ety', '<word>', 'Looks up the etymology of a word.')
     async def f_etymology(self, message, word):
         """Look up the etymology of a word"""
-
-        if word == '':
-            await self.provide_help('ety', message)
-            return
 
         try:
             result = self.etymology(word)

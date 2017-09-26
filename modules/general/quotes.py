@@ -12,23 +12,13 @@ import enchant
 
 class Quotes(glados.Module):
     def setup_memory(self):
-        memory['quotes path'] = os.path.join(self.data_dir, 'quotes')
-        if not os.path.exists(memory['quotes path']):
-            os.makedirs(memory['quotes path'])
+        self.memory['quotes path'] = os.path.join(self.data_dir, 'quotes')
+        if not os.path.exists(self.memory['quotes path']):
+            os.makedirs(self.memory['quotes path'])
 
-        memory['dictionaries'] = [
+        self.memory['dictionaries'] = [
             enchant.Dict('en_US'),
             enchant.Dict('en_GB')
-        ]
-
-    def get_help_list(self):
-        return [
-            glados.Help('quote', '<user>', 'Dig up a quote the user once said in the past.'),
-            glados.Help('quotestats', '<user>', 'Provide statistics on how many quotes a user has and how'
-                                                ' intelligent he is'),
-            glados.Help('findquote', '<user> <text>', 'Dig up a quote the user once said containing the specified text.'),
-            glados.Help('grep', '<word> [User]', 'Find how many times a user has said a particular word. Case-insensitive'),
-            glados.Help('zipf', '[user]', 'Plot a word frequency diagram of the user.')
         ]
 
     def check_nickname_valid(self, author):
@@ -50,7 +40,7 @@ class Quotes(glados.Module):
 
     # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Permissions.spamalot
-    @glados.Module.rules('^((?!\.\w+).*)$')
+    @glados.Module.rule('^((?!\.\w+).*)$')
     def record(self, message, match):
         # If user has opted out, don't log
         if message.author.id in self.settings['optout']:
@@ -62,7 +52,7 @@ class Quotes(glados.Module):
 
         return tuple()
 
-    @glados.Module.commands('quote')
+    @glados.Module.command('quote', '[user]', 'Dig up a quote the user (or yourself) once said in the past.')
     async def quote(self, message, content):
         if len(message.mentions) > 0:
             author = message.mentions[0].name
@@ -85,7 +75,7 @@ class Quotes(glados.Module):
 
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
 
-    @glados.Module.commands('findquote')
+    @glados.Module.command('findquote', '<user> <text>', 'Dig up a quote the user once said containing the specified text.')
     async def findquote(self, message, content):
         if len(message.mentions) == 1:
             author = message.mentions[0].name
@@ -128,7 +118,8 @@ class Quotes(glados.Module):
         quotes_file.close()
         return [x for x in lines if len(x) >= 20]
 
-    @glados.Module.commands('quotestats')
+    @glados.Module.command('quotestats', '[user]', 'Provide statistics on how many quotes a user (or yourself) has and '
+                           'how intelligent he is')
     async def quotestats(self, message, content):
         if content == '':
             content = message.author.name
@@ -173,10 +164,10 @@ class Quotes(glados.Module):
 
     def filter_to_english_words(self, words_list):
         return [word for word in words_list
-                    if any(d.check(word) for d in self.memory['dictionaries'])
+                    if any(d.check(word) for d in self.self.memory['dictionaries'])
                     and (len(word) > 1 or len(word) == 1 and word in 'aAI')]
 
-    @glados.Module.commands('grep')
+    @glados.Module.command('grep', '<word> [User]', 'Find how many times a user has said a particular word. Case-insensitive')
     async def grep(self, message, content):
         if content == '':
             await self.provide_help('grep', message)
@@ -219,7 +210,7 @@ class Quotes(glados.Module):
             response = '{0} has said "{1}" {2} times ({3:.2f}‰ of all words)'.format(author, word, found_count, found_count * 1000.0 / total_count)
         await self.client.send_message(message.channel, response)
 
-    @glados.Module.commands('zipf')
+    @glados.Module.command('zipf', '[user]', 'Plot a word frequency diagram of the user.')
     async def zipf(self, message, users):
         source_user = message.author.name
         source_user = source_user.strip('@').split('#')[0]

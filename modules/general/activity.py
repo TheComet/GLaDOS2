@@ -46,20 +46,13 @@ class Activity(glados.Module):
         if path.isfile(self.memory['cache file']):
             self.memory['cache'] = json.loads(open(self.memory['cache file']).read())
 
-    def get_help_list(self):
-        return [
-            glados.Help('activity', '[user]',
-                        'Plots activity statistics for a user, or total server activity if no user was specified.')
-        ]
-
     def __cache_is_stale(self):
         date = datetime.now().strftime('%Y-%m-%d')
         if self.memory['cache'] is None or not self.memory['cache']['date'] == date:
             return True
         return False
 
-    @asyncio.coroutine
-    def __reprocess_cache(self):
+    async def __reprocess_cache(self):
         # Get list of all channel log files
         files = [join(self.memory['log_dir'], f) for f in listdir(self.memory['log_dir']) if isfile(join(self.memory['log_dir'], f))]
         self.memory['cache'] = dict()
@@ -147,7 +140,7 @@ class Activity(glados.Module):
         with open(self.memory['cache file'], 'w') as f:
             f.write(json.dumps(self.memory['cache']))
 
-    @glados.Module.commands('ranks')
+    @glados.Module.command('ranks', '', 'Top users who post the most shit')
     async def ranks(self, message, users):
         if self.__cache_is_stale():
             await self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
@@ -163,7 +156,8 @@ class Activity(glados.Module):
         msg = fmt.format(*top5)
         await self.client.send_message(message.channel, msg)
 
-    @glados.Module.commands('activity')
+    @glados.Module.command('activity', '[user]',
+                           'Plots activity statistics for a user, or total server activity if no user was specified.')
     async def plot_activity(self, message, users):
         # Mentions have precedence
         if len(message.mentions) > 0:
@@ -236,6 +230,6 @@ class Activity(glados.Module):
         for label in ax3.xaxis.get_ticklabels()[::spacing]:
             label.set_visible(False)
 
-        image_file_name = path.join(self.self.memory['cache dir'], user_name + '.png')
+        image_file_name = path.join(self.memory['cache dir'], user_name + '.png')
         fig.savefig(image_file_name)
         return image_file_name

@@ -1,6 +1,7 @@
 import glados
 import os
 import json
+import dateutil
 from datetime import datetime, timedelta
 
 
@@ -15,15 +16,6 @@ class Permissions(glados.Permissions):
         self.memory['dict'] = dict()
         self.memory['config file'] = os.path.join(self.data_dir, 'permissions.json')
         self.__load_dict()
-
-    def get_help_list(self):
-        return [
-            glados.Help('modhelp', '', 'Moderator/Admin commands for the bot'),
-            glados.Help('modlist', '', 'Displays which users are bot moderators'),
-            glados.Help('banlist', '', 'Displays which users are banned'),
-            glados.Help('blesslist', '', 'Displays which users are blessed'),
-            glados.Help('optoutlist', '', 'Displays which users don\'t want to be logged by the bot')
-        ]
 
     def is_banned(self, member):
         return self.__is_member_still_marked_as(member, 'banned')
@@ -58,7 +50,7 @@ class Permissions(glados.Permissions):
     def get_ban_expiry(self, member):
         return self.__get_expiry(member, 'banned')
 
-    @glados.Module.commands('modhelp')
+    @glados.Module.command('modhelp', '', )
     async def modhelp(self, message, content):
         # If the user was banned, don't announce the help sending
         if self.is_banned(message.author):
@@ -79,7 +71,7 @@ class Permissions(glados.Permissions):
                    'unbless')
         )
 
-    @glados.Module.commands('modlist')
+    @glados.Module.command('modlist', '', 'Displays which users are bot moderators')
     async def modlist(self, message, content):
         mod_list = list()
         admin_list = list()
@@ -102,7 +94,7 @@ class Permissions(glados.Permissions):
 
         await self.client.send_message(message.channel, text)
 
-    @glados.Module.commands('banlist')
+    @glados.Module.command('banlist', '', 'Displays which users are banned')
     async def banlist(self, message, content):
         banned = list()
         for member in self.current_server.members:
@@ -126,7 +118,7 @@ class Permissions(glados.Permissions):
             text = 'No one is banned.'
         await self.client.send_message(message.channel, text)
 
-    @glados.Module.commands('blesslist')
+    @glados.Module.command('blesslist', '', 'Displays which users are blessed')
     async def blesslist(self, message, content):
         blessed = list()
         for member in self.current_server.members:
@@ -140,24 +132,13 @@ class Permissions(glados.Permissions):
             text = 'No one is blessed.'
         await self.client.send_message(message.channel, text)
 
-    @glados.Module.commands('optoutlist')
-    async def optoutlist(self, message, content):
-        optouts = list()
-        for member in self.current_server.members:
-            if member.id in self.settings['optout']:
-                if not member in optouts:
-                    optouts.append(member)
-
-        if len(optouts) > 0:
-            text = '**Opted-Out Users**\n{}'.format('\n'.join(['  + ' + x.name for x in optouts]))
-        else:
-            text = 'No one has opted out.'
-        await self.client.send_message(message.channel, text)
-
     @glados.Permissions.moderator
-    @glados.Module.commands('ban')
+    @glados.Module.command('ban', '<user/role> [user/role...] [hours=24]', 'Blacklist the specified user(s) or '
+                           'roles from using the bot for the specified number of hours. The default number of hours is '
+                           '24. Specifying a value of 0 will cause the user to be perma-banned. The ban is based on '
+                           'user ID.')
     async def ban_command(self, message, content):
-        members, roles, duration, error = self.__parse_members_roles_duration(message, content)
+        members, roles, duration, error = self.__parse_members_roles_duration(message, content, 24)
         if error:
             await self.client.send_message(message.channel, error)
             return
@@ -184,9 +165,9 @@ class Permissions(glados.Permissions):
                 self.__mark_command(members, roles, duration, 'banned'))
 
     @glados.Permissions.moderator
-    @glados.Module.commands('unban')
+    @glados.Module.command('unban', '<user/role> [user/role...]', 'Allow a banned user(s) to use the bot again')
     async def unban_command(self, message, content):
-        members, roles, duration, error = self.__parse_members_roles_duration(message, content)
+        members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
         if error:
             await self.client.send_message(message.channel, error)
             return
@@ -195,9 +176,11 @@ class Permissions(glados.Permissions):
                 self.__unmark_command(members, roles, 'banned'))
 
     @glados.Permissions.moderator
-    @glados.Module.commands('bless')
+    @glados.Module.command('bless', '<user/role> [user/role...] [hours=0]', 'Allow the specified user to evade the '
+                           'punishment system for a specified number of hours. Specifying 0 means forever. This '
+                           'allows the user to excessively use the bot without consequences.')
     async def bless_command(self, message, content):
-        members, roles, duration, error = self.__parse_members_roles_duration(message, content)
+        members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
         if error:
             await self.client.send_message(message.channel, error)
             return
@@ -206,9 +189,10 @@ class Permissions(glados.Permissions):
                 self.__mark_command(members, roles, duration, 'blessed'))
 
     @glados.Permissions.moderator
-    @glados.Module.commands('unbless')
+    @glados.Module.command('unbless', '<user/role> [user/role...]', 'Removes a user\'s blessing so he is punished '
+                           'for excessive use of the bot again.')
     async def unbless_command(self, message, content):
-        members, roles, duration, error = self.__parse_members_roles_duration(message, content)
+        members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
         if error:
             await self.client.send_message(message.channel, error)
             return
@@ -217,9 +201,11 @@ class Permissions(glados.Permissions):
                 self.__unmark_command(members, roles, 'blessed'))
 
     @glados.Permissions.admin
-    @glados.Module.commands('mod')
+    @glados.Module.command('mod', '<user/role> [user/role...] [hours=0]', 'Assign moderator status to a user or role.'
+                           ' Moderators are able to bless, unbless, ban or unban users, but they cannot use any admin '
+                           'commands.')
     async def mod_command(self, message, content):
-        members, roles, duration, error = self.__parse_members_roles_duration(message, content)
+        members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
         if error:
             await self.client.send_message(message.channel, error)
             return
@@ -228,9 +214,9 @@ class Permissions(glados.Permissions):
                 self.__mark_command(members, roles, duration, 'moderator'))
 
     @glados.Permissions.admin
-    @glados.Module.commands('unmod')
+    @glados.Module.command('unmod', '<user/role> [user/role]', 'Removes moderator status from users or roles.')
     async def unmod_command(self, message, content):
-        members, roles, duration, error = self.__parse_members_roles_duration(message, content)
+        members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
         if error:
             await self.client.send_message(message.channel, error)
             return
@@ -239,9 +225,12 @@ class Permissions(glados.Permissions):
                 self.__unmark_command(members, roles, 'moderator'))
 
     @glados.Permissions.owner
-    @glados.Module.commands('admin')
+    @glados.Module.command('admin', '<user/role> [user/role] [hours=0]', 'Assign admin status to a user or role. '
+                           'Admins can do everything moderators can, including major bot internal stuff (such as '
+                           'reloading the config, managig databases, etc.) They can also assign moderator status to '
+                           'people. Only give this to people you really trust.')
     async def admin_command(self, message, content):
-        members, roles, duration, error = self.__parse_members_roles_duration(message, content)
+        members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
         if error:
             await self.client.send_message(message.channel, error)
             return
@@ -250,9 +239,9 @@ class Permissions(glados.Permissions):
                 self.__mark_command(members, roles, duration, 'admin'))
 
     @glados.Permissions.owner
-    @glados.Module.commands('unadmin')
+    @glados.Module.command('unadmin', '<user/role> [user/role]', 'Removes admin status from users or roles.')
     async def unadmin_command(self, message, content):
-        members, roles, duration, error = self.__parse_members_roles_duration(message, content)
+        members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
         if error:
             await self.client.send_message(message.channel, error)
             return
@@ -260,19 +249,16 @@ class Permissions(glados.Permissions):
         await self.client.send_message(message.channel,
                 self.__unmark_command(members, roles, 'admin'))
 
-    def __parse_members_roles_duration(self, message, content):
-        if content == '':
-            return (), (), 'Invalid syntax. Type `.modhelp` if you need help.'
-
+    def __parse_members_roles_duration(self, message, content, default_duration):
         # Default duration is 24 hours
         args = content.split()
         if len(args) < 2:
-            duration = 24
+            duration = default_duration
         else:
             try:
                 duration = float(args[-1])
             except ValueError:
-                duration = 24
+                duration = default_duration
 
         members, roles, error = self.parse_members_roles(message, content)
         return members, roles, duration, error

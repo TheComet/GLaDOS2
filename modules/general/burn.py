@@ -17,18 +17,9 @@ class Burn(glados.Module):
         super(Burn, self).__init__()
         self.counter = 0
 
-    def get_help_list(self):
-        return [
-            glados.Help('burn', '<user>', 'Burn a user when you feel like he just got pwned')
-        ]
-
-    @glados.Module.commands("burn")
+    @glados.Module.command('burn', '<user>', 'Burn a user when you feel like he just got pwned')
     async def burn_user(self, message, content):
         global burns
-
-        if content == "":
-            await self.provide_help('burn', message)
-            return
 
         user_being_burned = content.strip('@')
         user_burning = message.author.name

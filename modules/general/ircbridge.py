@@ -15,11 +15,8 @@ class IRCBridge(glados.Module):
     STATE_TRY_JOIN = 1
     STATE_CONNECTED = 2
 
-    def __init__(self, settings):
-        super(IRCBridge, self).__init__(settings)
-        self.command_prefix = settings['commands']['prefix']
-        self.settings = settings
-        self.irc_settings = settings['irc']
+    def setup_global(self):
+        self.irc_settings = self.settings['irc']
         self.host = self.irc_settings['host']
         self.port = self.irc_settings['port']
         self.botnick = self.irc_settings['nick']
@@ -64,8 +61,7 @@ class IRCBridge(glados.Module):
         for channel in self.irc_channels:
             self.send_raw_message('PRIVMSG {} :{}\n'.format(channel, msg))
 
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
         while True:
             try:
                 if self.state == self.STATE_DISCONNECTED:
@@ -124,8 +120,8 @@ class IRCBridge(glados.Module):
         return list()
 
     @glados.Permissions.spamalot
-    @glados.Module.rules('^.*$')
-    def on_discord_message(self, message, match):
+    @glados.Module.rule('^.*$')
+    async def on_discord_message(self, message, match):
         if isinstance(message.channel, discord.Object):
             return()
         if message.channel.is_private:
@@ -141,11 +137,9 @@ class IRCBridge(glados.Module):
         self.send_to_all_channels('<{}> {}'.format(author, content))
         return ()
 
-    @glados.Module.commands('irc')
-    def on_irc_enable(self, message, args):
-        if not message.author.id in self.settings['admins']['IDs']:
-            return ()
-
+    @glados.Permissions.admin
+    @glados.Module.command('irc')
+    async def on_irc_enable(self, message, args):
         self.bridge_enable = not self.bridge_enable
         msg = 'IRC bridge enabled.' if self.bridge_enable else 'IRC bridge disabled.'
         await self.client.send_message(message.channel, msg)

@@ -33,8 +33,6 @@ def readable_timestamp(delta):
 
 
 class Lugaru(glados.Module):
-    def get_help_list(self): return [glados.Help('lugaru', '', 'Days since lugaru was mentioned')]
-
     def setup_memory(self):
         self.memory['db file'] = os.path.join(self.data_dir, 'lugaru.json')
         self.memory['db'] = dict()
@@ -64,7 +62,7 @@ class Lugaru(glados.Module):
         return delta, author, record
 
     # Don't match commands
-    @glados.Module.rules('^(?!\.\w+).*lugaru.*$')
+    @glados.Module.rule('^(?!\.\w+).*lugaru.*$')
     async def lugaru_was_mentioned(self, message, match):
         delta, author, record = self.__get_data()
         await self.client.send_message(message.channel, 'Days since `lugaru` was mentioned: :zero: :zero: :zero: :zero: (record was {} day(s) by {})'.format(record, author))
@@ -74,9 +72,8 @@ class Lugaru(glados.Module):
         self.memory['db']['author'] = message.author.name
         self.__save_db()
 
-    @glados.Module.commands('lugaru')
+    @glados.Module.command('lugaru', '', 'Days since lugaru was mentioned')
     async def lugaru(self, message, args):
         delta, author, record = self.__get_data()
         msg = '`Lugaru` was mentioned {} by {} (current record: {} day(s))'.format(readable_timestamp(delta), author, record)
         await self.client.send_message(message.channel, msg)
-

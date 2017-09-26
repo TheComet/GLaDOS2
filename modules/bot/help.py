@@ -7,32 +7,34 @@ class Help(glados.Module):
         super(Help, self).__init__()
         self.__command_prefix = None
 
-    def setup_global(self):
-        self.__command_prefix = self.settings['commands']['prefix']
-
-    def get_help_list(self):
-        return [glados.Help('help', '[search]', 'Get a list of all commands, or of a specific command')]
-
-    @glados.Module.commands('help')
+    @glados.Module.command('help', '[search]', 'Get a list of all commands, or of a specific command')
     async def help(self, message, content):
-        # creates a list of relevant modules
-        relevant_modules = self.bot.get_loaded_modules(message.server)
+        help_strings = (string for module in self.loaded_modules for string in module.get_casual_help_strings())
 
         # Filter relevant modules if the user is requesting a specific command
         if len(content) > 0:
-            relevant_modules = set(module for module in relevant_modules
-                                   if any(True for x in content.split()
-                                          if any(True for hlp in module.get_help_list()
-                                                 if x.lower() in hlp.command)))
-        # generates a list of help strings from the modules
-        relevant_help = sorted([self.__command_prefix + hlp.get()
-                                for mod in relevant_modules
-                                for hlp in mod.get_help_list()])
+            help_strings = filter(
+                lambda hlp: any(True for search in content.split() if search in hlp), help_strings)
 
         await self.client.send_message(message.channel,
                 'I\'m sending you a gigantic wall of direct message with a list of commands!')
 
-        for msg in self.__concat_into_valid_message(relevant_help):
+        for msg in self.__concat_into_valid_message(sorted(help_strings)):
+            await self.client.send_message(message.author, msg)
+
+    @glados.Module.command('modhelp', '[search]', 'Get a list of privileged bot commands (for moderators/admins)')
+    async def modhelp(self, message, content):
+        help_strings = (string for module in self.loaded_modules for string in module.get_privileged_help_strings())
+
+        # Filter relevant modules if the user is requesting a specific command
+        if len(content) > 0:
+            help_strings = filter(
+                lambda hlp: any(True for search in content.split() if search in hlp), help_strings)
+
+        await self.client.send_message(message.channel,
+                                       'I\'m sending you a list of moderator commands.')
+
+        for msg in self.__concat_into_valid_message(sorted(help_strings)):
             await self.client.send_message(message.author, msg)
 
     @staticmethod

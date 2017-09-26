@@ -4,13 +4,7 @@ from bs4 import BeautifulSoup
 
 
 class Fact(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('fact', '', 'Look up a random fact')
-        ]
-
-    @glados.Module.commands('fact')
+    @glados.Module.command('fact', '', 'Look up a random fact')
     async def fact(self, message, args):
         response = urllib.request.urlopen('http://randomfactgenerator.net/').read().decode('utf-8')
         soup = BeautifulSoup(response, 'lxml')

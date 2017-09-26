@@ -8,14 +8,10 @@ import glados
 
 STACK_EXCHANGE_API = 'https://api.stackexchange.com/2.2/search/advanced?'
 
-class StackOverflow(glados.Module):
-    def get_help_list(self):
-        return [
-            glados.Help('so', '<search terms>', 'Searches stuff in stackoverflow')
-        ]
 
-    @glados.Module.commands('so')
-    def search(self, message, content):
+class StackOverflow(glados.Module):
+    @glados.Module.command('so', '<search terms>', 'Searches stuff in stackoverflow')
+    async def search(self, message, content):
         query_string = urlencode({
             'order': 'desc',
             'sort': 'relevance',

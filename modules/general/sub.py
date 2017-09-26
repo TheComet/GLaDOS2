@@ -57,18 +57,15 @@ class Sub(glados.Module):
                 except re.error:
                     pass
 
-    def get_help_list(self):
-        return [
-            glados.Help('sub', '<regex>', 'Get notified when a message matches the regex. The regex is **case insensitive** and does not have to match the entire message, it searches for substrings (e.g. ".sub (trash can|trashcan)" will match those two phrases). You must be inactive for at least 1 minutes before being notified. You cannot notify yourself. A 1 minute cooldown is placed between notifications to prevent spam.'),
-            glados.Help('unsub', '<number> [@user]', 'Stop getting notifications. Use .sublist to get the number'),
-            glados.Help('sublist', '', 'See all of the things you\'ve subscribed to')
-        ]
-
     def __save_subs(self):
         with open(self.memory['subs file'], 'w') as f:
             f.write(json.dumps(self.memory['subs']))
 
-    @glados.Module.commands('sub')
+    @glados.Module.command('sub', '<regex>', 'Get notified when a message matches the regex. The regex is **case '
+                           'insensitive** and does not have to match the entire message, it searches for substrings '
+                           '(e.g. ".sub (trash can|trashcan)" will match those two phrases). You must be inactive for '
+                           'at least 1 minutes before being notified. You cannot notify yourself. A 1 minute cooldown '
+                           'is placed between notifications to prevent spam.')
     async def subscribe(self, message, regex):
         if regex == '':
             await self.provide_help('sub', message)
@@ -98,7 +95,7 @@ class Sub(glados.Module):
 
         await self.client.send_message(message.channel, '{} added subscription #{} (``{}``)'.format(message.author.name, len(memory['subs'][message.author.id]), regex))
 
-    @glados.Module.commands('unsub')
+    @glados.Module.command('unsub', '<number> [user]', 'Stop getting notifications. Use .sublist to get the number')
     async def unsubscribe(self, message, args):
         if args == '':
             await self.provide_help('unsub', message)
@@ -125,7 +122,7 @@ class Sub(glados.Module):
 
         await self.client.send_message(message.channel, '{} unsubscribed from {}'.format(message.author.name, ', '.join(str(x) for x in indices)))
 
-    @glados.Module.commands('sublist')
+    @glados.Module.command('sublist', '[user]', 'See all of the things you\'ve subscribed to')
     async def list_subscriptions(self, message, user):
         if user == '':
             member = message.author
@@ -154,7 +151,7 @@ class Sub(glados.Module):
         await self.client.send_message(message.channel, msg)
 
     @glados.Permissions.spamalot
-    @glados.Module.rules('^((?!\.\w+).*)$')
+    @glados.Module.rule('^((?!\.\w+).*)$')
     async def on_message(self, message, match):
         # Reset timer if user just made a message
         # Doing it here has the nice side effect of making it impossible to mention yourself

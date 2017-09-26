@@ -2,29 +2,7 @@ import glados
 
 
 class Poll(glados.Module):
-    def get_help_list(self):
-        return [
-            glados.Help('poll', '<new> <name> <1. first option 2. second option 3. ...>', 'Start a new poll with a number of options'),
-            glados.Help('poll', '<vote> <name> <option>', 'Place your vote in a running poll'),
-            glados.Help('poll', '<close|show> <name>', 'Close or show a poll')
-        ]
-
-    @glados.Module.commands('poll')
-    async def handle_poll(self, message, content):
-        parts = [x.strip() for x in content.split() if len(x) > 0]
-        if len(parts) == 0:
-            await self.provide_help('poll', message)
-            return
-        cmd = parts[0]
-        if cmd == 'new':
-            await self.handle_new(message, parts[1:])
-        elif cmd == 'vote':
-            await self.handle_vote(message, parts[1:])
-        elif cmd == 'close':
-            await self.handle_close(message, parts[1:])
-        elif cmd == 'show':
-            await self.handle_show(message, parts[1:])
-
+    @glados.Module.command('pollnew', '<name> <1. first option 2. second option 3. ...>', 'Start a new poll with a number of options')
     async def handle_new(self, message, parts):
         if len(parts) < 2:
             await self.provide_help('poll', message)
@@ -61,6 +39,7 @@ class Poll(glados.Module):
         msg = msg + '\n  ' + '\n  '.join(options)
         await self.client.send_message(message.channel, msg)
 
+    @glados.Module.command('pollvote', '<name> <option>', 'Place your vote in a running poll')
     async def handle_vote(self, message, parts):
         if len(parts) < 2:
             await self.provide_help('poll', message)
@@ -89,6 +68,7 @@ class Poll(glados.Module):
         vote = self.memory[name]['options'][vote_id - 1]
         await self.client.send_message(message.channel, '{} voted for {}!'.format(message.author.name, vote))
 
+    @glados.Module.command('pollclose', '<name>', 'Close a poll and show the results')
     async def handle_close(self, message, parts):
         if len(parts) < 1:
             await self.provide_help('poll', message)
@@ -114,6 +94,7 @@ class Poll(glados.Module):
         await self.client.send_message(message.channel,
                 'Poll "{}" closed.\nWinning option is "{}" with {} votes'.format(name, winner_option_str, winner_votes))
 
+    @glados.Module.command('pollshow', '<name>', 'Show the options of a running poll')
     async def handle_show(self, message, parts):
         if len(parts) < 1:
             await self.provide_help('poll', message)
@@ -128,7 +109,7 @@ class Poll(glados.Module):
         msg = msg + '\n  ' + '\n  '.join(self.memory[name]['options'])
         await self.client.send_message(message.channel, msg)
 
-    @glados.Module.commands('polls')
+    @glados.Module.command('polls', '', 'List all of the polls that are open')
     async def show_polls(self, message, content):
         polls = [k for k, v in self.memory.items()]
         await self.client.send_message(message.channel, 'Open polls:\n' + '\n  '.join(polls))

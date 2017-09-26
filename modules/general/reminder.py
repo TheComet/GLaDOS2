@@ -69,16 +69,10 @@ class Reminder(glados.Module):
     def __init__(self):
         super(Reminder, self).__init__()
 
-    def get_help_list(self):
-        return [
-            glados.Help('in', '<offset> <reminder>', 'Creates a reminder. Example: ".in 3h45m Go to class"')
-        ]
-
     def setup_memory(self):
         self.memory['reminder_file'] = os.path.join(self.data_dir, 'reminders.db')
         self.memory['rdb'] = self.__load_database()
 
-        @asyncio.coroutine
         async def monitor():
             while True:
                 await asyncio.sleep(2.5)
@@ -115,8 +109,8 @@ class Reminder(glados.Module):
         with codecs.open(self.memory['reminder_file'], 'w', encoding='utf-8') as f:
             f.write(json.dumps(self.memory['rdb']))
 
-    @glados.Module.commands('in')
-    def remind(self, message, args):
+    @glados.Module.command('in', '<offset> <reminder>', 'Creates a reminder. Example: ".in 3h45m Go to class"')
+    async def remind(self, message, args):
         args = args.split(' ', 1)
         if len(args) < 2:
             await self.provide_help('in', message)
@@ -147,11 +141,10 @@ class Reminder(glados.Module):
 
         timezone = get_timezone(
             bot.db, bot.config, None, trigger.nick, trigger.sender)
-        create_reminder(bot, trigger, duration, reminder, timezone)
+        self.create_reminder(bot, trigger, duration, reminder, timezone)
 
 
-    @commands('at')
-    @example('.at 13:47 Do your homework!')
+    @glados.Module.command('at', '<time> <reminder>', 'Creates a reminder. Example: ".at 13:47 Do your homework!"')
     def at(bot, trigger):
         """
         Gives you a reminder at the given time. Takes hh:mm:ssTimezone
@@ -197,8 +190,7 @@ class Reminder(glados.Module):
 
         if duration < 0:
             duration += 86400
-        create_reminder(bot, trigger, duration, message, 'UTC')
-
+        self.create_reminder(bot, trigger, duration, message, 'UTC')
 
     def create_reminder(bot, trigger, duration, message, tz):
         t = int(time.time()) + duration
@@ -208,7 +200,7 @@ class Reminder(glados.Module):
         except KeyError:
             self.memory['rdb'][t] = [reminder]
 
-        dump_database(bot.rfn, self.memory['rdb'])
+        self.dump_database(bot.rfn, self.memory['rdb'])
 
         if duration >= 60:
             remind_at = datetime.utcfromtimestamp(t)

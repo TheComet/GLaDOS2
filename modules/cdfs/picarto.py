@@ -25,8 +25,7 @@ class PicartoClient(object):
         self.websocket = websocket
         self.discord_channel_id = discord_channel_id
 
-    @asyncio.coroutine
-    def listen(self):
+    async def listen(self):
         await self.discord_client.wait_until_ready()
 
         discord_channel = None
@@ -111,8 +110,8 @@ class Picarto(glados.Module):
         client = PicartoClient(self.client, bridge['discord channel id'], websocket)
         return client
 
-    @glados.Module.rules('^.*$')
-    def on_message(self, message, match):
+    @glados.Module.rule('^.*$')
+    async def on_message(self, message, match):
         for picarto_client in self.picarto_clients:
             picarto_message = chat_pb2.NewMessage()
             picarto_message.message = message.clean_content

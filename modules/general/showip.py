@@ -6,13 +6,7 @@ from subprocess import check_output
 
 
 class ShowIP(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('showip', '<URL>', 'Performs a DNS lookup and returns the IP address')
-        ]
-
-    @glados.Module.commands('showip')
+    @glados.Module.command('showip', '<URL>', 'Performs a DNS lookup and returns the IP address')
     async def showip(self, message, content):
         if content == '':
             await self.provide_help('showip', message)

@@ -3,18 +3,8 @@ import derpibooru
 
 
 class Derpi(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('derpi', '<s|r> [query]', 'Search derpibooru for an image. The first argument is the mode. **s** means **search**, **r** means **random**.')
-        ]
-
-    @glados.Module.commands('derpi')
-    def derpi(self, message, args):
-        if args == '':
-            await self.provide_help('derpi', message)
-            return
-
+    @glados.Module.command('derpi', '<s|r> [query]', 'Search derpibooru for an image. The first argument is the mode. **s** means **search**, **r** means **random**.')
+    async def derpi(self, message, args):
         args = args.split(' ', 1)
         mode = args[0]
         tags = ''

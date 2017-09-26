@@ -25,12 +25,7 @@ class UpTime(glados.Module):
         super(UpTime, self).__init__()
         self.__started = datetime.utcnow()
 
-    def get_help_list(self):
-        return [
-            glados.Help('uptime', '', 'Returns the uptime of this bot.')
-        ]
-
-    @glados.Module.commands('uptime')
+    @glados.Module.command('uptime', '', 'Returns the uptime of this bot.')
     async def uptime(self, message, arg):
         delta = timedelta(seconds=round((datetime.utcnow() - self.__started).total_seconds()))
         await self.client.send_message(message.channel, random.choice(self.messages).format(delta))

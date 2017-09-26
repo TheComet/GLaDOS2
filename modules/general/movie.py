@@ -11,13 +11,8 @@ import json
 
 
 class Movie(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('movie/imdb', '<title>', 'Searches for the movie on IMDB')
-        ]
-
-    @glados.Module.commands('movie', 'imdb')
+    @glados.Module.command('movie', '<title>', 'Searches for the movie on IMDB')
+    @glados.Module.command('imdb', '', '')
     async def movie(self, message, movie):
         """
         Returns some information about a movie, like Title, Year, Rating, Genre and IMDB Link.

@@ -57,27 +57,22 @@ class Seen(glados.Module):
         with open(self.memory['config file'], 'w') as f:
             f.write(json.dumps(self.memory['dict']))
 
-    def get_help_list(self):
-        return [
-            glados.Help('seen', '<user>', 'Find the last message a user wrote, where he wrote it, and what it said')
-        ]
-
     @glados.Permissions.spamalot
-    @glados.Module.rules('^.*$')
+    @glados.Module.rule('^.*$')
     def on_message(self, message, match):
         author = message.author.name
         key = author.lower()
         channel = message.channel.name
         msg = message.clean_content
         ts = datetime.now().isoformat()
-        self.self.memory['dict'][key] = {'author': str(key),
+        self.memory['dict'][key] = {'author': str(key),
                                     'message': str(msg),
                                     'channel': str(channel),
                                     'timestamp': str(ts)}
         self.__save_dict()
         return tuple()
 
-    @glados.Module.commands('seen')
+    @glados.Module.command('seen', '<user>', 'Find the last message a user wrote, where he wrote it, and what it said')
     async def on_seen(self, message, content):
         if content == "":
             # Count how many users in total have been seen
@@ -86,7 +81,7 @@ class Seen(glados.Module):
 
         author = content.strip('@').split('#')[0]
         key = author.lower()
-        if not key in self.memory['dict']:
+        if key not in self.memory['dict']:
             if key == 'glados':
                 await self.client.send_message(message.channel, '{0} Do you see me? I see you.')
             else:

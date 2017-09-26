@@ -31,7 +31,8 @@ class Urban(glados.Module):
                               'not exist for \'%s\'.' % (1, word))
         return definition
 
-    @glados.Module.commands('urban', 'ud')
+    @glados.Module.command('urban', '<term>', 'Look up a term on urban dictionary.')
+    @glados.Module.command('ud', '<term>', 'Look up a term on urban dictionary.')
     async def urban(self, message, content):
         if content == '':
             await self.provide_help('urban', message)

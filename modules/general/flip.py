@@ -3,13 +3,7 @@ import random
 
 
 class Flip(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('flip', '[user]', 'Flip a coin... Or a user')
-        ]
-
-    @glados.Module.commands('flip')
+    @glados.Module.command('flip', '[user]', 'Flip a coin... Or a user')
     async def flip(self, message, user):
         """Flips a coin... or a user.
         Defaults to coin.

@@ -20,12 +20,10 @@ shrugs = [
     'http://i.imgur.com/XUsxfpG.png'
 ]
 
-class Shrug(glados.Module):
-    def get_help_list(self):
-        return [glados.Help('shrug', '', 'Shrug')]
 
-    @glados.Module.commands('shrug')
-    def shrug(self, message, args):
+class Shrug(glados.Module):
+    @glados.Module.command('shrug', '', 'Shrug')
+    async def shrug(self, message, args):
         shrug = random.choice(shrugs)
         await self.client.send_message(message.channel, shrug)
 

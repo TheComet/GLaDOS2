@@ -83,11 +83,6 @@ class LaTeX(glados.Module):
                                   "\\csname",
                                   "\\endcsname")
 
-    def get_help_list(self):
-        return [
-            glados.Help('math', '<latex code>', 'Render latex math code')
-        ]
-
     def generate_image(self, latex):
 
         num = str(random.randint(0, 2 ** 31))
@@ -127,7 +122,7 @@ class LaTeX(glados.Module):
 
         return True, png_file
 
-    @glados.Module.commands('math')
+    @glados.Module.command('math', '<latex code>', 'Render latex math code')
     async def on_message(self, message, content):
 
         if content == '':

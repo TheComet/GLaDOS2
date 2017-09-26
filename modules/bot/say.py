@@ -2,17 +2,10 @@ import glados
 
 
 class Say(glados.Module):
-
-    def get_help_list(self):
-        return [glados.Help('say', '<server> <channel> <message>', 'Have the bot send an arbitrary message to any server')]
-
     @glados.Permissions.owner
-    @glados.Module.commands('say')
+    @glados.Module.command('say',  '<server> <channel> <message>', 'Have the bot send an arbitrary message to any server')
     async def say(self, message, content):
         parts = content.split(' ', 2)
-        if len(parts) < 3:
-            await self.provide_help('say', message)
-            return
 
         # find relevant channel
         for channel in self.client.get_all_channels():

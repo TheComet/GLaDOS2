@@ -15,12 +15,9 @@ class Wikipedia(glados.Module):
         super(Wikipedia, self).__init__()
         self.__lang = 'en'
 
-    def get_help_list(self):
-        return [
-            glados.Help('w', '<query>', 'Search wikipedia for a thing.')
-        ]
-
-    @glados.Module.commands('w', 'wiki', 'wik')
+    @glados.Module.command('wiki', '<query>', 'Search wikipedia for a thing.')
+    @glados.Module.command('w', '', '')
+    @glados.Module.command('wik', '', '')
     async def wikipedia(self, message, query):
 
         if query == '':
