@@ -25,7 +25,7 @@ class build_emotes(glados.Module):
 
 	def setup_global(self):
 		self.emotedb_path = 'modules/pony/emotesdb/'
-		self.configdb_path = 'modules/pony/dbconfig/'
+		self.configdb_path = 'modules/pony/emote_info_db/'
 		self.worker_threads = 8
 		self.building_db = ""
 		self.is_running = False
@@ -33,7 +33,7 @@ class build_emotes(glados.Module):
 		
 	def get_help_list(self):
 		return [
-			glados.Help('buildpony', '<Optional db space sperated list>', 'Mod only usable, use to rebuild the entire pony emote db, or only a partial db specefied by Opetiondb(i.e: mylittlepony only builds for the mylittlepony.json db)')
+			glados.Help('ponybuild', '<Optional db space sperated list>', 'Mod only usable, use to rebuild the entire pony emote db, or only a partial db specefied by Opetiondb(i.e: mylittlepony only builds for the mylittlepony.json db)')
 		]
 		
 	def save_target_image(self, source, name, x_offset, y_offset, x_size, y_size, flip, convert):
@@ -69,10 +69,10 @@ class build_emotes(glados.Module):
 			if(str(e)=="bad transparency mask"):
 				try:
 					#save as regular file instead.
-					self.save_target_image(NameBase, name, xOffset, yOffset, xSize, ySize, Flip, False)
+					self.save_target_image(name_base, name, x_offset, y_offset, x_size, y_size, flip, False)
 				except Exception as e2:
 					print("Error2 processing emote: " + name)
-					print(e)
+					print(e2)
 				
 			else:
 				print("Error processing emote: " + name)
@@ -102,8 +102,9 @@ class build_emotes(glados.Module):
 			return
 		self.building_db = db_name
 		print("Building db: " + db_name)
-		json_file = open(path).read()
-		jdata = json.loads(json_file)
+		json_file = open(path)
+		jdata = json.loads(json_file.read())
+		json_file.close()
 		i = 0
 		for key, items in jdata.items():
 			#strip out any symbols from the name that'd allow file pathing.
@@ -132,7 +133,7 @@ class build_emotes(glados.Module):
 				y_size = size[1]
 			if css_transform:
 				flip = True #this is real dumb right now, but later i hope to actually parse and see if there is any interesting transform affects on emotes, but for now xScale seems to be the most common.
-			data_set[i].append(eemote(name, "https:" + image_path, x_offset, y_offset, x_size, y_size, flip))
+			data_set[i].append(eemote(name, "https://" + image_path.split('//')[1], x_offset, y_offset, x_size, y_size, flip))
 			i = (i + 1)%self.worker_threads
 			#self.BuildEmote(Name, "https:" + Img, xOffset, yOffset, xSize, ySize, Flip)
 		threads = []
@@ -165,7 +166,7 @@ class build_emotes(glados.Module):
 		print("Finished thread!")
 		return
 		
-	@glados.Module.commands('buildpony')
+	@glados.Module.commands('ponybuild')
 	def build_ponydb(self, message, content):
 		if message.author.id not in self.settings['moderators']['IDs'] and message.author.id not in self.settings['admins']['IDs']:
 			yield from self.client.send_message(message.channel, "This command can only be ran by a mod, or admin.")
