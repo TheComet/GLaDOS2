@@ -42,9 +42,9 @@ class BuildEmotes(glados.Module):
             m_img = m_img.convert('RGB').convert('P', palette=Image.ADAPTIVE, colors=255)
             mask = Image.eval(alpha, lambda a: 255 if a <= 128 else 0)
             m_img.paste(255, mask)
-            m_img.save(self.emotedb_path + name + ".png", transparency=255, optimize=True)
+            m_img.save(join(self.emotedb_path, name) + ".png", transparency=255, optimize=True)
         else:
-            m_img.save(self.emotedb_path + name + ".png", optimize=True)
+            m_img.save(join(self.emotedb_path, name) + ".png", optimize=True)
 
     def build_emote(self, name, image_path, x_offset, y_offset, x_size, y_size, flip):
         # print("Emote: '" + name + "' Img: " + ImagePath + " o: " + str(xOffset) + " " + str(yOffset) + " s: " + str(xSize) + " " + str(ySize))
@@ -90,7 +90,7 @@ class BuildEmotes(glados.Module):
         for i in range(0, self.worker_threads):
             data_set.append([])
 
-        path = self.configdb_path + db_name + ".json"
+        path = join(self.configdb_path, db_name) + ".json"
         if not isfile(path):
             print("Unknown db: " + db_name)
             return
@@ -145,7 +145,7 @@ class BuildEmotes(glados.Module):
         self.is_running = True
         try:
             if not content:
-                files = [f for f in listdir(self.configdb_path) if isfile(self.configdb_path + f)]
+                files = [f for f in listdir(self.configdb_path) if isfile(join(self.configdb_path, f))]
                 for f in files:
                     self.build_db(os.path.splitext(f)[0])
                 self.is_running = False

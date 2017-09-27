@@ -27,9 +27,9 @@ class Emotes(glados.Module):
     def __init__(self):
         super(Emotes, self).__init__()
         this_dir = dirname(realpath(__file__))
-        self.emotes_path = join(this_dir, 'emotesdb')
-        self.infodb_path = join(this_dir, 'emote_info_db')
-        self.tagdb_path = join(this_dir, 'emote_tag_db')
+        self.emotes_path = join(this_dir, 'emotesdb/')
+        self.infodb_path = join(this_dir, 'emote_info_db/')
+        self.tagdb_path = join(this_dir, 'emote_tag_db/')
         self.tag_list = {}
         self.emote_list = {}
         self.raw_emote_list = []
@@ -74,9 +74,9 @@ class Emotes(glados.Module):
             m_img = m_img.convert('RGB').convert('P', palette=Image.ADAPTIVE, colors=255)
             mask = Image.eval(alpha, lambda a: 255 if a <= 128 else 0)
             m_img.paste(255, mask)
-            m_img.save(self.emotes_path + name + ".png", transparency=255, optimize=True)
+            m_img.save(join(self.emotes_path, name) + ".png", transparency=255, optimize=True)
         else:
-            m_img.save(self.emotes_path + name + ".png", optimize=True)
+            m_img.save(join(self.emotes_path, name) + ".png", optimize=True)
 
     def build_emote(self, name, image_path, x_offset, y_offset, x_size, y_size, flip):
         # print("Emote: '" + name + "' Img: " + ImagePath + " o: " + str(xOffset) + " " + str(yOffset) + " s: " + str(xSize) + " " + str(ySize))
@@ -87,7 +87,7 @@ class Emotes(glados.Module):
             transform |= APNGLib.TransformFlipHorizontal
         try:
             urllib.request.urlretrieve(image_path, name_base)
-            frame_cnt = APNGLib.MakeGIF(name_base, self.emotes_path + name + ".gif", transform, x_offset, y_offset,
+            frame_cnt = APNGLib.MakeGIF(name_base, join(self.emotes_path, name) + ".gif", transform, x_offset, y_offset,
                                         x_size, y_size)
             if frame_cnt == 1:
                 # we tell the function the  not to save if there is only 1 frame, so we can save it as a png instead.
@@ -117,11 +117,11 @@ class Emotes(glados.Module):
         self.tag_list = {}
         self.emote_list = {}
         self.raw_emote_list = []
-        files = [f for f in listdir(self.infodb_path) if isfile(self.infodb_path + f)]
+        files = [f for f in listdir(self.infodb_path) if isfile(join(self.infodb_path,f))]
         for f in files:
             subreddit = os.path.splitext(f)[0]
-            jinfo_file = open(self.infodb_path + f)
-            jtag_file = open(self.tagdb_path + f)
+            jinfo_file = open(join(self.infodb_path,f))
+            jtag_file = open(join(self.tagdb_path,f))
             jinfodata = json.loads(jinfo_file.read())
             jtagdata = json.loads(jtag_file.read())
             jinfo_file.close()
@@ -199,7 +199,7 @@ class Emotes(glados.Module):
 
     def find_emote_path(self, emotename):
         # we use replace to strip any symbols that'd allow file naviagation.
-        path = self.emotes_path + emotename.replace('/', '').replace('\\', '').replace('.', '')
+        path = join(self.emotes_path,emotename.replace('/', '').replace('\\', '').replace('.', ''))
         if isfile(path + ".png"):
             return path + ".png"
         if isfile(path + ".gif"):
@@ -281,7 +281,7 @@ class Emotes(glados.Module):
     @glados.Module.command('ponynsfw', '<enable/disable>', 'sets a flag allowing or disallowing nsfw emotes on the '
                            'specefied server, only a mod or admin can run this command.')
     async def pony_nsfw(self, message, content):
-        if not content or (content != "enable" and content != "disable"):
+        if content != "enable" and content != "disable":
             await self.provide_help('ponynsfw', message)
             return
         enable = content == "enable"
@@ -293,7 +293,7 @@ class Emotes(glados.Module):
             await self.client.send_message(message.channel, 'nsfw emotes have been disabled.')
         return
 
-    @glados.Module.command('ponylist', '<subreddit | tags>', "pm's you a list of emotes in the specefied subreddits, "
+    @glados.Module.command('ponylist', '[subreddit | tags]', "pm's you a list of emotes in the specefied subreddits, "
                            "or tagged emotes(i.e: +v) or sends a list of all subreddits if empty.")
     async def get_pony_list(self, message, content):
         response = []
