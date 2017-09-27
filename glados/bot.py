@@ -54,7 +54,6 @@ class Bot(object):
             commands_to_process = self.__get_commands_that_could_be_executed(message, commands)
             commands_to_process += self.__get_matches_that_could_be_executed(message)
 
-
             punish_checked = False
             user_is_punished = False
             for callback, module, content in commands_to_process:

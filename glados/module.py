@@ -254,11 +254,9 @@ class Module(object):
         for member in self.current_server.members:
             if member.nick == name or member.name == name:
                 members.add(member)
-            # There is currently no way to get a list of all roles, but we can compose one by taking the
-            # roles from all of the members
-            for role in member.roles:
-                if role.name == name:
-                    roles.add(role)
+        for role in self.current_server.roles:
+            if role.name == name:
+                roles.add(role)
 
         if len(members) == 0 and len(roles) == 0:
             return (), (), 0, 'Error: No member or role found with the name "{}"'.format(name)
