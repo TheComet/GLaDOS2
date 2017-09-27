@@ -57,7 +57,7 @@ class Help(glados.Module):
             l += len(s)
             if l >= max_length:
                 ret.append('\n'.join(temp))
-                l = 0
+                l = len(s)
                 temp = list()
             temp.append(s)
         ret.append('\n'.join(temp))
