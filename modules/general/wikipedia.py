@@ -5,7 +5,8 @@
 import glados
 import json
 import re
-import urllib.request
+from urllib.request import urlopen
+from urllib.parse import urlencode
 
 REDIRECT = re.compile(r'^REDIRECT (.*)')
 
@@ -19,11 +20,6 @@ class Wikipedia(glados.Module):
     @glados.Module.command('w', '', '')
     @glados.Module.command('wik', '', '')
     async def wikipedia(self, message, query):
-
-        if query == '':
-            await self.provide_help('w', message)
-            return
-
         args = re.search(r'^-([a-z]{2,12})\s(.*)', query)
         if args is not None:
             lang = args.group(1)
@@ -48,11 +44,16 @@ def mw_search(server, query, num):
     Searches the specified MediaWiki server for the given query, and returns
     the specified number of results.
     """
-    search_url = ('http://%s/w/api.php?format=json&action=query'
-                  '&list=search&srlimit=%d&srprop=timestamp&srwhat=text'
-                  '&srsearch=') % (server, num)
-    search_url += query
-    query = json.loads(urllib.request.urlopen(search_url).read().decode("utf-8"))
+    search_url = 'http://{}/w/api.php?'.format(server) + urlencode(dict(
+        format='json',
+        action='query',
+        list='search',
+        srlimit=num,
+        srprop='timestamp',
+        srwhat='text',
+        srsearch=query
+    ))
+    query = json.loads(urlopen(search_url).read().decode("utf-8"))
     if 'query' in query:
         query = query['query']['search']
         return [r['title'] for r in query]
@@ -65,11 +66,14 @@ def mw_snippet(server, query):
     Retrives a snippet of the specified length from the given page on the given
     server.
     """
-    snippet_url = ('https://' + server + '/w/api.php?format=json'
-                   '&action=query&prop=extracts&exintro&explaintext'
-                   '&exchars=300&redirects&titles=')
-    snippet_url += query
-    snippet = json.loads(urllib.request.urlopen(snippet_url).read().decode("utf-8"))
+    snippet_url = 'https://{}/w/api.php?exintro&explaintext&redirects&'.format(server) + urlencode(dict(
+        format='json',
+        action='query',
+        prop='extracts',
+        exchars=300,
+        titles=query
+    ))
+    snippet = json.loads(urlopen(snippet_url).read().decode("utf-8"))
     snippet = snippet['query']['pages']
 
     # For some reason, the API gives the page *number* as the key, so we just
