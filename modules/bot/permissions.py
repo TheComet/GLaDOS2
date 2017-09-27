@@ -11,6 +11,7 @@ class Permissions(glados.Permissions):
         # Create an entry in the global config file with the default command names
         permissions = self.settings.setdefault('permissions', {})
         permissions.setdefault('bot owner', '<please enter your discord ID>')
+        permissions.setdefault('authorized servers', [])
 
     def setup_memory(self):
         self.memory['dict'] = dict()
@@ -22,6 +23,9 @@ class Permissions(glados.Permissions):
 
     def is_blessed(self, member):
         return self.__is_member_still_marked_as(member, 'blessed')
+
+    def is_server_authorized(self):
+        return self.current_server.id in self.settings['permissions']['authorized servers']
 
     def is_moderator(self, member):
         return self.__is_member_still_marked_as(member, 'moderator')
@@ -171,7 +175,7 @@ class Permissions(glados.Permissions):
 
     @glados.Permissions.moderator
     @glados.Module.command('unbless', '<user/role> [user/role...]', 'Removes a user\'s blessing so he is punished '
-                           'for excessive use of the bot again.')
+                           'for excessive use of the authorized serversbot again.')
     async def unbless_command(self, message, content):
         members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
         if error:
@@ -229,6 +233,50 @@ class Permissions(glados.Permissions):
 
         await self.client.send_message(message.channel,
                 self.__unmark_command(members, roles, 'admin'))
+
+    @glados.Permissions.owner
+    @glados.Module.command('addserver', '', 'Allows the bot to interact with this server. If this is not set, then the '
+                           'bot will simply ignore all queries sent to it.')
+    async def addserver(self, message, content):
+        authd_servers = self.settings['permissions']['authorized servers']
+        if message.server.id not in authd_servers:
+            authd_servers.append(message.server.id)
+            await self.client.send_message(message.channel, 'This server ({}) is now authorized to use this bot.'.format(
+                message.server.name))
+        else:
+            await self.client.send_message(message.channel, 'Server already authorized')
+
+    @glados.Permissions.owner
+    @glados.Module.command('rmserver', '[server index]', 'Remove the bot from a server. The bot doesn\'t leave but it '
+                           'will stop responding to queries.')
+    async def rmserver(self, message, content):
+        if content:
+            servers = list(self.client.servers)
+            try:
+                index = int(content)
+                if index > len(servers) or index < 1:
+                    raise ValueError('Index out of range')
+            except ValueError as e:
+                await self.client.send_message(message.channel, 'Error: {}'.format(e))
+                return
+            server = servers[index - 1]
+        else:
+            server = message.server
+
+        try:
+            self.settings['permissions']['authorized servers'].remove(server.id)
+            await self.client.send_message(message.channel, 'Server ({}) removed.'.format(server.name))
+        except ValueError:
+            await self.client.send_message(message.channel, 'Server already removed.'.format(server.name))
+
+    @glados.Permissions.owner
+    @glados.Module.command('serverlist', '', 'List all servers the bot has joined')
+    async def listservers(self, message, content):
+        servers_auths = [(server.name, server.id in self.settings['permissions']['authorized servers'])
+                         for server in self.client.servers]
+        msg = '\n'.join(' {}. {}: {}'.format(index+1, serv_auth[0], 'yes' if serv_auth[1] else '**no**')
+                        for index, serv_auth in enumerate(servers_auths))
+        await self.client.send_message(message.channel, msg)
 
     def __parse_members_roles_duration(self, message, content, default_duration):
         # Default duration is 24 hours

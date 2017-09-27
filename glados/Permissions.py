@@ -17,6 +17,9 @@ class Permissions(Module):
     def is_blessed(self, member):
         return False
 
+    def is_server_authorized(self):
+        return True
+
     def require_moderator(self, member):
         return False
 
