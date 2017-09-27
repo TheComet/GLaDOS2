@@ -55,7 +55,7 @@ class BuildEmotes(glados.Module):
             transform |= APNGLib.TransformFlipHorizontal
         try:
             urllib.request.urlretrieve(image_path, name_base)
-            frame_cnt = APNGLib.MakeGIF(name_base, self.emotedb_path + name + ".gif", transform, x_offset, y_offset,
+            frame_cnt = APNGLib.MakeGIF(name_base, join(self.emotedb_path,name) + ".gif", transform, x_offset, y_offset,
                                         x_size, y_size)
             if (frame_cnt == 1):
                 # we tell the function the  not to save if there is only 1 frame, so we can save it as a png instead.
