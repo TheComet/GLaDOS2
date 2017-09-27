@@ -45,7 +45,7 @@ class Bot(object):
             # required for permission server isolation
             self.permissions.set_current_server(message.server.id)
 
-            # Check if this bot has been authorized by the owner to be on this server
+            # Check if this bot has been authorized by the owner to be on this server (if enabled)
             if not self.permissions.is_server_authorized() \
                     and not self.permissions.is_owner(message.author):
                 return ()
