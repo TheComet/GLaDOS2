@@ -202,13 +202,13 @@ class Module(object):
 
     def get_casual_help_strings(self):
         for name, member in inspect.getmembers(self, predicate=inspect.ismethod):
-            if not hasattr(member, 'commands') or any(hasattr(member, x) for x in ('owner', 'admin', 'moderator')):
+            if not hasattr(member, 'commands') or any(hasattr(member, x) for x in ('moderator', 'admin', 'owner')):
                 continue
             yield from self.__help_string_from_member_func(member)
 
-    def get_privileged_help_strings(self):
+    def get_privileged_help_strings(self, level):
         for name, member in inspect.getmembers(self, predicate=inspect.ismethod):
-            if not hasattr(member, 'commands') or all(not hasattr(member, x) for x in ('owner', 'admin', 'moderator')):
+            if not hasattr(member, 'commands') or not hasattr(member, level):
                 continue
             yield from self.__help_string_from_member_func(member)
 
