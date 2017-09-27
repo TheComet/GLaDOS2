@@ -27,9 +27,9 @@ class Emotes(glados.Module):
     def __init__(self):
         super(Emotes, self).__init__()
         this_dir = dirname(realpath(__file__))
-        self.emotes_path = join(this_dir, 'emotesdb/')
-        self.infodb_path = join(this_dir, 'emote_info_db/')
-        self.tagdb_path = join(this_dir, 'emote_tag_db/')
+        self.emotes_path = join(this_dir, 'emotesdb')
+        self.infodb_path = join(this_dir, 'emote_info_db')
+        self.tagdb_path = join(this_dir, 'emote_tag_db')
         self.tag_list = {}
         self.emote_list = {}
         self.raw_emote_list = []
