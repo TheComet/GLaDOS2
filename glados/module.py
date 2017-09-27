@@ -99,7 +99,7 @@ class Module(object):
         """
         :return: Generates a list of all of the loaded modules that are active on the current server.
         """
-        return self.__bot.get_loaded_modules(self.__current_server.id)
+        return self.__bot.get_loaded_modules(self.__current_server)
 
     @property
     def global_data_dir(self):
