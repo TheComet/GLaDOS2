@@ -254,8 +254,7 @@ class Emotes(glados.Module):
                 await self.client.send_message(message.channel, 'Unknown emoticon.')
             return
 
-        mem = self.get_memory()
-        self.memory['blacklist'][emote.name] = ""
+        self.memory['blacklist'][emote.name] = 1
 
         self.save_blacklist()
         await self.client.send_message(message.channel, 'blacklisted emote.')

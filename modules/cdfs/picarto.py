@@ -68,11 +68,10 @@ class Picarto(glados.Module):
         super(Picarto, self).__init__()
         self.picarto_clients = list()
 
-    def get_help_list(self):
-        return tuple()
-
     def setup_global(self):
-        for bridge in self.settings['picarto']['bridges']:
+        picarto = self.settings.setdefault('picarto', {})
+        picarto.setdefault('persistent token', '<I NEED TOKENS>')
+        for bridge in picarto.setdefault('bridges', []):
             client = self.__connect(bridge)
             if client is None:
                 continue

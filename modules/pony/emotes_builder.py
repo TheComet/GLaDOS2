@@ -163,7 +163,7 @@ class BuildEmotes(glados.Module):
 
     @glados.Permissions.admin
     @glados.Module.command('ponybuild', '[db] [db...]', 'Admin only usable, use to rebuild the '
-                           'entire pony emote db, or only a partial db specefied by Opetiondb(i.e: mylittlepony only '
+                           'entire pony emote cache db, or only a partial db specefied by Opetiondb(i.e: mylittlepony only '
                            'builds for the mylittlepony.json db)')
     async def build_ponydb(self, message, content):
         # since this is a long process, we will spawn a thread to do the work in to not tie of the bot.

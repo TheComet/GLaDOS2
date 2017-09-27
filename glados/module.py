@@ -6,8 +6,6 @@ import inspect
 class Module(object):
 
     def __init__(self):
-        self.__was_initialised = False
-
         # this is set externally when the module is loaded. Contains a list of server names where this module should
         # be active. An empty list means it can be active on all servers.
         self.server_whitelist = list()
@@ -38,6 +36,8 @@ class Module(object):
         if not os.path.isdir(self.__global_data_dir):
             os.mkdir(self.__global_data_dir)
 
+        self.setup_global()  # calls derived
+
     def set_current_server(self, server_id):
         self.__current_server = next((server for server in self.client.servers if server.id == server_id))
         if self.__current_server is None:
@@ -46,11 +46,6 @@ class Module(object):
         self.__server_specific_data_dir = os.path.join(self.__data_path, server_id)
         if not os.path.isdir(self.__server_specific_data_dir):
             os.mkdir(self.__server_specific_data_dir)
-
-        # lazy global init for modules
-        if not self.__was_initialised:
-            self.setup_global()  # calls derived
-            self.__was_initialised = True
 
         # lazy memory init for modules
         self.__current_memory = self.__memories.get(self.__current_server.id, None)
@@ -99,7 +94,7 @@ class Module(object):
         """
         :return: Generates a list of all of the loaded modules that are active on the current server.
         """
-        return self.__bot.get_loaded_modules(self.__current_server.id)
+        return self.__bot.get_loaded_modules(self.__current_server)
 
     @property
     def global_data_dir(self):
@@ -127,8 +122,8 @@ class Module(object):
 
     def setup_global(self):
         """
-        Use this instead of __init__ if possible. This gets called once only, and it gets called on demand (that is, the
-        first time your module is required).
+        Gets called right after __init__(). Use this to populate self.settings with new entries if needed (self.settings
+        is None in __init__).
         """
         pass
 
