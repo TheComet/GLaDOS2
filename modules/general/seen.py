@@ -59,7 +59,7 @@ class Seen(glados.Module):
 
     @glados.Permissions.spamalot
     @glados.Module.rule('^.*$')
-    def on_message(self, message, match):
+    async def on_message(self, message, match):
         author = message.author.name
         key = author.lower()
         channel = message.channel.name
@@ -70,7 +70,7 @@ class Seen(glados.Module):
                                     'channel': str(channel),
                                     'timestamp': str(ts)}
         self.__save_dict()
-        return tuple()
+        return ()
 
     @glados.Module.command('seen', '<user>', 'Find the last message a user wrote, where he wrote it, and what it said')
     async def on_seen(self, message, content):

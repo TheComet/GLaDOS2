@@ -22,5 +22,5 @@ class Fart(glados.Module):
     async def fart(self, message, content):
         global fart_counter
         global fart_sounds
-        await self.client.send_message(message.author.nick + ": " + fart_sounds[fart_counter])
+        await self.client.send_message(message.channel, fart_sounds[fart_counter])
         fart_counter = randint(0, len(fart_sounds) - 1)

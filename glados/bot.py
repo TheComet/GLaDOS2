@@ -24,11 +24,13 @@ class Bot(object):
         self.load_modules()
 
         # The bot needs access to the permissions module for managing things like admins/botmods
-        self.permissions = Permissions(self, 'DummyPermissions', self.settings)
         for cb, m in self.__callback_tuples:
             if m.full_name == 'bot.permissions.Permissions':
                 self.permissions = m
                 break
+        else:
+            self.permissions = Permissions()
+            self.permissions.init_module(self, 'DummyPermissions', self.settings)
 
         @self.client.event
         async def on_message(message):
@@ -42,18 +44,18 @@ class Bot(object):
             commands_to_process += self.__get_matches_that_could_be_executed(message)
 
             # required for permission server isolation
-            self.__permissions.set_current_server(message.server.id)
+            self.permissions.set_current_server(message.server.id)
 
             punish_checked = False
             user_is_punished = False
             for callback, module, content in commands_to_process:
-                code = self.__permissions.check_permissions(message.author, callback)
+                code = self.permissions.check_permissions(message.author, callback)
                 if code < 0:
                     cooldown = self.__apply_cooldown(message)
                     if cooldown:
                         await self.client.send_message(message.author, cooldown)
                     else:
-                        await self.__permissions.inform_about_failure(message, code)
+                        await self.permissions.inform_about_failure(message, code)
                     continue
 
                 if code == Permissions.PUNISHABLE:
@@ -69,10 +71,10 @@ class Bot(object):
                 # Convenient: If the help string of the command contains brackets, check that the user has supplied the
                 # correct number of arguments. If not, provide help instead of executing the command.
                 if hasattr(callback, 'commands'):
-                    arg_string = callback.commands[0][1]  # first command (if more than one), argument list string
-                    required_arg_count = len(arg_string.split('<'))
+                    arg_string = callback.commands[-1][1]  # first command (if more than one), argument list string
+                    required_arg_count = len(arg_string.split('<')) - 1
                     if len(content.split()) < required_arg_count:
-                        await module.provide_help(callback[0][0])
+                        await module.provide_help(callback.commands[-1][0], message)
                         continue
 
                 module.set_current_server(message.server.id)  # required for server isolation
@@ -113,8 +115,9 @@ class Bot(object):
 
             # check if any issued commands match anything in the loaded callbacks
             if hasattr(callback, 'commands'):
+                callback_commands = list(zip(*callback.commands))[0]
                 for command, content in commands:
-                    if command in callback.command:
+                    if command in callback_commands:
                         ret.append((callback, module, content))
         return ret
 
@@ -128,7 +131,7 @@ class Bot(object):
 
             # process bot messages
             if message.author.bot and hasattr(callback, 'bot_rules'):
-                for rule in callback.bot_rule:
+                for rule in callback.bot_rules:
                     match = rule.match(message.content)
                     if match is None:
                         continue
@@ -140,7 +143,7 @@ class Bot(object):
 
             # process message responses
             if hasattr(callback, 'rules'):
-                for rule in callback.rule:
+                for rule in callback.rules:
                     match = rule.match(message.content)
                     if match is None:
                         continue
@@ -249,10 +252,6 @@ class Bot(object):
         return set(module for c, module in self.__callback_tuples
                         if len(module.server_whitelist) == 0
                         or server and server.name in module.server_whitelist)
-
-    async def __process_reload_command(self, message, content):
-        self.settings = json.loads(open('settings.json').read())
-        await self.client.send_message(message.channel, 'Reloaded settings')
 
     def __save_settings(self):
         open('settings.json', 'w').write(json.dumps(self.settings, indent=2, sort_keys=True))

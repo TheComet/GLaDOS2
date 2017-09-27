@@ -21,11 +21,7 @@ class Log(glados.Module):
 
     @glados.Permissions.spamalot
     @glados.Module.rule('^.*$')
-    def on_message(self, message, match):
-        # If user has opted out, don't log
-        if message.author.id in self.settings['optout']:
-            return ()
-
+    async def on_message(self, message, match):
         server_name = message.server.name if message.server else ''
         self.__open_new_log_if_necessary()
         info = '[{0}] {1}: #{2}: {3}: {4}\n'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),

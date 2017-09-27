@@ -33,7 +33,7 @@ messages = ["It is certain",
 class EightBall(glados.Module):
 
     @glados.Module.command('8', '<question>', 'Ask the magical 8-ball a yes/no question')
-    @glados.Module.command('8ball', '<question>', 'Ask the magical 8-ball a yes/no question')
+    @glados.Module.command('8ball', '', '')
     async def ball(self, message, content):
         if content == '':
             await self.provide_help('8', message)

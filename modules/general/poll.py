@@ -4,10 +4,7 @@ import glados
 class Poll(glados.Module):
     @glados.Module.command('pollnew', '<name> <1. first option 2. second option 3. ...>', 'Start a new poll with a number of options')
     async def handle_new(self, message, parts):
-        if len(parts) < 2:
-            await self.provide_help('poll', message)
-            return
-
+        parts = parts.split()
         name = parts[0]
         if name in self.memory:
             await self.client.send_message(message.channel, 'Poll with name "{}" still active'.format(name))
@@ -35,16 +32,13 @@ class Poll(glados.Module):
         self.memory[name]['options'] = options
         self.memory[name]['votes'] = dict()
 
-        msg = 'Poll "{}" created! Vote with ``.poll vote {} <number>``'.format(name, name)
+        msg = 'Poll "{}" created! Vote with ``{}pollvote {} <number>``'.format(self.command_prefix, name, name)
         msg = msg + '\n  ' + '\n  '.join(options)
         await self.client.send_message(message.channel, msg)
 
     @glados.Module.command('pollvote', '<name> <option>', 'Place your vote in a running poll')
     async def handle_vote(self, message, parts):
-        if len(parts) < 2:
-            await self.provide_help('poll', message)
-            return
-
+        parts = parts.split()
         name = parts[0]
         if not name in self.memory:
             await self.client.send_message(message.channel, 'Unknown poll with name "{}"'.format(name))
@@ -70,10 +64,7 @@ class Poll(glados.Module):
 
     @glados.Module.command('pollclose', '<name>', 'Close a poll and show the results')
     async def handle_close(self, message, parts):
-        if len(parts) < 1:
-            await self.provide_help('poll', message)
-            return
-
+        parts = parts.split()
         name = parts[0]
         if not name in self.memory:
             await self.client.send_message(message.channel, 'Unknown poll "{}"'.format(name))
@@ -96,16 +87,13 @@ class Poll(glados.Module):
 
     @glados.Module.command('pollshow', '<name>', 'Show the options of a running poll')
     async def handle_show(self, message, parts):
-        if len(parts) < 1:
-            await self.provide_help('poll', message)
-            return
-
+        parts = parts.split()
         name = parts[0]
         if not name in self.memory:
             await self.client.send_message(message.channel, 'Unknown poll "{}"'.format(name))
             return
 
-        msg = 'Vote with ``.poll vote {} <number>``'.format(name, name)
+        msg = 'Vote with ``{}poll vote {} <number>``'.format(self.command_prefix, name, name)
         msg = msg + '\n  ' + '\n  '.join(self.memory[name]['options'])
         await self.client.send_message(message.channel, msg)
 

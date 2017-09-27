@@ -1,7 +1,7 @@
 import glados
 import re
 import time
-import asyncio
+import types
 import pylab as plt
 import json
 from os import path, listdir, makedirs
@@ -91,8 +91,12 @@ class Activity(glados.Module):
                             a['weekly_day_cycle'][log_stamp] = [0] * 24
                         a['recent_day_cycle'][log_stamp][int(m.stamp.tm_hour)] += 1
                         a['weekly_day_cycle'][log_stamp][int(m.stamp.tm_hour)] += 1
+
                 # This process does take some time
-                yield
+                @types.coroutine
+                def switch():
+                    yield
+                await switch()
 
         # Normalise the 24h per day statistic over the number of days the author has made messages
         for author_name, author in authors.items():
@@ -144,7 +148,7 @@ class Activity(glados.Module):
     async def ranks(self, message, users):
         if self.__cache_is_stale():
             await self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
-            await self.__reprocess_cache()
+            self.__reprocess_cache()
 
         authors = self.memory['cache']['authors']
         authors_total = dict()

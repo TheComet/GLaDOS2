@@ -9,7 +9,7 @@ class R9K(glados.Module):
     def setup_memory(self):
         # Copy active channels from settings file into memory
         self.memory['channels'] = set()
-        for channel_id in self.settings['r9k']['channels']:
+        for channel_id in self.settings.setdefault('r9k', {}).setdefault('channels', []):
             self.memory['channels'].add(channel_id)
 
         # directory where r9k stuff is stored

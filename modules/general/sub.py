@@ -93,7 +93,7 @@ class Sub(glados.Module):
         self.memory['regex'].append((compiled_regex, message.author))
         self.__save_subs()
 
-        await self.client.send_message(message.channel, '{} added subscription #{} (``{}``)'.format(message.author.name, len(memory['subs'][message.author.id]), regex))
+        await self.client.send_message(message.channel, '{} added subscription #{} (``{}``)'.format(message.author.name, len(self.memory['subs'][message.author.id]), regex))
 
     @glados.Module.command('unsub', '<number> [user]', 'Stop getting notifications. Use .sublist to get the number')
     async def unsubscribe(self, message, args):

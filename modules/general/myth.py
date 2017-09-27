@@ -9,8 +9,8 @@ class Myth(glados.Module):
 
     def setup_memory(self):
         self.memory['data path'] = os.path.join(self.data_dir, 'myths')
-        if not os.path.exists(self.memory['data path']):
-            os.makedirs(self.memory['data path'])
+        if not os.path.isdir(self.memory['data path']):
+            os.mkdir(self.memory['data path'])
         self.memory['data file'] = os.path.join(self.memory['data path'], 'myths.txt')
 
     @glados.Module.command('addmyth', '<text>', 'Adds a myth to the mythical database')

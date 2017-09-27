@@ -6,8 +6,6 @@ from datetime import datetime, timedelta
 
 
 class Permissions(glados.Permissions):
-    def __init__(self):
-        pass
 
     def setup_global(self):
         # Create an entry in the global config file with the default command names
@@ -52,24 +50,45 @@ class Permissions(glados.Permissions):
     def get_ban_expiry(self, member):
         return self.__get_expiry(member, 'banned')
 
+    def __compose_list_of_members_for(self, key):
+        marked_members = list()
+        for member in self.current_server.members:
+
+            expiry_date = self.memory['dict'][key]['IDs'].get(member.id, None)
+            if expiry_date is None:
+                for role in member.roles:
+                    expiry_date = self.memory['dict'][key]['roles'].get(role.name, None)
+                    if expiry_date is not None:
+                        break
+                if expiry_date is None:
+                    continue  # This member is not marked with this key
+
+            if not expiry_date == 'never':
+                expiry_date = dateutil.parser.parse(expiry_date)
+                now = datetime.now()
+                if expiry_date > now:
+                    time_to_expiry = expiry_date - now
+                    time_to_expiry = '{0:.1f} hour(s)'.format(time_to_expiry.seconds / 3600.0)
+                else:
+                    time_to_expiry = '0 hour(s)'
+            else:
+                time_to_expiry = 'forever'
+            marked_members.append((member, time_to_expiry))
+
+        return marked_members
+
     @glados.Module.command('modlist', '', 'Displays which users are bot moderators')
     async def modlist(self, message, content):
-        mod_list = list()
-        admin_list = list()
+        mod_list = self.__compose_list_of_members_for('moderator')
+        admin_list = self.__compose_list_of_members_for('admin')
         owner = None
         for member in self.current_server.members:
-            if member.id in self.memory['dict']['moderator']['IDs']:
-                if not member in mod_list:
-                    mod_list.append(member)
-            if member.id in self.memory['dict']['admin']['IDs']:
-                if not member in admin_list:
-                    admin_list.append(member)
             if member.id == self.settings['permissions']['bot owner']:
                 owner = member
 
         text = '**Moderators:**\n{}\n**Administrators:**\n{}\n**Owner:** {}'.format(
-            '\n'.join(['  + ' + str(x) for x in mod_list]),
-            '\n'.join(['  + ' + str(x) for x in admin_list]),
+            '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in mod_list]),
+            '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in admin_list]),
             owner
         )
 
@@ -77,22 +96,7 @@ class Permissions(glados.Permissions):
 
     @glados.Module.command('banlist', '', 'Displays which users are banned')
     async def banlist(self, message, content):
-        banned = list()
-        for member in self.current_server.members:
-            if member.id in self.settings['banned']:
-                expiry_date = self.settings['banned'][member.id]
-                if not expiry_date == 'never':
-                    expiry_date = dateutil.parser.parse(expiry_date)
-                    now = datetime.now()
-                    if expiry_date > now:
-                        time_to_expiry = expiry_date - now
-                        time_to_expiry = '{0:.1f} hour(s)'.format(time_to_expiry.seconds / 3600.0)
-                    else:
-                        time_to_expiry = '0 hour(s)'
-                else:
-                    time_to_expiry = 'forever'
-                banned.append((member, time_to_expiry))
-
+        banned = self.__compose_list_of_members_for('banned')
         if len(banned) > 0:
             text = '**Banned Users**\n{}'.format('\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in banned]))
         else:
@@ -101,14 +105,10 @@ class Permissions(glados.Permissions):
 
     @glados.Module.command('blesslist', '', 'Displays which users are blessed')
     async def blesslist(self, message, content):
-        blessed = list()
-        for member in self.current_server.members:
-            if member.id in self.settings['blessed']:
-                if not member in blessed:
-                    blessed.append(member)
-
+        blessed = self.__compose_list_of_members_for('blessed')
         if len(blessed) > 0:
-            text = '**Blessed Users**\n{}'.format('\n'.join(['  + ' + x.name for x in blessed]))
+            text = '**Blessed Users**\n{}'.format(
+                '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in blessed]))
         else:
             text = 'No one is blessed.'
         await self.client.send_message(message.channel, text)
@@ -299,7 +299,6 @@ class Permissions(glados.Permissions):
     def __save_dict(self):
         with open(self.memory['config file'], 'w') as f:
             s = json.dumps(self.memory['dict'], indent=2, sort_keys=True)
-            print(s)
             f.write(s)
 
     def __get_members_from_string(self, message, user_name):

@@ -61,11 +61,7 @@ class Mentions(glados.Module):
 
     @glados.Permissions.spamalot
     @glados.Module.rule('^((?!\.\w+).*)$')
-    def record(self, message, match):
-        # If user has opted out, don't log
-        if message.author.id in self.settings['optout']:
-            return ()
-
+    async def record(self, message, match):
         with codecs.open(self.memory['log file'], 'a', encoding='utf-8') as f:
             f.write(datetime.now().isoformat()[:19] + "  " + message.author.name + ": " + message.clean_content + "\n")
 
@@ -74,7 +70,7 @@ class Mentions(glados.Module):
         self.memory['last seen'][key] = datetime.now().isoformat()[:19]  # don't need microseconds
         self.__save_seen_timestamps()
 
-        return tuple()
+        return ()
 
     @glados.Module.command('mentions', '[num]', 'Returns all messages in which you were mentioned since you were last '
                            'seen. If you provide a number, it will return the last [num] messages instead.')

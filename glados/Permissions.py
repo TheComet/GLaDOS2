@@ -11,10 +11,6 @@ class Permissions(Module):
     SPAMABLE = 1
     PUNISHABLE = 2
 
-    def __init__(self, bot, full_name, settings):
-        super(Permissions, self).__init__()
-        self.init_module(bot, full_name, settings)
-
     def is_banned(self, member):
         return False
 
@@ -78,8 +74,8 @@ class Permissions(Module):
         if self.is_banned(member) and not owner:
             return self.BANNED
 
-        # If member is blessed, then they can spam
-        if self.is_blessed(member):
+        # If member is blessed, or a mod or higher, then they can spam
+        if self.is_blessed(member) or owner or admin or moderator:
             return self.SPAMABLE
 
         return self.PUNISHABLE

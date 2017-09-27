@@ -20,8 +20,6 @@ class Module(object):
         self.__global_data_dir = None
         # reference to the bot object, required for getting the client object or a list of all loaded modules
         self.__bot = None
-        # reference to permission module (or dummy, if not loaded)
-        self.__permissions = None
 
         # Server isolation stuff
         self.__server_specific_data_dir = None
@@ -57,7 +55,7 @@ class Module(object):
         # lazy memory init for modules
         self.__current_memory = self.__memories.get(self.__current_server.id, None)
         if self.__current_memory is None:
-            self.__memories[self.__current_server.id] = dict()
+            self.__current_memory = self.__memories[self.__current_server.id] = dict()
             self.setup_memory()  # calls derived
 
     @property
@@ -154,7 +152,7 @@ class Module(object):
         :param member: A discord member object.
         :return: True if banned, False if otherwise
         """
-        return self.__permissions.is_banned(member)
+        return self.__bot.permissions.is_banned(member)
 
     def is_blessed(self, member):
         """
@@ -162,7 +160,7 @@ class Module(object):
         :param member: A discord member object.
         :return: True if blessed, False if otherwise
         """
-        return self.__permissions.is_blessed(member)
+        return self.__bot.permissions.is_blessed(member)
 
     def require_moderator(self, member):
         """
@@ -170,7 +168,7 @@ class Module(object):
         :param member: A discord member object.
         :return: True if so, False if otherwise.
         """
-        return self.__permissions.require_moderator(member)
+        return self.__bot.permissions.require_moderator(member)
 
     def require_admin(self, member):
         """
@@ -178,7 +176,7 @@ class Module(object):
         :param member: A discord member object.
         :return: True if so, False if otherwise.
         """
-        return self.__permissions.require_admin(member)
+        return self.__bot.permissions.require_admin(member)
 
     def require_owner(self, member):
         """
@@ -186,7 +184,7 @@ class Module(object):
         :param member: A discord member object.
         :return: True if so, False if otherwise.
         """
-        return self.__permissions.require_owner(member)
+        return self.__bot.permissions.require_owner(member)
 
     async def provide_help(self, command, message):
         """
@@ -204,32 +202,29 @@ class Module(object):
         for name, member in inspect.getmembers(self, predicate=inspect.ismethod):
             if not hasattr(member, 'commands') or not any(x[0] == command for x in member.commands):
                 continue
-            for command, argument_list_str, description in member.commands:
-                if argument_list_str:
-                    command_list.append('{}{} **{}** -- *{}*'.format(self.__command_prefix, command, argument_list_str, description))
-                else:
-                    command_list.append('{}{} -- *{}*'.format(self.__command_prefix, command, description))
+            command_list += list(self.__help_string_from_member_func(member))
         await self.client.send_message(message.channel, '\n'.join(command_list))
 
     def get_casual_help_strings(self):
         for name, member in inspect.getmembers(self, predicate=inspect.ismethod):
             if not hasattr(member, 'commands') or any(hasattr(member, x) for x in ('owner', 'admin', 'moderator')):
                 continue
-            for command, argument_list_str, description in member.commands:
-                if argument_list_str:
-                    yield '{}{} **{}** -- *{}*'.format(self.__command_prefix, command, argument_list_str, description)
-                else:
-                    yield '{}{} -- *{}*'.format(self.__command_prefix, command, description)
+            yield from self.__help_string_from_member_func(member)
 
     def get_privileged_help_strings(self):
         for name, member in inspect.getmembers(self, predicate=inspect.ismethod):
             if not hasattr(member, 'commands') or all(not hasattr(member, x) for x in ('owner', 'admin', 'moderator')):
                 continue
-            for command, argument_list_str, description in member.commands:
-                if argument_list_str:
-                    yield '{}{} **{}** -- *{}*'.format(self.__command_prefix, command, argument_list_str, description)
-                else:
-                    yield '{}{} -- *{}*'.format(self.__command_prefix, command, description)
+            yield from self.__help_string_from_member_func(member)
+
+    def __help_string_from_member_func(self, member_func):
+        for command, argument_list_str, description in member_func.commands[::-1]:  # decorators are applied in reverse
+            if not description:
+                continue
+            if argument_list_str:
+                yield '{}{} **{}** -- *{}*'.format(self.__command_prefix, command, argument_list_str, description)
+            else:
+                yield '{}{} -- *{}*'.format(self.__command_prefix, command, description)
 
     def parse_members_roles(self, message, content):
         """

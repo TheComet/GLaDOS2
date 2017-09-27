@@ -84,7 +84,7 @@ class Translate(glados.Module):
 #            await self.client.send_message(message.channel, 'Language guessing failed, so try suggesting one!')
 
     @glados.Module.command('tr', '[:en :fr] <phrase>', 'Translates phrase from :en to :fr')
-    @glados.Module.command('translate', '[:en :fr] <phrase>', 'Translates phrase from :en to :fr')
+    @glados.Module.command('translate', '', '')
     async def tr2(self, message, command):
         if not command:
             await self.provide_help('tr', message)

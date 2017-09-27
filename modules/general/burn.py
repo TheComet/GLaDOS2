@@ -17,6 +17,9 @@ class Burn(glados.Module):
         super(Burn, self).__init__()
         self.counter = 0
 
+    def setup_memory(self):
+        self.memory['burns'] = dict()
+
     @glados.Module.command('burn', '<user>', 'Burn a user when you feel like he just got pwned')
     async def burn_user(self, message, content):
         global burns
@@ -28,10 +31,10 @@ class Burn(glados.Module):
         self.counter = (self.counter + 1) % len(burns)
 
         if not user_burning in self.memory['burns']:
-            self.memory()['burns'][user_burning] = dict()
+            self.memory['burns'][user_burning] = dict()
         if not user_being_burned in self.memory['burns'][user_burning]:
             self.memory['burns'][user_burning] = {user_being_burned: 0}
-        if not user_being_burned in self.memory()['burns']:
+        if not user_being_burned in self.memory['burns']:
             self.memory['burns'][user_being_burned] = {user_burning: 0}
         self.memory['burns'][user_burning][user_being_burned] += 1
 

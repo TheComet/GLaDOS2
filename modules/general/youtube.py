@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 class Youtube(glados.Module):
     @glados.Module.command('youtube', '<search term|comment|video>', 'Look for a youtube video and return its URL, Look'
                            ' for a random youtube command and post it, or look for a random youtube video')
+    @glados.Module.command('yt', '', '')
     async def random_youtube(self, message, content):
         # no arguments
         if content == '':

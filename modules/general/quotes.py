@@ -41,16 +41,12 @@ class Quotes(glados.Module):
     # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Permissions.spamalot
     @glados.Module.rule('^((?!\.\w+).*)$')
-    def record(self, message, match):
-        # If user has opted out, don't log
-        if message.author.id in self.settings['optout']:
-            return ()
-
+    async def record(self, message, match):
         author = message.author.name
         with codecs.open(self.quotes_file_name(author.lower()), 'a', encoding='utf-8') as f:
             f.write(match.group(1) + "\n")
 
-        return tuple()
+        return ()
 
     @glados.Module.command('quote', '[user]', 'Dig up a quote the user (or yourself) once said in the past.')
     async def quote(self, message, content):
@@ -164,7 +160,7 @@ class Quotes(glados.Module):
 
     def filter_to_english_words(self, words_list):
         return [word for word in words_list
-                    if any(d.check(word) for d in self.self.memory['dictionaries'])
+                    if any(d.check(word) for d in self.memory['dictionaries'])
                     and (len(word) > 1 or len(word) == 1 and word in 'aAI')]
 
     @glados.Module.command('grep', '<word> [User]', 'Find how many times a user has said a particular word. Case-insensitive')
