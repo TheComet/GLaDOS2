@@ -15,17 +15,28 @@ class IRCBridge(glados.Module):
     STATE_TRY_JOIN = 1
     STATE_CONNECTED = 2
 
-    def setup_global(self):
-        self.irc_settings = self.settings['irc']
-        self.host = self.irc_settings['host']
-        self.port = self.irc_settings['port']
-        self.botnick = self.irc_settings['nick']
-        self.irc_channels = self.irc_settings['irc channels']
+    def __init__(self):
+        super(IRCBridge, self).__init__()
+
+        self.irc_settings = None
+        self.host = None
+        self.port = None
+        self.botnick = None
+        self.irc_channels = None
         self.discord_channels = list()
         self.channels_to_join = list()
         self.socket = None
-        self.bridge_enable = True if self.irc_settings['enable'] == 'true' else False
+        self.bridge_enable = False
         self.state = self.STATE_DISCONNECTED
+
+    def setup_global(self):
+        self.irc_settings = self.settings.setdefault('irc', {})
+        self.host = self.irc_settings.setdefault('host', '<IP Address>')
+        self.port = self.irc_settings.setdefault('port', '6667')
+        self.botnick = self.irc_settings.setdefault('nick', 'DiscordBridge')
+        self.irc_channels = self.irc_settings.setdefault('irc channels', [])
+        self.bridge_enable = True if self.irc_settings.setdefault('enable', 'true') == 'true' else False
+
         asyncio.ensure_future(self.run())
 
     def connect_to_server(self):
@@ -33,11 +44,12 @@ class IRCBridge(glados.Module):
         glados.log('Connecting to: {}:{}'.format(self.host, self.port))
         try:
             self.socket = socks.socksocket()
-            if not self.irc_settings['proxy host'] == 'none' and not self.irc_settings['proxy port'] == 'none':
+            if not self.irc_settings.setdefault('proxy host', 'none') == 'none' \
+                and not self.irc_settings.setdefault('proxy port', 'none') == 'none':
                 self.socket.setproxy(socks.PROXY_TYPE_SOCKS5, self.irc_settings['proxy host'], int(self.irc_settings['proxy port']), True)
             self.socket.connect((self.host, self.port))
             self.send_raw_message('USER {0} {0} {0} :{0}\n'.format(self.botnick))
-            if not self.irc_settings['password'] == '':
+            if not self.irc_settings.setdefault('password', 'none') == '':
                 #self.send_raw_message('PRIVMSG NickServ :IDENTIFY {} {}\n'.format(self.botnick, self.irc_settings['password']))
                 self.send_raw_message('PASS {}\n'.format(self.irc_settings['password']))
             self.send_raw_message('NICK {}\n'.format(self.botnick))

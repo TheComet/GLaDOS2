@@ -1,7 +1,7 @@
 import glados
 import os
 import json
-import dateutil
+import dateutil.parser
 from datetime import datetime, timedelta
 
 
@@ -157,11 +157,11 @@ class Permissions(glados.Permissions):
                 self.__unmark_command(members, roles, 'banned'))
 
     @glados.Permissions.moderator
-    @glados.Module.command('bless', '<user/role> [user/role...] [hours=0]', 'Allow the specified user to evade the '
+    @glados.Module.command('bless', '<user/role> [user/role...] [hours=1]', 'Allow the specified user to evade the '
                            'punishment system for a specified number of hours. Specifying 0 means forever. This '
                            'allows the user to excessively use the bot without consequences.')
     async def bless_command(self, message, content):
-        members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
+        members, roles, duration, error = self.__parse_members_roles_duration(message, content, 1)
         if error:
             await self.client.send_message(message.channel, error)
             return
@@ -300,22 +300,6 @@ class Permissions(glados.Permissions):
         with open(self.memory['config file'], 'w') as f:
             s = json.dumps(self.memory['dict'], indent=2, sort_keys=True)
             f.write(s)
-
-    def __get_members_from_string(self, message, user_name):
-        # Use mentions instead of looking up the name if possible
-        if len(message.mentions) > 0:
-            return message.mentions
-
-        user_name = user_name.strip('@').split('#')[0]
-        members = list()
-        for member in self.current_server.members:
-            if member.nick == user_name or member.name == user_name:
-                members.append(member)
-        if len(members) == 0:
-            return 'Error: No member found with the name "{}"'.format(user_name)
-        if len(members) > 1:
-            return 'Error: Multiple members share the name "{}". Try again by mentioning the user.'.format(user_name)
-        return members
 
     def __is_member_still_marked_as(self, member, key):
         try:

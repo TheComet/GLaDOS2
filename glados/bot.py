@@ -5,6 +5,8 @@ import asyncio
 import inspect
 import re
 import math
+import copy
+import difflib
 from .Log import log
 from .cooldown import Cooldown
 from .tools.path import add_import_paths
@@ -16,6 +18,7 @@ comment_pattern = re.compile('`(.*?)`')
 class Bot(object):
     def __init__(self):
         self.settings = json.loads(open('settings.json').read())
+        self.original_settings = copy.deepcopy(self.settings)
         self.client = discord.Client()
 
         self.__command_prefix = self.settings.setdefault('commands', {}).setdefault('prefix', '.')
@@ -80,6 +83,8 @@ class Bot(object):
                 module.set_current_server(message.server.id)  # required for server isolation
                 await callback(message, content)
 
+            self.__check_if_settings_changed()
+
         @self.client.event
         async def on_ready():
             # TODO this doesn't seem to work, bots don't have permission to just join servers
@@ -99,6 +104,18 @@ class Bot(object):
             except discord.Forbidden:
                 log('Forbidden')
         return tuple()
+
+    def __check_if_settings_changed(self):
+        if self.settings == self.original_settings:
+            return
+
+        a = self.__as_json(self.original_settings).split('\n')
+        b = self.__as_json(self.settings).split('\n')
+
+        log('Settings diff:\n{}'.format('\n'.join(difflib.unified_diff(a, b))))
+        log('settings.json has been modified, you probably want to go edit it now')
+        self.__save_settings()
+        self.original_settings = copy.deepcopy(self.settings)
 
     def __get_commands_that_could_be_executed(self, message, commands):
         ret = list()
@@ -253,8 +270,12 @@ class Bot(object):
                         if len(module.server_whitelist) == 0
                         or server and server.name in module.server_whitelist)
 
+    @staticmethod
+    def __as_json(o):
+        return json.dumps(o, indent=2, sort_keys=True)
+
     def __save_settings(self):
-        open('settings.json', 'w').write(json.dumps(self.settings, indent=2, sort_keys=True))
+        open('settings.json', 'w').write(self.__as_json(self.settings))
 
     @staticmethod
     def __get_callback_tuples(m):
@@ -273,6 +294,7 @@ class Bot(object):
             args.append(email)
             args.append(password)
 
+        self.__check_if_settings_changed()
         await self.client.login(*args)
         await self.client.connect()
 
@@ -282,9 +304,8 @@ class Bot(object):
             loop.run_until_complete(self.login())
         except:
             loop.run_until_complete(self.client.logout())
-            raise
+            traceback.print_exc()
         finally:
             loop.close()
             for cb, m in self.__callback_tuples:
                 m.shutdown()
-            self.__save_settings()

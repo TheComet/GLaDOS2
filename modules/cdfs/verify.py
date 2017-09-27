@@ -17,8 +17,6 @@ def check_message_for_deletion(message):
 
 
 class Verify(glados.Module):
-    def get_help_list(self):
-        return tuple()
 
     def setup_global(self):
         @self.client.event
