@@ -2,6 +2,7 @@ import glados
 import collections
 import json
 import discord
+import dateutil.parser
 from datetime import datetime, timedelta
 from os.path import join, isfile
 
@@ -111,29 +112,90 @@ class AntiSpam(glados.Module):
         msg = content.replace('{0}', '<user>').replace('{1}', '<expiry>')
         await self.client.send_message(message.channel, 'Message changed to "{}"'.format(msg))
 
+    @glados.Permissions.moderator
+    @glados.Module.command('mute', '<user> [user...]', 'Mutes the specified user(s)')
+    async def mute(self, message, content):
+        members, roles, error = self.parse_members_roles(message, content)
+        if len(members) == 0:
+            error = error if error else 'Couldn\'t find any users'
+            await self.client.send_message(message.channel, error)
+            return
+
+        for user in members:
+            await self.__mute_user(user)
+        await self.client.send_message(message.channel, 'User(s) {} were muted'.format(' '.join(x.name for x in members)))
+
+    @glados.Permissions.moderator
+    @glados.Module.command('unmute', '<user> [user...]', 'Unmutes the specified user(s)')
+    async def unmute(self, message, content):
+        members, roles, error = self.parse_members_roles(message, content)
+        if len(members) == 0:
+            error = error if error else 'Couldn\'t find any users'
+            await self.client.send_message(message.channel, error)
+            return
+
+        for user in members:
+            await self.__unmute_user(user)
+
+    @glados.Module.command('mutelist', '', 'Displays a list of users who have been muted')
+    async def mutelist(self, message, channel):
+        muted_dict = self.memory['db'].get('users', None)
+        if muted_dict is None:
+            return ()
+
+        muted_members = list()
+        for member in self.current_server.members:
+
+            expiry_date = muted_dict.get(member.id, None)
+            if expiry_date is None:
+                continue  # This member is not muted
+
+            if not expiry_date == 'never':
+                expiry_date = dateutil.parser.parse(expiry_date)
+                now = datetime.now()
+                if expiry_date > now:
+                    time_to_expiry = expiry_date - now
+                    time_to_expiry = '{0:.1f} hour(s)'.format(time_to_expiry.seconds / 3600.0)
+                else:
+                    time_to_expiry = '0 hour(s)'
+            else:
+                time_to_expiry = 'forever'
+            muted_members.append((member, time_to_expiry))
+
+        if len(muted_members) > 0:
+            strings = ['**Muted Users**']
+            for member, time_to_expiry in muted_members:
+                strings.append('  + ' + member.name + ' for ' + time_to_expiry)
+        else:
+            strings = ['No one is muted.']
+        for msg in self.pack_into_messages(strings):
+            await self.client.send_message(message.channel, msg)
+
     async def __mute_user(self, member):
+        length = self.memory['db']['length']
+        expiry = 'never' if length == 0 else (datetime.now() + timedelta(hours=length)).isoformat()
+        self.memory['db']['users'][member.id] = expiry
+        self.__save_db()
+
         role_id = self.memory['db']['role']
         roles = [role for role in self.current_server.roles if role.id == role_id]
         await self.client.add_roles(member, *roles)
 
-        length = self.memory['db']['length']
-        expiry = 'never' if length == 0 else (datetime.now() + timedelta(hours=length)).isoformat()
-        self.memory['db']['users'][member.id] = expiry
+    async def __unmute_user(self, member):
+        role_id = self.memory['db']['role']
+        roles = [role for role in self.current_server.roles if role.id == role_id]
+        await self.client.remove_roles(member, *roles)
+
+        self.memory['db']['users'].pop(member.id)
         self.__save_db()
 
     async def __unmute_expired_users(self):
         now = datetime.now().isoformat()
         muted_users = self.memory['db']['users']
         users_to_unmute = [id for id, expiry in muted_users.items() if not expiry == 'never' and now > expiry]
-        if len(users_to_unmute) == 0:
-            return ()
 
-        role_id = self.memory['db']['role']
-        roles = [role for role in self.current_server.roles if role.id == role_id]
         for user_id in users_to_unmute:
-            muted_users.pop(user_id)
-            await self.client.remove_roles(self.current_server.get_member(user_id), *roles)
-        self.__save_db()
+            await self.__unmute_user(self.current_server.get_member(user_id))
 
     def __load_db(self):
         if isfile(self.memory['db file']):

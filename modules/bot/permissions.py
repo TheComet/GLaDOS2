@@ -27,9 +27,7 @@ class Permissions(glados.Permissions):
 
     def is_server_authorized(self):
         permissions = self.settings['permissions']
-        if not permissions['server authorization']:
-            return True
-        return self.current_server.id in permissions['authorized servers']
+        return not permissions['server authorization'] or self.current_server.id in permissions['authorized servers']
 
     def is_moderator(self, member):
         return self.__is_member_still_marked_as(member, 'moderator')
@@ -41,19 +39,13 @@ class Permissions(glados.Permissions):
         return self.require_owner(member)
 
     def require_moderator(self, member):
-        if self.require_admin(member):
-            return True
-        return self.__is_member_still_marked_as(member, 'moderator')
+        return self.require_admin(member) or self.__is_member_still_marked_as(member, 'moderator')
 
     def require_admin(self, member):
-        if self.require_owner(member):
-            return True
-        return self.__is_member_still_marked_as(member, 'admin')
+        return self.require_owner(member) or self.__is_member_still_marked_as(member, 'admin')
 
     def require_owner(self, member):
-        if member.id == self.settings['permissions']['bot owner']:
-            return True
-        return False
+        return member.id == self.settings['permissions']['bot owner']
 
     def get_ban_expiry(self, member):
         return self.__get_expiry(member, 'banned')
@@ -85,14 +77,14 @@ class Permissions(glados.Permissions):
 
         return marked_members
 
-    @glados.Module.command('modlist', '', 'Displays which users are bot moderators')
+    @glados.Module.command('modlist', '', 'Displays which users have privileges')
     async def modlist(self, message, content):
         mod_list = self.__compose_list_of_members_for('moderator')
         admin_list = self.__compose_list_of_members_for('admin')
-        owner = None
-        for member in self.current_server.members:
-            if member.id == self.settings['permissions']['bot owner']:
-                owner = member
+        owner = self.current_server.get_member(self.settings['permissions']['bot owner'])
+
+        strings = ['**Moderators:**']
+        strings += ()
 
         text = '**Moderators:**\n{}\n**Administrators:**\n{}\n**Owner:** {}'.format(
             '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in mod_list]),

@@ -11,8 +11,6 @@ responses = [
 
 
 class Saatchi(glados.Module):
-    def get_help_list(self): return list()
-
     @glados.Module.bot_rule('^.*Boku.*$')
     async def saatchi(self, message, match):
         if message.author.id == '247846577723408385':
