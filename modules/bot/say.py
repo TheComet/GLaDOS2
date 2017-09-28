@@ -38,4 +38,4 @@ class Say(glados.Module):
 
     @staticmethod
     def get_message(i, parts):
-        return parts[i:]
+        return ' '.join(parts[i:])
