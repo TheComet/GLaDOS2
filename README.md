@@ -92,8 +92,10 @@ class MyModule(glados.Module):
 
 Avalander
  + findquote refactor
+
 fastcall22
  + Fixed punishment system
-slicer4ever [](github.com/slicer4ever)
+
+slicer4ever [](https://github.com/slicer4ever)
  + Pony emotes module
 
