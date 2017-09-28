@@ -2,9 +2,9 @@ import glados
 import os
 from os import listdir
 from os.path import isfile, dirname, realpath, join
+import asyncio
 import json
 import urllib.request
-import threading
 from PIL import Image
 import APNGLib
 import time
@@ -27,7 +27,7 @@ class BuildEmotes(glados.Module):
         this_dir = dirname(realpath(__file__))
         self.emotedb_path = join(this_dir, 'emotesdb')
         self.configdb_path = join(this_dir, 'emote_info_db')
-        self.worker_threads = 8
+        self.worker_threads = 16
         self.building_db = ""
         self.is_running = False
 
@@ -85,7 +85,7 @@ class BuildEmotes(glados.Module):
         for e in data_set:
             self.build_emote(e.name, e.image_path, e.x_offset, e.y_offset, e.x_size, e.y_size, e.flip)
 
-    def build_db(self, db_name):
+    async def build_db(self, db_name):
         data_set = []
         for i in range(0, self.worker_threads):
             data_set.append([])
@@ -130,30 +130,29 @@ class BuildEmotes(glados.Module):
             data_set[i].append(
                 Eemote(name, "https://" + image_path.split('//')[1], x_offset, y_offset, x_size, y_size, flip))
             i = (i + 1) % self.worker_threads
-            # self.BuildEmote(Name, "https:" + Img, xOffset, yOffset, xSize, ySize, Flip)
-        threads = []
-        for x in range(0, self.worker_threads):
-            t = threading.Thread(target=self.build_emote_db, args=(data_set[x],))
-            t.start()
-            threads.append(t)
-        for t in threads:
-            t.join()
+            await asyncio.sleep(0)
+        loop = asyncio.get_event_loop()
+        tasks = []
+        for d in data_set:
+            tasks.append(loop.run_in_executor(None, self.build_emote_db, d))
+        for t in tasks:
+            await t
         print("Finished building: " + db_name)
         return
 
-    def run_thread(self, content):
+    async def run_thread(self, content):
         self.is_running = True
         try:
             if not content:
                 files = [f for f in listdir(self.configdb_path) if isfile(join(self.configdb_path, f))]
                 for f in files:
-                    self.build_db(os.path.splitext(f)[0])
+                    await self.build_db(os.path.splitext(f)[0])
                 self.is_running = False
                 print("Finished thread!")
                 return
             databases = content.split(' ')
             for db in databases:
-                self.build_db(db)
+                await self.build_db(db)
         except Exception as e:
             print("Exception during thread: ")
             print(e)
@@ -172,7 +171,5 @@ class BuildEmotes(glados.Module):
             return
         await self.client.send_message(message.channel, 'Building pony database...this may take awhile.')
 
-        thread = threading.Thread(target=self.run_thread, args=(content,))
-        thread.daemon = True
-        thread.start()
+        asyncio.ensure_future(self.run_thread(content))
         return

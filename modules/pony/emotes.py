@@ -4,7 +4,7 @@ from os import listdir
 from os.path import dirname, realpath, isfile, join
 import json
 import difflib
-import threading
+import asyncio
 import APNGLib
 import time
 import urllib.request
@@ -37,8 +37,7 @@ class Emotes(glados.Module):
 
     def setup_global(self):
         self.is_running = True
-        thread = threading.Thread(target=self.build_emote_db, args=())
-        thread.start()
+        asyncio.ensure_future(self.build_emote_db())
         return
 
     def setup_memory(self):
@@ -113,7 +112,7 @@ class Emotes(glados.Module):
             except:
                 time.sleep(1)
 
-    def build_emote_db(self):
+    async def build_emote_db(self):
         self.tag_list = {}
         self.emote_list = {}
         self.raw_emote_list = []
@@ -128,6 +127,7 @@ class Emotes(glados.Module):
             jtag_file.close()
             self.tag_list[subreddit] = {}
             for key, items in jinfodata.items():
+                
                 name = key[1:].replace('/', '').replace('\\', '').replace('.', '')
                 emote = items.get("Emotes")
                 if not emote: continue
@@ -167,7 +167,7 @@ class Emotes(glados.Module):
                     self.emote_list[name] = Eemote(name, "https://" + image_path.split('//')[1], x_offset, y_offset,
                                                    x_size, y_size, flip, is_nsfw)
                     self.raw_emote_list.append(name)
-
+                await asyncio.sleep(0)
         self.is_running = False
         print("Finished building emote db.")
 
