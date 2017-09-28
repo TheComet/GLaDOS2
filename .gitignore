@@ -10,7 +10,7 @@
 *log
 
 # secret settings file
-/settings.json
+/settings.json*
 
 # IDE files
 .idea/
