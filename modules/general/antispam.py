@@ -113,7 +113,7 @@ class AntiSpam(glados.Module):
         await self.client.send_message(message.channel, 'Message changed to "{}"'.format(msg))
 
     @glados.Permissions.moderator
-    @glados.Module.command('mute', '<user> [user...]', 'Mutes the specified user(s)')
+    @glados.Module.command('mute', '<user> [user...] [duration]', 'Mutes the specified user(s)')
     async def mute(self, message, content):
         members, roles, error = self.parse_members_roles(message, content)
         if len(members) == 0:
@@ -121,9 +121,15 @@ class AntiSpam(glados.Module):
             await self.client.send_message(message.channel, error)
             return
 
+        try:
+            length = float(content[-1])
+        except ValueError:
+            length = self.memory['db']['length']
+
         for user in members:
-            await self.__mute_user(user)
-        await self.client.send_message(message.channel, 'User(s) {} were muted'.format(' '.join(x.name for x in members)))
+            await self.__mute_user(user, length)
+        await self.client.send_message(message.channel, 'User(s) {} were muted for {} hour(s)'.format(
+            ' '.join(x.name for x in members), length))
 
     @glados.Permissions.moderator
     @glados.Module.command('unmute', '<user> [user...]', 'Unmutes the specified user(s)')
@@ -172,8 +178,7 @@ class AntiSpam(glados.Module):
         for msg in self.pack_into_messages(strings):
             await self.client.send_message(message.channel, msg)
 
-    async def __mute_user(self, member):
-        length = self.memory['db']['length']
+    async def __mute_user(self, member, length):
         expiry = 'never' if length == 0 else (datetime.now() + timedelta(hours=length)).isoformat()
         self.memory['db']['users'][member.id] = expiry
         self.__save_db()
