@@ -59,11 +59,3 @@ class AutoCorrect(glados.Module):
     @glados.Module.rule('^.*(?i)((sh|c|w)ould|might)\\s+of\\b.*$')
     async def shouldof(self, message, match):
         await self.client.send_message(message.channel, '{} have*'.format(match.group(1)))
-
-    @glados.Module.rule('^.*(?i)\\btho\\b.*$')
-    async def tho(self, message, match):
-        await self.client.send_message(message.channel, 'though*')
-
-    @glados.Module.rule('^.*(!i)\\bcuz\\b.*$')
-    async def cuz(self, message, match):
-        await self.client.send_message(message.channel, 'because*')
