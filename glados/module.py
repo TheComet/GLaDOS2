@@ -259,12 +259,12 @@ class Module(object):
                 roles.add(role)
 
         if len(members) == 0 and len(roles) == 0:
-            return (), (), 0, 'Error: No member or role found with the name "{}"'.format(name)
+            return (), (), 'Error: No member or role found with the name "{}"'.format(name)
         if len(members) > 0 and len(roles) > 0:
-            return (), (), 0, 'Error: One or more member(s) have a name identical to a role name "{}".' \
+            return (), (), 'Error: One or more member(s) have a name identical to a role name "{}".' \
                               'Try again by mentioning the user/role'.format(name)
         if len(members) > 1 or len(roles) > 1:
-            return (), (), 0, 'Error: Multiple members/roles share the name "{}".' \
+            return (), (), 'Error: Multiple members/roles share the name "{}".' \
                               'Try again by mentioning the user.'.format(name)
 
         return members, roles, ''
