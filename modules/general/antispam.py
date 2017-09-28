@@ -136,6 +136,7 @@ class AntiSpam(glados.Module):
 
         for user in members:
             await self.__unmute_user(user)
+        await self.client.send_message(message.channel, 'User(s) {} were unmuted'.format(' '.join(x.name for x in members)))
 
     @glados.Module.command('mutelist', '', 'Displays a list of users who have been muted')
     async def mutelist(self, message, channel):
