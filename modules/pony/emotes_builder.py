@@ -5,7 +5,6 @@ from os.path import isfile, dirname, realpath, join
 import asyncio
 import json
 import urllib.request
-import threading
 from PIL import Image
 import APNGLib
 import time
