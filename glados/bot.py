@@ -132,8 +132,10 @@ class Bot(object):
         for callback, module in self.__callback_tuples:
             # Does the module have a server whitelist? If so, make sure this module is allowed.
             if len(module.server_whitelist) > 0:
-                if message.server and not message.server.id in module.server_whitelist:
+                if message.server.id not in module.server_whitelist:
                     continue
+            if message.server.id in module.server_blacklist:
+                continue
 
             # check if any issued commands match anything in the loaded callbacks
             if hasattr(callback, 'commands'):
@@ -203,48 +205,42 @@ class Bot(object):
         delayed_successes = list()
         delayed_errors = list()
 
-        # load global modules
-        for modfullname in self.settings['modules'].setdefault('names', [
+        # load white/blacklist and map to server IDs, so it's easier to assign servers to module blacklists
+        blacklist = dict()
+        whitelist = dict()
+        for server_id, blacklisted in self.settings['modules'].setdefault('blacklist', {}).items():
+            for modfullname in blacklisted:
+                blacklist.setdefault(modfullname, []).append(server_id)
+        for server_id, whitelisted in self.settings['modules'].setdefault('whitelist', {}).items():
+            for modfullname in whitelisted:
+                whitelist.setdefault(modfullname, []).append(server_id)
+
+        # compose a complete set of modules that need to be loaded. These are global modules + whitelisted modules
+        modules_to_load = set(self.settings['modules'].setdefault('names', [
             'bot.permissions.Permissions',
             'bot.help.Help',
             'bot.ping.Ping',
             'bot.uptime.UpTime',
             'bot.say.Say'
-        ]):
-            result = self.__import_module(modfullname)
-            if result is not None:
-                delayed_errors.append(result)
-            else:
-                delayed_successes.append('Loaded global module {}'.format(modfullname))
+        ])).union(set(whitelist))
 
-        # load server whitelisted modules
-        for server, modlist in self.settings['modules'].setdefault('server specific', {
-            'server id': []
-        }).items():
-            for modfullname in modlist:
-                result = self.__import_module(modfullname, server)
-                if not result is None:
-                    delayed_errors.append(result)
-                else:
-                    delayed_successes.append('Loaded whitelisted module {0} for server {1}'.format(modfullname, server))
+        # time to load all modules
+        for modfullname in modules_to_load:
+            m, error = self.__import_module(modfullname)
+            if error:
+                delayed_errors.append(error)
+            else:
+                m.server_whitelist = whitelist.get(modfullname, [])
+                m.server_blacklist = blacklist.get(modfullname, [])
+                delayed_successes.append('Loaded module {}, whitelisted in {}, blacklisted in {}'.format(
+                    modfullname, m.server_whitelist, m.server_blacklist))
 
         if delayed_successes:
             log('---------Loaded Modules----------\n' + '\n'.join(delayed_successes))
         if delayed_errors:
             log('---------FAILED Modules----------\n' + '\n'.join(delayed_errors))
 
-    def __import_module(self, modfullname, server=None):
-        # was this module name already loaded? This checks if "modfullname" is in any of the loaded modules
-        # mod.namespace attribute.
-        if len(self.__callback_tuples) > 0:
-            existing_module = [m for callback, m in self.__callback_tuples if m.full_name == modfullname]
-            if existing_module:
-                # No need to load again. However, maybe the server has changed?
-                if not server is None:
-                    if not server in existing_module[0].server_whitelist:
-                        existing_module[0].server_whitelist.append(server)
-                return
-
+    def __import_module(self, modfullname):
         # get class name and namespace
         modnamespace = modfullname.split('.')
         classname = modnamespace[-1]
@@ -255,25 +251,19 @@ class Bot(object):
             m = __import__(modnamespace, fromlist=[classname])
             m = getattr(m, classname)()
         except ImportError:
-            return 'Error: Failed to import module {0}\n{1}'.format(modfullname,
-                                                                    traceback.print_exc())
-
-        # set server whitelist
-        if server is not None:
-            m.server_whitelist.append(server)
-
-        # set module properties
-        m.init_module(self, modfullname, self.settings)
+            return None, 'Error: Failed to import module {0}\n{1}'.format(modfullname, traceback.print_exc())
 
         # get a list of tuples containing (callback function, module) pairs.
         callback_tuples = self.__get_callback_tuples(m)
         if len(callback_tuples) > 0:
             self.__callback_tuples += callback_tuples
 
+        return m, ''
+
     def get_loaded_modules(self, server):
         return set(module for c, module in self.__callback_tuples
-                        if len(module.server_whitelist) == 0
-                        or server and server.name in module.server_whitelist)
+                   if (len(module.server_whitelist) == 0 or server.id in module.server_whitelist)
+                   and server.id not in module.server_blacklist)
 
     @staticmethod
     def __as_json(o):

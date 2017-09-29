@@ -9,6 +9,7 @@ class Module(object):
         # this is set externally when the module is loaded. Contains a list of server names where this module should
         # be active. An empty list means it can be active on all servers.
         self.server_whitelist = list()
+        self.server_blacklist = list()
         # set when the module is loaded. It will be something like "test.foo.Hello".
         self.__full_name = str()
         # the settings dictionary (settings.json)
