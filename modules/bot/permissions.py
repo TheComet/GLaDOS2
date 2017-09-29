@@ -7,7 +7,9 @@ from datetime import datetime, timedelta
 
 class Permissions(glados.Permissions):
 
-    def setup_global(self):
+    def __init__(self, bot, full_name):
+        super(Permissions, self).__init__(bot, full_name)
+
         # Create an entry in the global config file with the default command names
         permissions = self.settings.setdefault('permissions', {})
         permissions.setdefault('bot owner', '<please enter your discord ID>')

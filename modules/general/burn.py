@@ -13,8 +13,8 @@ burns = [
 
 class Burn(glados.Module):
 
-    def __init__(self):
-        super(Burn, self).__init__()
+    def __init__(self, bot, full_name):
+        super(Burn, self).__init__(bot, full_name)
         self.counter = 0
 
     def setup_memory(self):

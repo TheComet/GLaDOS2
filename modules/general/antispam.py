@@ -11,8 +11,9 @@ TIME_THRESHOLD = 2  # If the average time between messages sinks below this (in 
 
 
 class AntiSpam(glados.Module):
-    def __init__(self):
-        super(AntiSpam, self).__init__()
+
+    def __init__(self, bot, full_name):
+        super(AntiSpam, self).__init__(bot, full_name)
         self.__times = dict()
 
     def setup_memory(self):
@@ -79,8 +80,9 @@ class AntiSpam(glados.Module):
                 muted_users = [(self.current_server.get_member(uid), exp) for uid, exp in db['users'].items()]
                 muted_users = list(filter(lambda x: x[0] is not None, muted_users))
 
-                for user, exp in muted_users:
-                    self.__unmute_user(user)
+                if 'role' in db:
+                    for user, exp in muted_users:
+                        self.__unmute_user(user)
 
                 db['role'] = role.id
 

@@ -7,6 +7,7 @@ import re
 import math
 import copy
 import difflib
+import os
 from .Log import log
 from .cooldown import Cooldown
 from .tools.path import add_import_paths
@@ -17,13 +18,22 @@ comment_pattern = re.compile('`(.*?)`')
 
 class Bot(object):
     def __init__(self):
-        self.settings = json.loads(open('settings.json').read())
-        self.original_settings = copy.deepcopy(self.settings)
-        self.client = discord.Client()
-
-        self.__command_prefix = self.settings.setdefault('commands', {}).setdefault('prefix', '.')
+        self.__settings = json.loads(open('settings.json').read())
+        self.__original_settings = copy.deepcopy(self.__settings)
         self.__callback_tuples = list()  # list of tuples. (callback, module)
         self.__cooldown = Cooldown()
+
+        self.__root_data_dir = self.__settings['modules'].setdefault('data', 'data')
+        self.__global_data_dir = os.path.join(self.__root_data_dir, 'global_cache')
+        self.__server_data_dir = None
+        self.__current_server = None
+
+        self.__settings.setdefault('command prefix', {}).setdefault('default', '.')
+        self.settings.setdefault('auto join', {
+            'note': 'This doesn\'t seem to work for bots, they don\'t have permission to just join servers. But this will work if the bot uses a normal user account instead.',
+            'invite urls': []
+        })
+
         self.load_modules()
 
         # The bot needs access to the permissions module for managing things like admins/botmods
@@ -32,8 +42,9 @@ class Bot(object):
                 self.permissions = m
                 break
         else:
-            self.permissions = Permissions()
-            self.permissions.init_module(self, 'DummyPermissions', self.settings)
+            self.permissions = Permissions(self, 'bot.dummy.DummyPermissions')
+
+        self.client = discord.Client()
 
         @self.client.event
         async def on_message(message):
@@ -42,12 +53,11 @@ class Bot(object):
             if not message.server:
                 return ()
 
-            # required for permission server isolation
-            self.permissions.set_current_server(message.server.id)
+            self.__set_current_server(message.server.id)
 
             # Check if this bot has been authorized by the owner to be on this server (if enabled)
             if not self.permissions.is_server_authorized() \
-                    and not self.permissions.is_owner(message.author):
+                    and not self.permissions.require_owner(message.author):
                 return ()
 
             commands = self.extract_commands_from_message(message.clean_content)
@@ -88,16 +98,16 @@ class Bot(object):
                 module.set_current_server(message.server.id)  # required for server isolation
                 await callback(message, content)
 
+            # Write settings dict to disc (and print a diff) if a command changed it in any way
             self.__check_if_settings_changed()
 
         @self.client.event
         async def on_ready():
-            # TODO this doesn't seem to work, bots don't have permission to just join servers
-            #await self.__auto_join_channels()
+            await self.__auto_join_channels()
             log('Running as {}'.format(self.client.user.name))
 
     async def __auto_join_channels(self):
-        invite_urls = [url for name, url in self.settings['auto join'].items()]
+        invite_urls = [url for name, url in self.settings['auto join']['invite urls'].items()]
         for url in invite_urls:
             log('Auto-joining {}'.format(url))
             try:
@@ -110,17 +120,57 @@ class Bot(object):
                 log('Forbidden')
         return tuple()
 
+    @property
+    def settings(self):
+        return self.settings
+
+    @property
+    def command_prefix(self):
+        """
+        :return: Returns the configured command prefix character(s) for commands.
+        """
+        prefix = self.settings['command prefix']
+        try:
+            return prefix[self.__current_server.id]
+        except KeyError:
+            return prefix.setdefault(self.__current_server.id, prefix['default'])
+
+    @property
+    def current_server(self):
+        """
+        :return: A reference to the currently active discord server object (from which the message originated).
+        """
+        return self.__current_server
+
+    @property
+    def global_data_dir(self):
+        return self.__global_data_dir
+
+    @property
+    def data_dir(self):
+        return self.__server_data_dir
+
+    def __set_current_server(self, server_id):
+        self.__server_data_dir = None
+        self.__current_server = next((server for server in self.client.servers if server.id == server_id))
+        if self.__current_server is None:
+            raise RuntimeError('Failed to set current server to ID: {}'.format(server_id))
+
+        self.__server_data_dir = os.path.join(self.__root_data_dir, server_id)
+        if not os.path.isdir(self.__server_data_dir):
+            os.mkdir(self.__server_data_dir)
+
     def __check_if_settings_changed(self):
-        if self.settings == self.original_settings:
+        if self.__settings == self.__original_settings:
             return
 
-        a = self.__as_json(self.original_settings).split('\n')
-        b = self.__as_json(self.settings).split('\n')
+        a = self.__as_json(self.__original_settings).split('\n')
+        b = self.__as_json(self.__settings).split('\n')
 
         log('Settings diff:\n{}'.format('\n'.join(difflib.unified_diff(a, b))))
         log('settings.json has been modified, you probably want to go edit it now')
         self.__save_settings()
-        self.original_settings = copy.deepcopy(self.settings)
+        self.__original_settings = copy.deepcopy(self.__settings)
 
     def __get_commands_that_could_be_executed(self, message, commands):
         ret = list()
@@ -186,9 +236,9 @@ class Bot(object):
 
         return False
 
-    def extract_commands_from_message(self, msg):
-        msg = str(msg)
-        cmd_prefix = self.settings['commands']['prefix']
+    def extract_commands_from_message(self, message):
+        msg = str(message.clean_content)
+        cmd_prefix = self.settings['command prefix'][message.server.id]
 
         if msg.startswith(cmd_prefix):
             return [(msg[len(cmd_prefix):].split(' ', 1) + [''])[:2]]

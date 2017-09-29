@@ -1,65 +1,29 @@
 import re
-import os
 import inspect
 
 
 class Module(object):
 
-    def __init__(self):
+    def __init__(self, bot, full_name):
         # this is set externally when the module is loaded. Contains a list of server names where this module should
         # be active. An empty list means it can be active on all servers.
         self.server_whitelist = list()
-        # set when the module is loaded. It will be something like "test.foo.Hello".
-        self.__full_name = str()
-        # the settings dictionary (settings.json)
-        self.__settings = None
-        self.__command_prefix = None
-        self.__data_path = None
-        self.__global_data_dir = None
         # reference to the bot object, required for getting the client object or a list of all loaded modules
-        self.__bot = None
+        self.__bot = bot
+        # set when the module is loaded. It will be something like "test.foo.Hello".
+        self.__full_name = full_name
 
-        # Server isolation stuff
-        self.__server_specific_data_dir = None
+        # Maintain a "Memory" dict per server, for isolation purposes
         self.__memories = dict()
         self.__current_memory = None
-        self.__current_server = None
-
-    def init_module(self, bot, full_name, settings):
-        self.__bot = bot
-        self.__full_name = full_name
-        self.__settings = settings
-        self.__command_prefix = settings['commands']['prefix']
-        self.__data_path = settings['modules'].setdefault('data', 'data')
-        self.__global_data_dir = os.path.join(self.__data_path, 'global_cache')
-
-        if not os.path.isdir(self.__global_data_dir):
-            os.mkdir(self.__global_data_dir)
-
-        self.setup_global()  # calls derived
-
-    def set_current_server(self, server_id):
-        self.__current_server = next((server for server in self.client.servers if server.id == server_id))
-        if self.__current_server is None:
-            raise RuntimeError('Failed to set current server to ID: {}'.format(server_id))
-
-        self.__server_specific_data_dir = os.path.join(self.__data_path, server_id)
-        if not os.path.isdir(self.__server_specific_data_dir):
-            os.mkdir(self.__server_specific_data_dir)
-
-        # lazy memory init for modules
-        self.__current_memory = self.__memories.get(self.__current_server.id, None)
-        if self.__current_memory is None:
-            self.__current_memory = self.__memories[self.__current_server.id] = dict()
-            self.setup_memory()  # calls derived
 
     @property
     def settings(self):
         """
-        :return: Reference to global settings.json file. You can write things back into it. Changes will be saved when
-        the bot shuts down.
+        :return: Reference to global settings.json file. You can write things back into it. Changes will be saved after
+        your command returns.
         """
-        return self.__settings
+        return self.__bot.settings
 
     @property
     def full_name(self):
@@ -70,17 +34,14 @@ class Module(object):
 
     @property
     def command_prefix(self):
-        """
-        :return: Returns the configured command prefix character(s) for commands.
-        """
-        return self.__command_prefix
+        return self.__bot.command_prefix
 
     @property
     def current_server(self):
         """
         :return: A reference to the currently active discord server object (from which the message originated).
         """
-        return self.__current_server
+        return self.__bot.current_server
 
     @property
     def client(self):
@@ -94,7 +55,7 @@ class Module(object):
         """
         :return: Generates a list of all of the loaded modules that are active on the current server.
         """
-        return self.__bot.get_loaded_modules(self.__current_server)
+        return self.__bot.get_loaded_modules(self.current_server)
 
     @property
     def global_data_dir(self):
@@ -102,7 +63,7 @@ class Module(object):
         :return: Returns the path to a directory where modules can store data that is common among all servers.
         If you want to store data only for specific servers, then use data_dir() instead.
         """
-        return self.__global_data_dir
+        return self.__bot.global_data_dir
 
     @property
     def data_dir(self):
@@ -110,7 +71,7 @@ class Module(object):
         Returns the path in which modules can store their data. Modules **must** use this function and not retrieve it
         from the "settings" dict. It changes depending on which server a message originated from.
         """
-        return self.__server_specific_data_dir
+        return self.__bot.data_dir
 
     @property
     def memory(self):
@@ -119,13 +80,6 @@ class Module(object):
         :return: A dictionary. Store whatever you want
         """
         return self.__current_memory
-
-    def setup_global(self):
-        """
-        Gets called right after __init__(). Use this to populate self.settings with new entries if needed (self.settings
-        is None in __init__).
-        """
-        pass
 
     def setup_memory(self):
         """
@@ -217,9 +171,9 @@ class Module(object):
             if not description:
                 continue
             if argument_list_str:
-                yield '{}{} **{}** -- *{}*'.format(self.__command_prefix, command, argument_list_str, description)
+                yield '{}{} **{}** -- *{}*'.format(self.command_prefix, command, argument_list_str, description)
             else:
-                yield '{}{} -- *{}*'.format(self.__command_prefix, command, description)
+                yield '{}{} -- *{}*'.format(self.command_prefix, command, description)
 
     def parse_members_roles(self, message, content):
         """
@@ -296,6 +250,13 @@ class Module(object):
         ret.append(join_str.join(temp))
         return ret
 
+    def __lazy_memory_initializer(self):
+        # lazy memory init for modules
+        self.__current_memory = self.__memories.get(self.current_server.id, None)
+        if self.__current_memory is None:
+            self.__current_memory = self.__memories[self.current_server.id] = dict()
+            self.setup_memory()  # calls derived
+
     @staticmethod
     def command(command, argument_list_str, description):
         """
@@ -317,11 +278,15 @@ class Module(object):
         is used to generate help)
         :param description: A string containing a description of what the command does (used for help).
         """
-        def add_attribute(func):
+        def factory(func):
             func.__dict__.setdefault('commands', list())
             func.commands.append((command, argument_list_str, description))
-            return func
-        return add_attribute
+
+            def wrapper(obj, *args):
+                obj.__lazy_memory_initializer()
+                return func(obj, *args)
+            return wrapper
+        return factory
 
     @staticmethod
     def rule(rule):
@@ -342,11 +307,15 @@ class Module(object):
 
         :param rule: A regular expression to match messages sent on Discord with.
         """
-        def add_attribute(func):
+        def factory(func):
             func.__dict__.setdefault('rules', list())
             func.rules.append(re.compile(rule, re.IGNORECASE))
-            return func
-        return add_attribute
+
+            def wrapper(obj, *args):
+                obj.__lazy_memory_initializer()
+                return func(obj, *args)
+            return wrapper
+        return factory
 
     @staticmethod
     def bot_rule(rule):
@@ -354,8 +323,12 @@ class Module(object):
         Same as rules(), except only messages that originate from bots (that aren't our own) are passed.
         :param rule: A regular expression to match messages sent on Discord with.
         """
-        def add_attribute(func):
+        def factory(func):
             func.__dict__.setdefault('bot_rules', list())
             func.bot_rules.append(re.compile(rule, re.IGNORECASE))
-            return func
-        return add_attribute
+
+            def wrapper(obj, *args):
+                obj.__lazy_memory_initializer()
+                return func(obj, *args)
+            return wrapper
+        return factory
