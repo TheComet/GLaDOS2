@@ -326,7 +326,7 @@ class Emotes(glados.Module):
         jinfodata['/'+name] = {}
         jinfodata['/'+name]["Emotes"] = {}
         jinfodata['/'+name]["Emotes"][""] = {}
-        jinfodata['/'+name]["Emotes"]["Image"] = csplit[1]
+        jinfodata['/'+name]["Emotes"][""]["Image"] = csplit[1]
         jtagdata['/'+name] = []
         for tag in csplit:
             if tag==csplit[0] or tag==csplit[1]:
