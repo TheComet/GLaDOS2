@@ -53,3 +53,9 @@ class SpellCheck(glados.Module):
         word = message.clean_content.split('(spelling?)')[0].strip().split()[-1]
         word = match.group(1)
         await self.spellcheck(message, word)
+
+
+class AutoCorrect(glados.Module):
+    @glados.Module.rule('^.*(?i)((sh|c|w)ould|might)\\s+of\\b.*$')
+    async def shouldof(self, message, match):
+        await self.client.send_message(message.channel, '{} have*'.format(match.group(1)))

@@ -12,6 +12,7 @@ class Permissions(glados.Permissions):
         permissions = self.settings.setdefault('permissions', {})
         permissions.setdefault('bot owner', '<please enter your discord ID>')
         permissions.setdefault('authorized servers', [])
+        permissions.setdefault('server authorization', False)
 
     def setup_memory(self):
         self.memory['dict'] = dict()
@@ -25,7 +26,8 @@ class Permissions(glados.Permissions):
         return self.__is_member_still_marked_as(member, 'blessed')
 
     def is_server_authorized(self):
-        return self.current_server.id in self.settings['permissions']['authorized servers']
+        permissions = self.settings['permissions']
+        return not permissions['server authorization'] or self.current_server.id in permissions['authorized servers']
 
     def is_moderator(self, member):
         return self.__is_member_still_marked_as(member, 'moderator')
@@ -37,19 +39,13 @@ class Permissions(glados.Permissions):
         return self.require_owner(member)
 
     def require_moderator(self, member):
-        if self.require_admin(member):
-            return True
-        return self.__is_member_still_marked_as(member, 'moderator')
+        return self.require_admin(member) or self.__is_member_still_marked_as(member, 'moderator')
 
     def require_admin(self, member):
-        if self.require_owner(member):
-            return True
-        return self.__is_member_still_marked_as(member, 'admin')
+        return self.require_owner(member) or self.__is_member_still_marked_as(member, 'admin')
 
     def require_owner(self, member):
-        if member.id == self.settings['permissions']['bot owner']:
-            return True
-        return False
+        return member.id == self.settings['permissions']['bot owner']
 
     def get_ban_expiry(self, member):
         return self.__get_expiry(member, 'banned')
@@ -81,14 +77,14 @@ class Permissions(glados.Permissions):
 
         return marked_members
 
-    @glados.Module.command('modlist', '', 'Displays which users are bot moderators')
+    @glados.Module.command('modlist', '', 'Displays which users have privileges')
     async def modlist(self, message, content):
         mod_list = self.__compose_list_of_members_for('moderator')
         admin_list = self.__compose_list_of_members_for('admin')
-        owner = None
-        for member in self.current_server.members:
-            if member.id == self.settings['permissions']['bot owner']:
-                owner = member
+        owner = self.current_server.get_member(self.settings['permissions']['bot owner'])
+
+        strings = ['**Moderators:**']
+        strings += ()
 
         text = '**Moderators:**\n{}\n**Administrators:**\n{}\n**Owner:** {}'.format(
             '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in mod_list]),
@@ -272,11 +268,28 @@ class Permissions(glados.Permissions):
     @glados.Permissions.owner
     @glados.Module.command('serverlist', '', 'List all servers the bot has joined')
     async def listservers(self, message, content):
+        if not self.settings['permissions']['server authorization']:
+            await self.client.send_message(message.channel,
+                    'This feature is not enabled. Use {}serverauth to enable'.format(self.command_prefix))
+            return
+
         servers_auths = [(server.name, server.id in self.settings['permissions']['authorized servers'])
                          for server in self.client.servers]
         msg = '\n'.join(' {}. {}: {}'.format(index+1, serv_auth[0], 'yes' if serv_auth[1] else '**no**')
                         for index, serv_auth in enumerate(servers_auths))
         await self.client.send_message(message.channel, msg)
+
+    @glados.Permissions.owner
+    @glados.Module.command('serverauth', '<enable|disable>', 'Enable or disable the server authorization feature')
+    async def serverauth(self, message, content):
+        if content == 'enable':
+            self.settings['permissions']['server authorization'] = True
+            await self.client.send_message(message.channel, 'Enabled. Your bot will ignore all messages if not authorized')
+        elif content == 'disable':
+            self.settings['permissions']['server authorization'] = False
+            await self.client.send_message(message.channel, 'Disabled. Anyone who adds your bot to their server can use it')
+        else:
+            await self.provide_help('serverauth', message)
 
     def __parse_members_roles_duration(self, message, content, default_duration):
         # Default duration is 24 hours

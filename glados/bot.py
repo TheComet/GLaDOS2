@@ -45,7 +45,7 @@ class Bot(object):
             # required for permission server isolation
             self.permissions.set_current_server(message.server.id)
 
-            # Check if this bot has been authorized by the owner to be on this server
+            # Check if this bot has been authorized by the owner to be on this server (if enabled)
             if not self.permissions.is_server_authorized() \
                     and not self.permissions.is_owner(message.author):
                 return ()
@@ -53,7 +53,6 @@ class Bot(object):
             commands = self.extract_commands_from_message(message.clean_content)
             commands_to_process = self.__get_commands_that_could_be_executed(message, commands)
             commands_to_process += self.__get_matches_that_could_be_executed(message)
-
 
             punish_checked = False
             user_is_punished = False

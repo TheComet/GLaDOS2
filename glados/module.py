@@ -202,13 +202,13 @@ class Module(object):
 
     def get_casual_help_strings(self):
         for name, member in inspect.getmembers(self, predicate=inspect.ismethod):
-            if not hasattr(member, 'commands') or any(hasattr(member, x) for x in ('owner', 'admin', 'moderator')):
+            if not hasattr(member, 'commands') or any(hasattr(member, x) for x in ('moderator', 'admin', 'owner')):
                 continue
             yield from self.__help_string_from_member_func(member)
 
-    def get_privileged_help_strings(self):
+    def get_privileged_help_strings(self, level):
         for name, member in inspect.getmembers(self, predicate=inspect.ismethod):
-            if not hasattr(member, 'commands') or all(not hasattr(member, x) for x in ('owner', 'admin', 'moderator')):
+            if not hasattr(member, 'commands') or not hasattr(member, level):
                 continue
             yield from self.__help_string_from_member_func(member)
 
@@ -254,22 +254,47 @@ class Module(object):
         for member in self.current_server.members:
             if member.nick == name or member.name == name:
                 members.add(member)
-            # There is currently no way to get a list of all roles, but we can compose one by taking the
-            # roles from all of the members
-            for role in member.roles:
-                if role.name == name:
-                    roles.add(role)
+        for role in self.current_server.roles:
+            if role.name == name:
+                roles.add(role)
 
         if len(members) == 0 and len(roles) == 0:
-            return (), (), 0, 'Error: No member or role found with the name "{}"'.format(name)
+            return (), (), 'Error: No member or role found with the name "{}"'.format(name)
         if len(members) > 0 and len(roles) > 0:
-            return (), (), 0, 'Error: One or more member(s) have a name identical to a role name "{}".' \
+            return (), (), 'Error: One or more member(s) have a name identical to a role name "{}".' \
                               'Try again by mentioning the user/role'.format(name)
         if len(members) > 1 or len(roles) > 1:
-            return (), (), 0, 'Error: Multiple members/roles share the name "{}".' \
+            return (), (), 'Error: Multiple members/roles share the name "{}".' \
                               'Try again by mentioning the user.'.format(name)
 
         return members, roles, ''
+
+    @staticmethod
+    def pack_into_messages(list_of_strings, join_str='\n'):
+        """
+        Takes a list of strings and joines them (with newlines by default) into a new list of strings such that none of
+         the new strings exceed discord's message limit.
+        :param list_of_strings: A list of strings you want to join.
+        :param join_str: The string to use for joining (default is newline).
+        :return: Returns a list of strings. Each string will be small enough to be sent in a discord message.
+        """
+        ret = list()
+        temp = list()
+        l = 0
+        max_length = 1000
+
+        if len(list_of_strings) == 0:
+            return ret
+
+        for s in list_of_strings:
+            l += len(s)
+            if l >= max_length:
+                ret.append(join_str.join(temp))
+                l = len(s)
+                temp = list()
+            temp.append(s)
+        ret.append(join_str.join(temp))
+        return ret
 
     @staticmethod
     def command(command, argument_list_str, description):
