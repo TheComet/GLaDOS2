@@ -30,6 +30,7 @@ class Emotes(glados.Module):
         self.emotes_path = join(this_dir, 'emotesdb')
         self.infodb_path = join(this_dir, 'emote_info_db')
         self.tagdb_path = join(this_dir, 'emote_tag_db')
+        self.custom_emote_filename = 'ponybot.json'
         self.tag_list = {}
         self.emote_list = {}
         self.raw_emote_list = []
@@ -64,7 +65,8 @@ class Emotes(glados.Module):
 
     def save_target_image(self, source, name, x_offset, y_offset, x_size, y_size, flip, convert):
         m_img = Image.open(source)
-        m_img = m_img.crop((x_offset, y_offset, x_offset + x_size, y_offset + y_size))
+        if x_size!=0 and y_size!=0:
+            m_img = m_img.crop((x_offset, y_offset, x_offset + x_size, y_offset + y_size))
         if flip is True:
             m_img = m_img.transpose(Image.FLIP_LEFT_RIGHT)
         if convert is True:
@@ -76,12 +78,18 @@ class Emotes(glados.Module):
             m_img.save(join(self.emotes_path, name) + ".png", transparency=255, optimize=True)
         else:
             m_img.save(join(self.emotes_path, name) + ".png", optimize=True)
-
+    
+    def sanitize_name(self, name):
+        # we use replace to strip any symbols that'd allow file naviagation.
+        return name.replace('/', '').replace('\\', '').replace('.', '')
+    
     def build_emote(self, name, image_path, x_offset, y_offset, x_size, y_size, flip):
         # print("Emote: '" + name + "' Img: " + ImagePath + " o: " + str(xOffset) + " " + str(yOffset) + " s: " + str(xSize) + " " + str(ySize))
         name_base = name + ".tmp"
         frame_cnt = 1
-        transform = APNGLib.TransformCrop | APNGLib.TransformNoGif1Frame
+        transform = APNGLib.TransformNoGif1Frame
+        if x_size != 0 and y_size != 0:
+            transform |= APNGLib.TransformCrop
         if flip is True:
             transform |= APNGLib.TransformFlipHorizontal
         try:
@@ -100,18 +108,20 @@ class Emotes(glados.Module):
                 except Exception as e2:
                     print("Error2 processing emote: " + name)
                     print(e2)
+                    return False
 
             else:
                 print("Error processing emote: " + name)
                 print(e)
-
+                return False
         for i in range(0, 3):  # retry a few times in case failure is due to the os hasn't given up a handle right away.
             try:
                 os.remove(name_base)
                 break
             except:
                 time.sleep(1)
-
+        return True
+                
     async def build_emote_db(self):
         self.tag_list = {}
         self.emote_list = {}
@@ -128,7 +138,7 @@ class Emotes(glados.Module):
             self.tag_list[subreddit] = {}
             for key, items in jinfodata.items():
                 
-                name = key[1:].replace('/', '').replace('\\', '').replace('.', '')
+                name = self.sanitize_name(key[1:])
                 emote = items.get("Emotes")
                 if not emote: continue
                 emote = emote.get("")
@@ -198,8 +208,7 @@ class Emotes(glados.Module):
         return ret
 
     def find_emote_path(self, emotename):
-        # we use replace to strip any symbols that'd allow file naviagation.
-        path = join(self.emotes_path,emotename.replace('/', '').replace('\\', '').replace('.', ''))
+        path = join(self.emotes_path, self.sanitize_name(emotename))
         if isfile(path + ".png"):
             return path + ".png"
         if isfile(path + ".gif"):
@@ -233,12 +242,10 @@ class Emotes(glados.Module):
 
         path = self.find_emote_path(emote.name)
         if not path:
-            self.build_emote(emote.name, emote.image_path, emote.x_offset, emote.y_offset, emote.x_size, emote.y_size,
-                             emote.flip)
-            path = self.find_emote_path(emote.name)
-        if not path:
-            await self.client.send_message(message.channel, "Emote doesn't work")
-            return
+            if not self.build_emote(emote.name, emote.image_path, emote.x_offset, emote.y_offset, emote.x_size, emote.y_size,
+                             emote.flip):
+                await self.client.send_message(message.channel, "Emote doesn't work")
+                return
         await self.client.send_file(message.channel, path)
 
     @glados.Permissions.moderator
@@ -292,6 +299,57 @@ class Emotes(glados.Module):
             await self.client.send_message(message.channel, 'nsfw emotes have been disabled.')
         return
 
+
+    @glados.Permissions.moderator
+    @glados.Module.command('ponyadd', '<emote> <pngimagepath> [Optional tags]', 'adds a custom pony emote to the bot, and adds it the servers json file')
+    async def pony_add(self, message, content):
+        csplit = content.split()
+        if len(csplit)<2:
+            return await self.provide_help('ponyadd')
+
+        name = self.sanitize_name(csplit[0])
+        emote = self.emote_list.get(csplit[0])
+        is_nsfw = False
+        if emote:
+            return await self.client.send_message(message.channel, 'emote name is already in use.')
+        
+        if not self.build_emote(name, csplit[1], 0, 0, 0, 0, False):
+            return await self.client.send_message(message.channel, 'Failed to create emote.')
+        
+        #append new emote into our bot's json file.
+        jinfo_file = open(join(self.infodb_path, self.custom_emote_filename))
+        jtag_file = open(join(self.tagdb_path,self.custom_emote_filename))
+        jinfodata = json.loads(jinfo_file.read())
+        jtagdata = json.loads(jtag_file.read())
+        jinfo_file.close()
+        jtag_file.close()
+        jinfodata['/'+name] = {}
+        jinfodata['/'+name]["Emotes"] = {}
+        jinfodata['/'+name]["Emotes"][""] = {}
+        jinfodata['/'+name]["Emotes"]["Image"] = csplit[1]
+        jtagdata['/'+name] = []
+        for tag in csplit:
+            if tag==csplit[0] or tag==csplit[1]:
+                continue
+            if tag[0]!='+':
+                tag = '+' + tag
+            if not self.tag_list.get(tag):
+                self.tag_list[tag] = {}
+            self.tag_list[tag][name] = ""
+            if tag == "+nsfw":
+                is_nsfw = True
+            jtagdata['/'+name].append(tag)
+        jinfo_file = open(join(self.infodb_path, self.custom_emote_filename), 'w')
+        jtag_file = open(join(self.tagdb_path, self.custom_emote_filename), 'w')
+        jinfo_file.write(json.dumps(jinfodata))
+        jtag_file.write(json.dumps(jtagdata))
+        jinfo_file.close()
+        jtag_file.close()
+        #add emote to existing db.
+        self.emote_list[name] = Eemote(name, csplit[1], 0, 0, 0, 0, False, is_nsfw)
+        self.raw_emote_list.append(name)
+        return await self.client.send_message(message.channel, 'Added '+name+' to emote list.') 
+        
     @glados.Module.command('ponylist', '[subreddit | tags]', "pm's you a list of emotes in the specefied subreddits, "
                            "or tagged emotes(i.e: +v) or sends a list of all subreddits if empty.")
     async def get_pony_list(self, message, content):
