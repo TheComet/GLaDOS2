@@ -94,7 +94,7 @@ class Quotes(glados.Module):
             return
 
         line = random.choice(lines).strip('\n')
-        line = self.remove_mentions(line)
+        line = self.remove_mentions(line).replace(search_query, '**{}**'.format(search_query))
 
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
 
