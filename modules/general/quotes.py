@@ -71,7 +71,7 @@ class Quotes(glados.Module):
 
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
 
-    @glados.Module.command('findquote', '<user> <text>', 'Dig up a quote the user once said containing the specified text.')
+    @glados.Module.command('findquote', '<text> [user]', 'Dig up a quote the user once said containing the specified text.')
     async def findquote(self, message, content):
         if len(message.mentions) == 1:
             author = message.mentions[0].name
