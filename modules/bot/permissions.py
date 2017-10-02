@@ -276,17 +276,19 @@ class Permissions(glados.Permissions):
 
     @glados.Permissions.owner
     @glados.Module.command('serverlist', '', 'List all servers the bot has joined')
-    async def listservers(self, message, content):
-        if not self.settings['permissions']['server authorization']:
-            await self.client.send_message(message.channel,
-                    'This feature is not enabled. Use {}serverauth to enable'.format(self.command_prefix))
-            return
-
+    async def serverlist(self, message, content):
         servers_auths = [(server.name, server.id in self.settings['permissions']['authorized servers'])
                          for server in self.client.servers]
-        msg = '\n'.join(' {}. {}: {}'.format(index+1, serv_auth[0], 'yes' if serv_auth[1] else '**no**')
-                        for index, serv_auth in enumerate(servers_auths))
-        await self.client.send_message(message.channel, msg)
+        strings = list(' {}. {}: {}'.format(index+1, serv_auth[0], 'yes' if serv_auth[1] else '**no**')
+                       for index, serv_auth in enumerate(servers_auths))
+
+        if not self.settings['permissions']['server authorization']:
+            strings += ['Note: Serverauth is not enabled, so all servers will be able to use your bot anyway. You can '
+                        'enable serverauth with {}serverauth'.format(self.command_prefix)]
+
+        strings = self.pack_into_messages(strings)
+        for msg in strings:
+            await self.client.send_message(message.channel, msg)
 
     @glados.Permissions.owner
     @glados.Module.command('serverauth', '<enable|disable>', 'Enable or disable the server authorization feature')
