@@ -277,12 +277,12 @@ class Module(object):
         return members, roles, ''
 
     @staticmethod
-    def pack_into_messages(list_of_strings, join_str='\n'):
+    def pack_into_messages(list_of_strings, delimiter='\n'):
         """
         Takes a list of strings and joines them (with newlines by default) into a new list of strings such that none of
          the new strings exceed discord's message limit.
         :param list_of_strings: A list of strings you want to join.
-        :param join_str: The string to use for joining (default is newline).
+        :param delimiter: The string to use for joining (default is newline).
         :return: Returns a list of strings. Each string will be small enough to be sent in a discord message.
         """
         ret = list()
@@ -296,11 +296,11 @@ class Module(object):
         for s in list_of_strings:
             l += len(s)
             if l >= max_length:
-                ret.append(join_str.join(temp))
+                ret.append(delimiter.join(temp))
                 l = len(s)
                 temp = list()
             temp.append(s)
-        ret.append(join_str.join(temp))
+        ret.append(delimiter.join(temp))
         return ret
 
     @staticmethod
