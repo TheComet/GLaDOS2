@@ -18,6 +18,7 @@ comment_pattern = re.compile('`(.*?)`')
 
 class Bot(object):
     def __init__(self):
+        self.client = discord.Client()
         self.__settings = json.loads(open('settings.json').read())
         self.__original_settings = copy.deepcopy(self.__settings)
         self.__callback_tuples = list()  # list of tuples. (callback, module)
@@ -43,8 +44,6 @@ class Bot(object):
                 break
         else:
             self.permissions = Permissions(self, 'bot.dummy.DummyPermissions')
-
-        self.client = discord.Client()
 
         @self.client.event
         async def on_message(message):
