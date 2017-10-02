@@ -61,8 +61,8 @@ def google(query):
 
 
 class XKCD(glados.Module):
-    def __init__(self):
-        super(XKCD, self).__init__()
+    def __init__(self, bot, full_name):
+        super(XKCD, self).__init__(bot, full_name)
         self.__tmp_dir = None
 
     def setup_memory(self):

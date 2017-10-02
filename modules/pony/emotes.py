@@ -24,8 +24,8 @@ class Eemote:
 
 
 class Emotes(glados.Module):
-    def __init__(self):
-        super(Emotes, self).__init__()
+    def __init__(self, bot, full_name):
+        super(Emotes, self).__init__(bot, full_name)
         this_dir = dirname(realpath(__file__))
         self.emotes_path = join(this_dir, 'emotesdb')
         self.infodb_path = join(this_dir, 'emote_info_db')
@@ -127,7 +127,7 @@ class Emotes(glados.Module):
             jtag_file.close()
             self.tag_list[subreddit] = {}
             for key, items in jinfodata.items():
-                
+
                 name = key[1:].replace('/', '').replace('\\', '').replace('.', '')
                 emote = items.get("Emotes")
                 if not emote: continue
