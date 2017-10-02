@@ -299,7 +299,7 @@ class Bot(object):
         try:
             m = __import__(modnamespace, fromlist=[classname])
             m = getattr(m, classname)(self, modfullname)
-        except ImportError:
+        except:
             return None, 'Error: Failed to import module {0}\n{1}'.format(modfullname, traceback.print_exc())
 
         # get a list of tuples containing (callback function, module) pairs.
