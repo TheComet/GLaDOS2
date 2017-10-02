@@ -17,8 +17,9 @@ def check_message_for_deletion(message):
 
 
 class Verify(glados.Module):
+    def __init__(self, bot, full_name):
+        super(Verify, self).__init__(bot, full_name)
 
-    def setup_global(self):
         @self.client.event
         async def on_member_remove(member):
             if member.server is None or member.server.id != cdfs_server_id:

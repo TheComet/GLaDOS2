@@ -7,7 +7,9 @@ from datetime import datetime, timedelta
 
 class Permissions(glados.Permissions):
 
-    def setup_global(self):
+    def __init__(self, bot, full_name):
+        super(Permissions, self).__init__(bot, full_name)
+
         # Create an entry in the global config file with the default command names
         permissions = self.settings.setdefault('permissions', {})
         permissions.setdefault('bot owner', '<please enter your discord ID>')
@@ -76,6 +78,13 @@ class Permissions(glados.Permissions):
             marked_members.append((member, time_to_expiry))
 
         return marked_members
+
+    @glados.Module.command('test1', '', 'Displays which users have privileges')
+    @glados.Module.command('test2', '', 'Displays which users have privileges')
+    @glados.Module.command('test3', '', 'Displays which users have privileges')
+    @glados.Module.command('test4', '', 'Displays which users have privileges')
+    async def test(self, message, content):
+        return ()
 
     @glados.Module.command('modlist', '', 'Displays which users have privileges')
     async def modlist(self, message, content):

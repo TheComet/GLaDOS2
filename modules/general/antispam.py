@@ -11,8 +11,9 @@ TIME_THRESHOLD = 2  # If the average time between messages sinks below this (in 
 
 
 class AntiSpam(glados.Module):
-    def __init__(self):
-        super(AntiSpam, self).__init__()
+
+    def __init__(self, bot, full_name):
+        super(AntiSpam, self).__init__(bot, full_name)
         self.__times = dict()
 
     def setup_memory(self):
@@ -24,7 +25,7 @@ class AntiSpam(glados.Module):
     @glados.Module.rule('^.*$')
     async def on_message(self, message, match):
         # No need to do anything if there is no mute role
-        if self.memory['db'].get('role', None) is None:
+        if 'role' not in self.memory['db']:
             return ()
 
         await self.__unmute_expired_users()
@@ -64,22 +65,33 @@ class AntiSpam(glados.Module):
                            'permissions within discord to mute any person with this role, for example.')
     async def muterole(self, message, content):
         if content == 'none':
-            self.memory['db'] = {}
+            self.memory['db'].pop('role', None)
             self.__save_db()
             await self.client.send_message(message.channel, 'Anti-spam deactivated')
             return
 
         for role in self.current_server.roles:
             if role.name == content:
-                self.memory['db'] = {
-                    'role': role.id,
-                    'length': 0,
-                    'users': {},
-                    'msg': '{0} You were muted for spamming until {1}'
-                }
-                self.__save_db()
+                db = self.memory['db']
+                db.setdefault('length', 0)
+                db.setdefault('users', {})
+                db.setdefault('msg', '{0} You were muted for spamming until {1}')
+
+                muted_users = [(self.current_server.get_member(uid), exp) for uid, exp in db['users'].items()]
+                muted_users = list(filter(lambda x: x[0] is not None, muted_users))
+
+                if 'role' in db:
+                    for user, exp in muted_users:
+                        self.__unmute_user(user)
+
+                db['role'] = role.id
+
+                for user, exp in muted_users:
+                    self.__mute_user(user, exp)
+
                 await self.client.send_message(message.channel,
-                        'Role "{}" set up as mute role (default mute length: 0)'.format(role.name))
+                    'Role "{}" set up as mute role (mute length is {} hour(s)). Re-muted existing user(s) {}'.format(
+                        role.name, self.memory['db']['length'], ', '.join(x[0].name for x in muted_users)))
                 break
         else:
             await self.client.send_message(message.channel, 'No role with name "{}" found'.format(content))
@@ -115,6 +127,11 @@ class AntiSpam(glados.Module):
     @glados.Permissions.moderator
     @glados.Module.command('mute', '<user> [user...] [duration]', 'Mutes the specified user(s)')
     async def mute(self, message, content):
+        if 'role' not in self.memory['db']:
+            self.client.send_message(message.channel,
+                'Mute role has not been set with {}muterole. Can\'t mute.'.format(self.command_prefix))
+            return
+
         members, roles, error = self.parse_members_roles(message, content)
         if len(members) == 0:
             error = error if error else 'Couldn\'t find any users'
@@ -134,6 +151,11 @@ class AntiSpam(glados.Module):
     @glados.Permissions.moderator
     @glados.Module.command('unmute', '<user> [user...]', 'Unmutes the specified user(s)')
     async def unmute(self, message, content):
+        if 'role' not in self.memory['db']:
+            self.client.send_message(message.channel,
+                'Mute role has not been set with {}muterole. Can\'t unmute.'.format(self.command_prefix))
+            return
+
         members, roles, error = self.parse_members_roles(message, content)
         if len(members) == 0:
             error = error if error else 'Couldn\'t find any users'
