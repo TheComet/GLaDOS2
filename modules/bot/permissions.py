@@ -105,10 +105,13 @@ class Permissions(glados.Permissions):
     async def banlist(self, message, content):
         banned = self.__compose_list_of_members_for('banned')
         if len(banned) > 0:
-            text = '**Banned Users**\n{}'.format('\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in banned]))
+            strings = ['**Banned Users**']
+            strings += ['  + ' + x[0].name + ' for {}'.format(x[1]) for x in banned]
         else:
-            text = 'No one is banned.'
-        await self.client.send_message(message.channel, text)
+            strings = ['No one is banned.']
+
+        for msg in self.pack_into_messages(strings):
+            await self.client.send_message(message.channel, msg)
 
     @glados.Module.command('blesslist', '', 'Displays which users are blessed')
     async def blesslist(self, message, content):
@@ -351,7 +354,7 @@ class Permissions(glados.Permissions):
             self.__unmark_role(role.name, key)
             unmarked.append(role)
 
-        return '"{}": No longer {}'.format(', '.join(x.mention for x in unmarked), key)
+        return '"{}": No longer {}'.format(', '.join(x.name for x in unmarked), key)
 
     def __load_dict(self):
         if os.path.isfile(self.memory['config file']):
