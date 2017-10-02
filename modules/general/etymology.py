@@ -10,12 +10,12 @@ from __future__ import unicode_literals, absolute_import, print_function, divisi
 import re
 import glados
 import urllib.request
+import urllib.parse
 
 
 class Etymology(glados.Module):
 
-    etyuri = 'http://etymonline.com/?term=%s'
-    etysearch = 'http://etymonline.com/?search=%s'
+    etyuri = 'http://etymonline.com/?'
 
     r_definition = re.compile(r'(?ims)<dd[^>]*>.*?</dd>')
     r_tag = re.compile(r'<(?!!)[^>]+>')
@@ -30,16 +30,10 @@ class Etymology(glados.Module):
     t_sentence = r'^.*?(?<!%s)(?:\.(?= [A-Z0-9]|\Z)|\Z)'
     r_sentence = re.compile(t_sentence % ')(?<!'.join(abbrs))
 
-    def unescape(self, s):
-        s = s.replace('&gt;', '>')
-        s = s.replace('&lt;', '<')
-        s = s.replace('&amp;', '&')
-        return s
-
     def text(self, html):
         html = self.r_tag.sub('', html)
         html = self.r_whitespace.sub(' ', html)
-        return self.unescape(html).strip()
+        return urllib.parse.unquote(html)
 
     def etymology(self, word):
         # @@ <nsh> sbp, would it be possible to have a flag for .ety to get 2nd/etc
@@ -49,7 +43,8 @@ class Etymology(glados.Module):
             raise ValueError("Word too long: %s[...]" % word[:10])
         word = {'axe': 'ax/axe'}.get(word, word)
 
-        bytes = urllib.request.urlopen(self.etyuri % word).read().decode('utf-8')
+        uri = self.etyuri + urllib.parse.urlencode(dict(term=word))
+        bytes = urllib.request.urlopen(uri).read().decode('utf-8')
         definitions = self.r_definition.findall(bytes)
 
         if not definitions:
@@ -69,7 +64,7 @@ class Etymology(glados.Module):
             sentence = ' '.join(words) + ' [...]'
 
         sentence = '"' + sentence.replace('"', "'") + '"'
-        return sentence + ' - ' + (self.etyuri % word)
+        return sentence + ' - ' + uri
 
     @glados.Module.command('ety', '<word>', 'Looks up the etymology of a word.')
     async def f_etymology(self, message, word):
@@ -81,13 +76,11 @@ class Etymology(glados.Module):
             msg = "Can't connect to etymonline.com (%s)" % (self.etyuri % word)
             await self.client.send_message(message.channel, msg)
             return
-        except (AttributeError, TypeError):
-            result = None
 
         if result is not None:
             await self.client.send_message(message.channel, result)
         else:
-            uri = self.etysearch % word
+            uri = self.etyuri + urllib.parse.urlencode(dict(search=word))
             msg = 'Can\'t find the etymology for "%s". Try %s' % (word, uri)
             await self.client.send_message(message.channel, msg)
             return

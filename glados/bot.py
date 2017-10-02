@@ -58,7 +58,6 @@ class Bot(object):
             if not self.permissions.is_server_authorized() \
                     and not self.permissions.require_owner(message.author):
                 return ()
-
             commands = self.extract_commands_from_message(message)
             commands_to_process = self.__get_commands_that_could_be_executed(message, commands)
             commands_to_process += self.__get_matches_that_could_be_executed(message)

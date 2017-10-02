@@ -3,14 +3,6 @@ import glados
 
 class Help(glados.Module):
 
-    def setup_memory(self):
-        print('setup_memory')
-
-    @glados.Module.command('test', '', 'The test')
-    @glados.Module.command('test2', '', 'The test')
-    async def test(self, message, content):
-        await self.client.send_message(message.content, 'test')
-
     @glados.Module.command('help', '[search]', 'Get a list of all commands, or of a specific command')
     async def help(self, message, content):
         help_strings = (string for module in self.active_modules for string in module.get_casual_help_strings())

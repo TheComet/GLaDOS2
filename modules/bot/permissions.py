@@ -93,34 +93,37 @@ class Permissions(glados.Permissions):
         owner = self.current_server.get_member(self.settings['permissions']['bot owner'])
 
         strings = ['**Moderators:**']
-        strings += ()
+        strings += ['  + ' + x[0].name + ' for {}'.format(x[1]) for x in mod_list]
+        strings += ['**Administrators:**']
+        strings += ['  + ' + x[0].name + ' for {}'.format(x[1]) for x in admin_list]
+        strings += ['**Owner:** {}'.format(owner)]
 
-        text = '**Moderators:**\n{}\n**Administrators:**\n{}\n**Owner:** {}'.format(
-            '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in mod_list]),
-            '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in admin_list]),
-            owner
-        )
-
-        await self.client.send_message(message.channel, text)
+        for msg in self.pack_into_messages(strings):
+            await self.client.send_message(message.channel, msg)
 
     @glados.Module.command('banlist', '', 'Displays which users are banned')
     async def banlist(self, message, content):
         banned = self.__compose_list_of_members_for('banned')
         if len(banned) > 0:
-            text = '**Banned Users**\n{}'.format('\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in banned]))
+            strings = ['**Banned Users**']
+            strings += ['  + ' + x[0].name + ' for {}'.format(x[1]) for x in banned]
         else:
-            text = 'No one is banned.'
-        await self.client.send_message(message.channel, text)
+            strings = ['No one is banned.']
+
+        for msg in self.pack_into_messages(strings):
+            await self.client.send_message(message.channel, msg)
 
     @glados.Module.command('blesslist', '', 'Displays which users are blessed')
     async def blesslist(self, message, content):
         blessed = self.__compose_list_of_members_for('blessed')
         if len(blessed) > 0:
-            text = '**Blessed Users**\n{}'.format(
-                '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in blessed]))
+            strings = ['**Blessed Users**']
+            strings += ['  + ' + x[0].name + ' for {}'.format(x[1]) for x in blessed]
         else:
-            text = 'No one is blessed.'
-        await self.client.send_message(message.channel, text)
+            strings = ['No one is blessed.']
+
+        for msg in self.pack_into_messages(strings):
+            await self.client.send_message(message.channel, msg)
 
     @glados.Permissions.moderator
     @glados.Module.command('ban', '<user/role> [user/role...] [hours=24]', 'Blacklist the specified user(s) or '
@@ -276,17 +279,19 @@ class Permissions(glados.Permissions):
 
     @glados.Permissions.owner
     @glados.Module.command('serverlist', '', 'List all servers the bot has joined')
-    async def listservers(self, message, content):
-        if not self.settings['permissions']['server authorization']:
-            await self.client.send_message(message.channel,
-                    'This feature is not enabled. Use {}serverauth to enable'.format(self.command_prefix))
-            return
-
+    async def serverlist(self, message, content):
         servers_auths = [(server.name, server.id in self.settings['permissions']['authorized servers'])
                          for server in self.client.servers]
-        msg = '\n'.join(' {}. {}: {}'.format(index+1, serv_auth[0], 'yes' if serv_auth[1] else '**no**')
-                        for index, serv_auth in enumerate(servers_auths))
-        await self.client.send_message(message.channel, msg)
+        strings = list(' {}. {}: {}'.format(index+1, serv_auth[0], 'yes' if serv_auth[1] else '**no**')
+                       for index, serv_auth in enumerate(servers_auths))
+
+        if not self.settings['permissions']['server authorization']:
+            strings += ['Note: Serverauth is not enabled, so all servers will be able to use your bot anyway. You can '
+                        'enable serverauth with {}serverauth'.format(self.command_prefix)]
+
+        strings = self.pack_into_messages(strings)
+        for msg in strings:
+            await self.client.send_message(message.channel, msg)
 
     @glados.Permissions.owner
     @glados.Module.command('serverauth', '<enable|disable>', 'Enable or disable the server authorization feature')
@@ -349,7 +354,7 @@ class Permissions(glados.Permissions):
             self.__unmark_role(role.name, key)
             unmarked.append(role)
 
-        return '"{}": No longer {}'.format(', '.join(x.mention for x in unmarked), key)
+        return '"{}": No longer {}'.format(', '.join(x.name for x in unmarked), key)
 
     def __load_dict(self):
         if os.path.isfile(self.memory['config file']):
