@@ -93,15 +93,13 @@ class Permissions(glados.Permissions):
         owner = self.current_server.get_member(self.settings['permissions']['bot owner'])
 
         strings = ['**Moderators:**']
-        strings += ()
+        strings += ['  + ' + x[0].name + ' for {}'.format(x[1]) for x in mod_list]
+        strings += ['**Administrators:**']
+        strings += ['  + ' + x[0].name + ' for {}'.format(x[1]) for x in admin_list]
+        strings += ['**Owner:** {}'.format(owner)]
 
-        text = '**Moderators:**\n{}\n**Administrators:**\n{}\n**Owner:** {}'.format(
-            '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in mod_list]),
-            '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in admin_list]),
-            owner
-        )
-
-        await self.client.send_message(message.channel, text)
+        for msg in self.pack_into_messages(strings):
+            await self.client.send_message(message.channel, msg)
 
     @glados.Module.command('banlist', '', 'Displays which users are banned')
     async def banlist(self, message, content):
@@ -116,11 +114,13 @@ class Permissions(glados.Permissions):
     async def blesslist(self, message, content):
         blessed = self.__compose_list_of_members_for('blessed')
         if len(blessed) > 0:
-            text = '**Blessed Users**\n{}'.format(
-                '\n'.join(['  + ' + x[0].name + ' for {}'.format(x[1]) for x in blessed]))
+            strings = ['**Blessed Users**']
+            strings += ['  + ' + x[0].name + ' for {}'.format(x[1]) for x in blessed]
         else:
-            text = 'No one is blessed.'
-        await self.client.send_message(message.channel, text)
+            strings = ['No one is blessed.']
+
+        for msg in self.pack_into_messages(strings):
+            await self.client.send_message(message.channel, msg)
 
     @glados.Permissions.moderator
     @glados.Module.command('ban', '<user/role> [user/role...] [hours=24]', 'Blacklist the specified user(s) or '
