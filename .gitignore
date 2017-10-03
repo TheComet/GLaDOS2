@@ -14,3 +14,6 @@
 
 # IDE files
 .idea/
+
+# wiki repository
+/wiki
