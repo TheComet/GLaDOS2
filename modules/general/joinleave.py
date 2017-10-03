@@ -79,6 +79,34 @@ class JoinLeave(glados.Module):
             self.__save_db()
             await self.client.send_message(message.channel, 'Removed leave message from channel {}'.format(channel.name))
 
+    @glados.Permissions.admin
+    @glados.Module.command('lsjoin', '', 'Shows the configured join messages for this server')
+    async def lsjoin(self, message, content):
+        strings = list()
+        for channel_id, msg in self.memory['db']['join messages'].items():
+            channel = self.client.get_channel(channel_id)
+            strings += ['#{}: {}'.format(channel.name, msg.replace('{}', '<user>'))]
+        if len(strings) == 0:
+            strings = ['No join messages']
+        else:
+            strings = ['**Join Messages**'] + strings
+        for msg in self.pack_into_messages(strings):
+            await self.client.send_message(message.channel, msg)
+
+    @glados.Permissions.admin
+    @glados.Module.command('lsleave', '', 'Shows the configured leave messages for this server')
+    async def lsleave(self, message, content):
+        strings = list()
+        for channel_id, msg in self.memory['db']['leave messages'].items():
+            channel = self.client.get_channel(channel_id)
+            strings += ['#{}: {}'.format(channel.name, msg.replace('{}', '<user>'))]
+        if len(strings) == 0:
+            strings = ['No leave messages']
+        else:
+            strings = ['**Leave Messages**'] + strings
+        for msg in self.pack_into_messages(strings):
+            await self.client.send_message(message.channel, msg)
+
     def __parse_args(self, message, content):
         channel_name, msg = content.split(' ', 1)
         channel_name = channel_name.strip('#')
