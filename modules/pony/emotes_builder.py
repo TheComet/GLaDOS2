@@ -33,7 +33,8 @@ class BuildEmotes(glados.Module):
 
     def save_target_image(self, source, name, x_offset, y_offset, x_size, y_size, flip, convert):
         m_img = Image.open(source)
-        m_img = m_img.crop((x_offset, y_offset, x_offset + x_size, y_offset + y_size))
+        if x_size!=0 and y_size!=0:
+            m_img = m_img.crop((x_offset, y_offset, x_offset + x_size, y_offset + y_size))
         if flip is True:
             m_img = m_img.transpose(Image.FLIP_LEFT_RIGHT)
         if convert is True:
@@ -50,7 +51,9 @@ class BuildEmotes(glados.Module):
         # print("Emote: '" + name + "' Img: " + ImagePath + " o: " + str(xOffset) + " " + str(yOffset) + " s: " + str(xSize) + " " + str(ySize))
         name_base = name + ".tmp"
         frame_cnt = 1
-        transform = APNGLib.TransformCrop | APNGLib.TransformNoGif1Frame
+        transform = APNGLib.TransformNoGif1Frame
+        if x_size !=0 and y_size !=0:
+            transform |= APNGLib.TransformCrop
         if flip is True:
             transform |= APNGLib.TransformFlipHorizontal
         try:
