@@ -305,7 +305,7 @@ class Emotes(glados.Module):
     async def pony_add(self, message, content):
         csplit = content.split()
         if len(csplit)<2:
-            return await self.provide_help('ponyadd')
+            return await self.provide_help('ponyadd', message)
 
         name = self.sanitize_name(csplit[0])
         emote = self.emote_list.get(csplit[0])
