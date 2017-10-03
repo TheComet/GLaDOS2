@@ -15,28 +15,19 @@ class IRCBridge(glados.Module):
     STATE_TRY_JOIN = 1
     STATE_CONNECTED = 2
 
-    def __init__(self):
-        super(IRCBridge, self).__init__()
+    def __init__(self, bot, full_name):
+        super(IRCBridge, self).__init__(bot, full_name)
 
-        self.irc_settings = None
-        self.host = None
-        self.port = None
-        self.botnick = None
-        self.irc_channels = None
-        self.discord_channels = list()
-        self.channels_to_join = list()
-        self.socket = None
-        self.bridge_enable = False
-        self.state = self.STATE_DISCONNECTED
-
-    def setup_global(self):
         self.irc_settings = self.settings.setdefault('irc', {})
         self.host = self.irc_settings.setdefault('host', '<IP Address>')
         self.port = self.irc_settings.setdefault('port', '6667')
         self.botnick = self.irc_settings.setdefault('nick', 'DiscordBridge')
         self.irc_channels = self.irc_settings.setdefault('irc channels', [])
+        self.discord_channels = list()
+        self.channels_to_join = list()
+        self.socket = None
         self.bridge_enable = True if self.irc_settings.setdefault('enable', 'true') == 'true' else False
-
+        self.state = self.STATE_DISCONNECTED
         asyncio.ensure_future(self.run())
 
     def connect_to_server(self):

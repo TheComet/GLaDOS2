@@ -48,7 +48,7 @@ class BuildEmotes(glados.Module):
             m_img.save(join(self.emotedb_path, name) + ".png", optimize=True)
 
     def build_emote(self, name, image_path, x_offset, y_offset, x_size, y_size, flip):
-        # print("Emote: '" + name + "' Img: " + ImagePath + " o: " + str(xOffset) + " " + str(yOffset) + " s: " + str(xSize) + " " + str(ySize))
+        #print("Emote: '" + name + "' Img: " + ImagePath + " o: " + str(xOffset) + " " + str(yOffset) + " s: " + str(xSize) + " " + str(ySize))
         name_base = name + ".tmp"
         frame_cnt = 1
         transform = APNGLib.TransformNoGif1Frame
