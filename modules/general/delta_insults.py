@@ -1,4 +1,4 @@
-from willie import module
+from glados import Module
 
 chill_out_counter = 0
 chill_out = ["Woahhh, chill the fuck out bro", "Says the guy with two gay daddies", "That was uncalled for"]
@@ -6,43 +6,40 @@ chill_out = ["Woahhh, chill the fuck out bro", "Says the guy with two gay daddie
 diety_counter = 0
 diety_dammit = ["Allah dammit!", "Buddha dammit!", "Vishnu dammit!", "Shiva dammit!"]
 
-@module.rule("^.*(what i thought).*$")
-def what_i_thought(bot, trigger):
-	bot.say(trigger.nick + ": Oh yeah? Think again")
 
-@module.rule("^.*(i figured).*$")
-def i_figured(bot, trigger):
-        bot.say(trigger.nick + ": Oh yeah Einstein? Did Sherlock Holmes help you with that one?")
+class DeltaInsults(Module):
 
-@module.rule("^.*(?=.*thought)(?=.*so).*$")
-def thought_so(bot, trigger):
-        bot.say(trigger.nick + ": Oh yeah? Think again")
+    @Module.rule("^.*(what i thought).*$")
+    async def what_i_thought(self, message, content):
+        await self.client.send_message(message.channel, message.author.name + ": Oh yeah? Think again")
 
-@module.rule("^.*(?=.*get)(?=.*book).*$")
-def getting_a_book(bot, trigger):
-	bot.say("Another book? That's some expensive toilet paper.")
+    @Module.rule("^.*(i figured).*$")
+    async def i_figured(self, message, content):
+            await self.client.send_message(message.channel, message.author.name + ": Oh yeah Einstein? Did Sherlock Holmes help you with that one?")
 
-@module.rule("^.*(?=.*according)(?=.*book).*$")
-def according_to_books(bot, trigger):
-	bot.say(trigger.nick + ": Just because you read lots of books doesn't mean mommy loves you")
+    @Module.rule("^.*(?=.*thought)(?=.*so).*$")
+    async def thought_so(self, message, content):
+            await self.client.send_message(message.channel, message.author.name + ": Oh yeah? Think again")
 
-@module.rule("^.*(?=.*fuck)(?=.*queer).*$")
-def fucking_queer_defense(bot, trigger):
-        defend(bot, trigger)
+    @Module.rule("^.*(?=.*get)(?=.*book).*$")
+    async def getting_a_book(self, message, content):
+        await self.client.send_message(message.channel, "Another book? That's some expensive toilet paper.")
 
-@module.rule("^.*(?=.*fuck)(?=.*fag).*$")
-def fucking_fag_defense(bot, trigger):
-        defend(bot, trigger)
+    @Module.rule("^.*(?=.*according)(?=.*book).*$")
+    async def according_to_books(self, message, content):
+        await self.client.send_message(message.channel, message.author.name + ": Just because you read lots of books doesn't mean mommy loves you")
 
-def defend(bot, trigger):
-	global chill_out
-	global chill_out_counter
-	bot.say(trigger.nick + ": " + chill_out[chill_out_counter])
-	chill_out_counter = (chill_out_counter + 1) % len(chill_out)
+    @Module.rule("^.*(?=.*fuck)(?=.*fag).*$")
+    @Module.rule("^.*(?=.*fuck)(?=.*queer).*$")
+    async def fucking_fag_defense(self, message, content):
+        global chill_out
+        global chill_out_counter
+        await self.client.send_message(message.channel, message.author.name + ": " + chill_out[chill_out_counter])
+        chill_out_counter = (chill_out_counter + 1) % len(chill_out)
 
-@module.rule("^(((?=.*goddammit).*)|((?=.*goddamnit).*)|((?=.*goddangit).*)).*$")
-def allah_dammit(bot, trigger):
+    @Module.rule("^(((?=.*goddammit).*)|((?=.*goddamnit).*)|((?=.*goddangit).*)).*$")
+    async def allah_dammit(self, message, content):
         global diety_counter
         global diety_dammit
-        bot.say(trigger.nick + ": " + diety_dammit[diety_counter])
+        await self.client.send_message(message.channel, message.author.name + ": " + diety_dammit[diety_counter])
         diety_counter = (diety_counter + 1) % len(diety_dammit)

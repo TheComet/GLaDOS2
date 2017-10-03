@@ -21,8 +21,8 @@ class UpTime(glados.Module):
         "I am but an abstract description being used in an abstract way. Been so for {}"
     )
 
-    def __init__(self):
-        super(UpTime, self).__init__()
+    def __init__(self, bot, full_name):
+        super(UpTime, self).__init__(bot, full_name)
         self.__started = datetime.utcnow()
 
     @glados.Module.command('uptime', '', 'Returns the uptime of this bot.')

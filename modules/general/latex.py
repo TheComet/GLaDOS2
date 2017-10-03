@@ -71,8 +71,8 @@ __DATA__
 
 class LaTeX(glados.Module):
 
-    def __init__(self):
-        super(LaTeX, self).__init__()
+    def __init__(self, bot, full_name):
+        super(LaTeX, self).__init__(bot, full_name)
         self.__out_folder = 'tex'
         self.__latex_blacklist = ("\\write18",
                                   "\\input",

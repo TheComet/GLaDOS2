@@ -64,11 +64,10 @@ class PicartoClient(object):
 
 class Picarto(glados.Module):
 
-    def __init__(self):
-        super(Picarto, self).__init__()
-        self.picarto_clients = list()
+    def __init__(self, bot, full_name):
+        super(Picarto, self).__init__(bot, full_name)
 
-    def setup_global(self):
+        self.picarto_clients = list()
         picarto = self.settings.setdefault('picarto', {})
         picarto.setdefault('persistent token', '<I NEED TOKENS>')
         for bridge in picarto.setdefault('bridges', []):
