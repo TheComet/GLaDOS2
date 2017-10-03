@@ -25,8 +25,8 @@ CANNOT_UNDERSTAND = [
 
 
 class WolframAlpha(glados.Module):
-    def __init__(self):
-        super(WolframAlpha, self).__init__()
+    def __init__(self, bot, full_name):
+        super(WolframAlpha, self).__init__(bot, full_name)
         self.__wolfram_client = None
 
     def setup_global(self):

@@ -12,8 +12,8 @@ REDIRECT = re.compile(r'^REDIRECT (.*)')
 
 
 class Wikipedia(glados.Module):
-    def __init__(self):
-        super(Wikipedia, self).__init__()
+    def __init__(self, bot, full_name):
+        super(Wikipedia, self).__init__(bot, full_name)
         self.__lang = 'en'
 
     @glados.Module.command('wiki', '<query>', 'Search wikipedia for a thing.')

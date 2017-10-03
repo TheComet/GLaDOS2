@@ -6,11 +6,8 @@ import traceback
 
 
 class PushNotifier(glados.Module):
-    def __init__(self):
-        super(PushNotifier, self).__init__()
-        self.__channels = None
-
-    def setup_global(self):
+    def __init__(self, bot, full_name):
+        super(PushNotifier, self).__init__(bot, full_name)
         self.__channels = self.settings.setdefault('git', {}).setdefault('push notifier', {}).setdefault('channels', [])
         asyncio.ensure_future(self.run())
 

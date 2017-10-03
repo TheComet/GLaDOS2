@@ -7,6 +7,7 @@ import re
 import math
 import copy
 import difflib
+import os
 from .Log import log
 from .cooldown import Cooldown
 from .tools.path import add_import_paths
@@ -17,13 +18,23 @@ comment_pattern = re.compile('`(.*?)`')
 
 class Bot(object):
     def __init__(self):
-        self.settings = json.loads(open('settings.json').read())
-        self.original_settings = copy.deepcopy(self.settings)
         self.client = discord.Client()
-
-        self.__command_prefix = self.settings.setdefault('commands', {}).setdefault('prefix', '.')
+        self.__settings = json.loads(open('settings.json').read())
+        self.__original_settings = copy.deepcopy(self.__settings)
         self.__callback_tuples = list()  # list of tuples. (callback, module)
         self.__cooldown = Cooldown()
+
+        self.__root_data_dir = self.__settings['modules'].setdefault('data', 'data')
+        self.__global_data_dir = os.path.join(self.__root_data_dir, 'global_cache')
+        self.__server_data_dir = None
+        self.__current_server = None
+
+        self.__settings.setdefault('command prefix', {}).setdefault('default', '.')
+        self.settings.setdefault('auto join', {
+            'note': 'This doesn\'t seem to work for bots, they don\'t have permission to just join servers. But this will work if the bot uses a normal user account instead.',
+            'invite urls': []
+        })
+
         self.load_modules()
 
         # The bot needs access to the permissions module for managing things like admins/botmods
@@ -32,8 +43,7 @@ class Bot(object):
                 self.permissions = m
                 break
         else:
-            self.permissions = Permissions()
-            self.permissions.init_module(self, 'DummyPermissions', self.settings)
+            self.permissions = Permissions(self, 'bot.dummy.DummyPermissions')
 
         @self.client.event
         async def on_message(message):
@@ -42,15 +52,13 @@ class Bot(object):
             if not message.server:
                 return ()
 
-            # required for permission server isolation
-            self.permissions.set_current_server(message.server.id)
+            self.__set_current_server(message.server.id)
 
             # Check if this bot has been authorized by the owner to be on this server (if enabled)
             if not self.permissions.is_server_authorized() \
-                    and not self.permissions.is_owner(message.author):
+                    and not self.permissions.require_owner(message.author):
                 return ()
-
-            commands = self.extract_commands_from_message(message.clean_content)
+            commands = self.extract_commands_from_message(message)
             commands_to_process = self.__get_commands_that_could_be_executed(message, commands)
             commands_to_process += self.__get_matches_that_could_be_executed(message)
 
@@ -85,20 +93,19 @@ class Bot(object):
                         await module.provide_help(callback.commands[-1][0], message)
                         continue
 
-                module.set_current_server(message.server.id)  # required for server isolation
+                module.lazy_memory_initializer()
                 await callback(message, content)
 
+            # Write settings dict to disc (and print a diff) if a command changed it in any way
             self.__check_if_settings_changed()
 
         @self.client.event
         async def on_ready():
-            # TODO this doesn't seem to work, bots don't have permission to just join servers
-            #await self.__auto_join_channels()
+            await self.__auto_join_channels()
             log('Running as {}'.format(self.client.user.name))
 
     async def __auto_join_channels(self):
-        invite_urls = [url for name, url in self.settings['auto join'].items()]
-        for url in invite_urls:
+        for url in self.settings['auto join']['invite urls']:
             log('Auto-joining {}'.format(url))
             try:
                 await self.client.accept_invite(url)
@@ -110,17 +117,59 @@ class Bot(object):
                 log('Forbidden')
         return tuple()
 
+    @property
+    def settings(self):
+        return self.__settings
+
+    @property
+    def command_prefix(self):
+        """
+        :return: Returns the configured command prefix character(s) for commands.
+        """
+        prefix = self.settings['command prefix']
+        try:
+            return prefix[self.__current_server.id]
+        except KeyError:
+            return prefix.setdefault(self.__current_server.id, prefix['default'])
+
+    @property
+    def current_server(self):
+        """
+        :return: A reference to the currently active discord server object (from which the message originated).
+        """
+        return self.__current_server
+
+    @property
+    def global_data_dir(self):
+        return self.__global_data_dir
+
+    @property
+    def data_dir(self):
+        return self.__server_data_dir
+
+    def __set_current_server(self, server_id):
+        self.__server_data_dir = None
+        self.__current_server = next((server for server in self.client.servers if server.id == server_id))
+        if self.__current_server is None:
+            raise RuntimeError('Failed to set current server to ID: {}'.format(server_id))
+
+        self.__server_data_dir = os.path.join(self.__root_data_dir, server_id)
+        if not os.path.isdir(self.__server_data_dir):
+            os.mkdir(self.__server_data_dir)
+
+        self.permissions.lazy_memory_initializer()
+
     def __check_if_settings_changed(self):
-        if self.settings == self.original_settings:
+        if self.__settings == self.__original_settings:
             return
 
-        a = self.__as_json(self.original_settings).split('\n')
-        b = self.__as_json(self.settings).split('\n')
+        a = self.__as_json(self.__original_settings).split('\n')
+        b = self.__as_json(self.__settings).split('\n')
 
         log('Settings diff:\n{}'.format('\n'.join(difflib.unified_diff(a, b))))
         log('settings.json has been modified, you probably want to go edit it now')
         self.__save_settings()
-        self.original_settings = copy.deepcopy(self.settings)
+        self.__original_settings = copy.deepcopy(self.__settings)
 
     def __get_commands_that_could_be_executed(self, message, commands):
         ret = list()
@@ -130,10 +179,8 @@ class Bot(object):
             return ret
 
         for callback, module in self.__callback_tuples:
-            # Does the module have a server whitelist? If so, make sure this module is allowed.
-            if len(module.server_whitelist) > 0:
-                if message.server and not message.server.id in module.server_whitelist:
-                    continue
+            if not module.is_active_for(message.server):
+                continue
 
             # check if any issued commands match anything in the loaded callbacks
             if hasattr(callback, 'commands'):
@@ -146,10 +193,8 @@ class Bot(object):
     def __get_matches_that_could_be_executed(self, message):
         ret = list()
         for callback, module in self.__callback_tuples:
-            # Does the module have a server whitelist? If so, make sure this module is allowed.
-            if len(module.server_whitelist) > 0:
-                if message.server and not message.server.id in module.server_whitelist:
-                    continue
+            if not module.is_active_for(message.server):
+                continue
 
             # process bot messages
             if message.author.bot and hasattr(callback, 'bot_rules'):
@@ -186,9 +231,9 @@ class Bot(object):
 
         return False
 
-    def extract_commands_from_message(self, msg):
-        msg = str(msg)
-        cmd_prefix = self.settings['commands']['prefix']
+    def extract_commands_from_message(self, message):
+        msg = str(message.clean_content)
+        cmd_prefix = self.command_prefix
 
         if msg.startswith(cmd_prefix):
             return [(msg[len(cmd_prefix):].split(' ', 1) + [''])[:2]]
@@ -203,48 +248,46 @@ class Bot(object):
         delayed_successes = list()
         delayed_errors = list()
 
-        # load global modules
-        for modfullname in self.settings['modules'].setdefault('names', [
-            'bot.permissions.Permissions',
-            'bot.help.Help',
-            'bot.ping.Ping',
-            'bot.uptime.UpTime',
-            'bot.say.Say'
-        ]):
-            result = self.__import_module(modfullname)
-            if result is not None:
-                delayed_errors.append(result)
-            else:
-                delayed_successes.append('Loaded global module {}'.format(modfullname))
+        # Need whitelist and blacklist so we can assign them to modules
+        whitelist = dict()
+        blacklist = dict()
+        for server_id, modnames in self.settings['modules'].setdefault('whitelist', {}).items():
+            for modname in modnames:
+                whitelist.setdefault(modname, set()).add(server_id)
+        for server_id, modnames in self.settings['modules'].setdefault('blacklist', {}).items():
+            for modname in modnames:
+                blacklist.setdefault(modname, set()).add(server_id)
 
-        # load server whitelisted modules
-        for server, modlist in self.settings['modules'].setdefault('server specific', {
-            'server id': []
-        }).items():
-            for modfullname in modlist:
-                result = self.__import_module(modfullname, server)
-                if not result is None:
-                    delayed_errors.append(result)
-                else:
-                    delayed_successes.append('Loaded whitelisted module {0} for server {1}'.format(modfullname, server))
+        # compose a complete set of modules that need to be loaded. These are global modules + whitelisted modules
+        modules_to_load = set(self.settings['modules'].setdefault('names', [
+            'bot.del.Del',
+            'bot.help.Help',
+            'bot.modulemanager.ModuleManager',
+            'bot.permissions.Permissions',
+            'bot.ping.Ping',
+            'bot.prefix.Prefix',
+            'bot.say.Say',
+            'bot.source.Source',
+            'bot.uptime.UpTime',
+        ])).union(whitelist)
+
+        # time to load all modules
+        for modfullname in modules_to_load:
+            m, error = self.__import_module(modfullname)
+            if error:
+                delayed_errors.append(error)
+                continue
+            delayed_successes.append('Loaded module {}'.format(modfullname))
+
+            m.server_whitelist = whitelist.get(modfullname, set())
+            m.server_blacklist = blacklist.get(modfullname, set())
 
         if delayed_successes:
             log('---------Loaded Modules----------\n' + '\n'.join(delayed_successes))
         if delayed_errors:
             log('---------FAILED Modules----------\n' + '\n'.join(delayed_errors))
 
-    def __import_module(self, modfullname, server=None):
-        # was this module name already loaded? This checks if "modfullname" is in any of the loaded modules
-        # mod.namespace attribute.
-        if len(self.__callback_tuples) > 0:
-            existing_module = [m for callback, m in self.__callback_tuples if m.full_name == modfullname]
-            if existing_module:
-                # No need to load again. However, maybe the server has changed?
-                if not server is None:
-                    if not server in existing_module[0].server_whitelist:
-                        existing_module[0].server_whitelist.append(server)
-                return
-
+    def __import_module(self, modfullname):
         # get class name and namespace
         modnamespace = modfullname.split('.')
         classname = modnamespace[-1]
@@ -253,27 +296,26 @@ class Bot(object):
         # try importing the module
         try:
             m = __import__(modnamespace, fromlist=[classname])
-            m = getattr(m, classname)()
-        except ImportError:
-            return 'Error: Failed to import module {0}\n{1}'.format(modfullname,
-                                                                    traceback.print_exc())
-
-        # set server whitelist
-        if server is not None:
-            m.server_whitelist.append(server)
-
-        # set module properties
-        m.init_module(self, modfullname, self.settings)
+            m = getattr(m, classname)(self, modfullname)
+        except:
+            return None, 'Error: Failed to import module {0}\n{1}'.format(modfullname, traceback.print_exc())
 
         # get a list of tuples containing (callback function, module) pairs.
-        callback_tuples = self.__get_callback_tuples(m)
+        callback_tuples = [(member, m) for name, member in inspect.getmembers(m, predicate=inspect.ismethod)
+                           if hasattr(member, 'commands') or hasattr(member, 'rules') or hasattr(member, 'bot_rules')]
         if len(callback_tuples) > 0:
             self.__callback_tuples += callback_tuples
 
-    def get_loaded_modules(self, server):
-        return set(module for c, module in self.__callback_tuples
-                        if len(module.server_whitelist) == 0
-                        or server and server.name in module.server_whitelist)
+        return m, ''
+
+    def get_active_modules_for(self, server):
+        return set(module for c, module in self.__callback_tuples if module.is_active_for(server))
+
+    def get_available_modules_for(self, server):
+        return set(module for c, module in self.__callback_tuples if module.is_available_for(server))
+
+    def get_blacklisted_modules_for(self, server):
+        return set(module for c, module in self.__callback_tuples if module.is_blacklisted_for(server))
 
     @staticmethod
     def __as_json(o):
@@ -281,11 +323,6 @@ class Bot(object):
 
     def __save_settings(self):
         open('settings.json', 'w').write(self.__as_json(self.settings))
-
-    @staticmethod
-    def __get_callback_tuples(m):
-        return [(member, m) for name, member in inspect.getmembers(m, predicate=inspect.ismethod)
-                if hasattr(member, 'commands') or hasattr(member, 'rules') or hasattr(member, 'bot_rules')]
 
     async def login(self):
         log('Connecting...')

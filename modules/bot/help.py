@@ -5,7 +5,7 @@ class Help(glados.Module):
 
     @glados.Module.command('help', '[search]', 'Get a list of all commands, or of a specific command')
     async def help(self, message, content):
-        help_strings = (string for module in self.loaded_modules for string in module.get_casual_help_strings())
+        help_strings = (string for module in self.active_modules for string in module.get_casual_help_strings())
 
         # Filter relevant modules if the user is requesting a specific command
         if len(content) > 0:
@@ -31,7 +31,7 @@ class Help(glados.Module):
         await self.__privileged_help(message, content, 'owner')
 
     async def __privileged_help(self, message, content, level):
-        help_strings = (string for module in self.loaded_modules
+        help_strings = (string for module in self.active_modules
                         for string in module.get_privileged_help_strings(level))
 
         # Filter relevant modules if the user is requesting a specific command
