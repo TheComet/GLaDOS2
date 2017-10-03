@@ -12,13 +12,44 @@ class KYMException(Exception):
         super(KYMException, self).__init__(message)
 
 
+def get_meme_info(url):
+    try:
+        html = urlopen(url).read().decode('utf-8')
+        soup = BeautifulSoup(html, 'lxml')
+        about = accumulate_to(soup.find('h2', {'id': 'about'}), ['h2', 'h3', 'h4'])
+        origin = accumulate_to(soup.find('h2', {'id': 'origin'}), ['h2', 'h3', 'h4'])
+        return about, origin
+    except Exception as e:
+        raise KYMException(str(e))
+
+
+def accumulate_to(navstr, strings):
+    if navstr is None:
+        return 'Unknown'
+    ret = list()
+    for x in navstr.next_siblings:
+        try:
+            if x.name in strings:
+                break
+        except AttributeError:
+            pass
+
+        try:
+            ret.append(x.text)
+        except:
+            pass
+
+    return '\n'.join(ret)
+
+
 class KnowYourMeme(Module):
 
     @Module.command('kym', '<term>', 'Searches knowyourmeme.com for dank memes')
+    @Module.command('meme', '', '')
     async def search(self, message, content):
         try:
             url = self.search_meme(content)
-            about, origin = self.get_meme_info(url)
+            about, origin = get_meme_info(url)
         except KYMException as e:
             return await self.client.send_message(message.channel, 'Error: {}'.format(e))
 
@@ -50,13 +81,3 @@ class KnowYourMeme(Module):
         url = urljoin(KYM_URL, a['href'])
         return url
 
-    @staticmethod
-    def get_meme_info(url):
-        try:
-            html = urlopen(url).read().decode('utf-8')
-            soup = BeautifulSoup(html, 'lxml')
-            about = soup.find('h2', {'id': 'about'}).next_sibling.next_sibling.get_text()
-            origin = soup.find('h2', {'id': 'origin'}).next_sibling.next_sibling.get_text()
-            return about, origin
-        except Exception as e:
-            raise KYMException(str(e))
