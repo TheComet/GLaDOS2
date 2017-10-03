@@ -12,14 +12,18 @@ from .Log import log
 from .cooldown import Cooldown
 from .tools.path import add_import_paths
 from .Permissions import Permissions
-
+from os.path import isfile
 comment_pattern = re.compile('`(.*?)`')
 
 
 class Bot(object):
     def __init__(self):
         self.client = discord.Client()
-        self.__settings = json.loads(open('settings.json').read())
+        if isfile('settings.json'):
+            self.__settings = json.loads(open('settings.json').read())
+        else:
+            self.__settings= {}
+            self.__settings['modules'] =  {}
         self.__original_settings = copy.deepcopy(self.__settings)
         self.__callback_tuples = list()  # list of tuples. (callback, module)
         self.__cooldown = Cooldown()
@@ -325,6 +329,10 @@ class Bot(object):
         open('settings.json', 'w').write(self.__as_json(self.settings))
 
     async def login(self):
+        #create settings.json and then let it be changed before actually logging in.
+        if not isfile('settings.json'):
+            self.__check_if_settings_changed()
+            return
         log('Connecting...')
         args = list()
         token = self.settings.setdefault('login', {}).setdefault('token', 'OAuth2 Token')
