@@ -52,7 +52,7 @@ class Bot(object):
             if not message.server:
                 return ()
 
-            self.__set_current_server(message.server.id)
+            self.__set_current_server(message.server)
 
             # Check if this bot has been authorized by the owner to be on this server (if enabled)
             if not self.permissions.is_server_authorized() \
@@ -93,7 +93,6 @@ class Bot(object):
                         await module.provide_help(callback.commands[-1][0], message)
                         continue
 
-                module.lazy_memory_initializer()
                 await callback(message, content)
 
             # Write settings dict to disc (and print a diff) if a command changed it in any way
@@ -103,6 +102,13 @@ class Bot(object):
         async def on_ready():
             await self.__auto_join_channels()
             log('Running as {}'.format(self.client.user.name))
+
+        @self.client.event
+        async def on_server_available(server):
+            self.__set_current_server(server)
+            self.permissions.lazy_memory_initializer()
+            for m in self.get_available_modules_for(server):
+                m.lazy_memory_initializer()
 
     async def __auto_join_channels(self):
         for url in self.settings['auto join']['invite urls']:
@@ -147,17 +153,11 @@ class Bot(object):
     def data_dir(self):
         return self.__server_data_dir
 
-    def __set_current_server(self, server_id):
-        self.__server_data_dir = None
-        self.__current_server = next((server for server in self.client.servers if server.id == server_id))
-        if self.__current_server is None:
-            raise RuntimeError('Failed to set current server to ID: {}'.format(server_id))
-
-        self.__server_data_dir = os.path.join(self.__root_data_dir, server_id)
+    def __set_current_server(self, server):
+        self.__current_server = server
+        self.__server_data_dir = os.path.join(self.__root_data_dir, server.id)
         if not os.path.isdir(self.__server_data_dir):
             os.mkdir(self.__server_data_dir)
-
-        self.permissions.lazy_memory_initializer()
 
     def __check_if_settings_changed(self):
         if self.__settings == self.__original_settings:

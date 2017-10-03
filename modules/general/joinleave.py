@@ -6,7 +6,7 @@ from os.path import join, isfile
 class JoinLeave(glados.Module):
 
     def setup_memory(self):
-        self.memory['db file'] = join(self.data_dir, 'announcements.json')
+        self.memory['db file'] = join(self.data_dir, 'joinleave.json')
         self.__load_db()
 
         @self.client.event
