@@ -73,6 +73,17 @@ class Quotes(glados.Module):
 
     @glados.Module.command('findquote', '<text> [user]', 'Dig up a quote the user once said containing the specified text.')
     async def findquote(self, message, content):
+        content_parts = content.split(' ')
+        if len(content_parts) == 1:
+            author = message.author.name
+            search_query = content.strip()
+        else:
+            members, roles, error = self.parse_members_roles(message, content_parts[-1])
+            await self.client.send_message(message.channel, members)
+            await self.client.send_message(message.channel, error)
+            search_query = ' '.join(content_parts[:-1]).strip()
+
+'''
         if len(message.mentions) == 1:
             author = message.mentions[0].name
             content = content.replace('@' + author, '')
@@ -82,6 +93,7 @@ class Quotes(glados.Module):
             return
         else:
             author = message.author.name
+            '''
         search_query = content.strip()
 
         lines = self.get_quote_lines(author)
