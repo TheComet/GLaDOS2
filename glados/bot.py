@@ -22,13 +22,12 @@ class Bot(object):
         if isfile('settings.json'):
             self.__settings = json.loads(open('settings.json').read())
         else:
-            self.__settings= {}
-            self.__settings['modules'] =  {}
+            self.__settings = dict()
         self.__original_settings = copy.deepcopy(self.__settings)
         self.__callback_tuples = list()  # list of tuples. (callback, module)
         self.__cooldown = Cooldown()
 
-        self.__root_data_dir = self.__settings['modules'].setdefault('data', 'data')
+        self.__root_data_dir = self.__settings.setdefault('modules', {}).setdefault('data', 'data')
         self.__global_data_dir = os.path.join(self.__root_data_dir, 'global_cache')
         self.__server_data_dir = None
         self.__current_server = None
@@ -329,11 +328,7 @@ class Bot(object):
         open('settings.json', 'w').write(self.__as_json(self.settings))
 
     async def login(self):
-        #create settings.json and then let it be changed before actually logging in.
-        if not isfile('settings.json'):
-            self.__check_if_settings_changed()
-            return
-        log('Connecting...')
+
         args = list()
         token = self.settings.setdefault('login', {}).setdefault('token', 'OAuth2 Token')
         email = self.settings['login'].setdefault('email', 'address')
@@ -344,7 +339,13 @@ class Bot(object):
             args.append(email)
             args.append(password)
 
+        # create settings.json and then let it be changed before actually logging in.
+        if not isfile('settings.json'):
+            self.__check_if_settings_changed()
+            return ()
         self.__check_if_settings_changed()
+
+        log('Connecting...')
         await self.client.login(*args)
         await self.client.connect()
 
