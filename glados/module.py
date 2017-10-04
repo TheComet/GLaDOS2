@@ -331,7 +331,7 @@ class Module(object):
         return factory
 
     @staticmethod
-    def rule(rule):
+    def rule(rule, ignorecommands=False):
         """
         This should be used as a decorator for your module member functions that handle responding to specific patterns
         in messages. You can specify a list of regular expressions as arguments. If a message posted on Discord matches
@@ -351,18 +351,18 @@ class Module(object):
         """
         def factory(func):
             func.__dict__.setdefault('rules', list())
-            func.rules.append(re.compile(rule, re.IGNORECASE))
+            func.rules.append((re.compile(rule, re.IGNORECASE), ignorecommands))
             return func
         return factory
 
     @staticmethod
-    def bot_rule(rule):
+    def bot_rule(rule, ignorecommands=False):
         """
         Same as rules(), except only messages that originate from bots (that aren't our own) are passed.
         :param rule: A regular expression to match messages sent on Discord with.
         """
         def factory(func):
             func.__dict__.setdefault('bot_rules', list())
-            func.bot_rules.append(re.compile(rule, re.IGNORECASE))
+            func.bot_rules.append((re.compile(rule, re.IGNORECASE), ignorecommands))
             return func
         return factory

@@ -201,7 +201,9 @@ class Bot(object):
 
             # process bot messages
             if message.author.bot and hasattr(callback, 'bot_rules'):
-                for rule in callback.bot_rules:
+                for rule, ignorecommands in callback.bot_rules:
+                    if ignorecommands and message.content.startswith(self.command_prefix):
+                        continue
                     match = rule.match(message.content)
                     if match is None:
                         continue
@@ -213,7 +215,9 @@ class Bot(object):
 
             # process message responses
             if hasattr(callback, 'rules'):
-                for rule in callback.rules:
+                for rule, ignorecommands in callback.rules:
+                    if ignorecommands and message.content.startswith(self.command_prefix):
+                        continue
                     match = rule.match(message.content)
                     if match is None:
                         continue

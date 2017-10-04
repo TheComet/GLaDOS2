@@ -7,7 +7,7 @@ users_to_correct = [
 
 
 class BagelCorrect(glados.Module):
-    @glados.Module.rule('^.*(?i)\\btho\\b.*$')
+    @glados.Module.rule('^.*(?i)(\\btho\\b|\\bdoe\\b).*$')
     async def tho(self, message, match):
         if message.author.id in users_to_correct:
             await self.client.send_message(message.channel, 'though*')
