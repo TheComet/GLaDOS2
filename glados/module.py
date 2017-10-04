@@ -18,7 +18,7 @@ class Module(object):
         self.__memories = dict()
         self.__current_memory = None
 
-    def lazy_memory_initializer(self):
+    def switch_memory(self):
         # lazy memory init for modules
         self.__current_memory = self.__memories.get(self.current_server.id, None)
         if self.__current_memory is None:
