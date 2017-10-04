@@ -151,7 +151,7 @@ class Sub(glados.Module):
         await self.client.send_message(message.channel, msg)
 
     @glados.Permissions.spamalot
-    @glados.Module.rule('^((?!\.\w+).*)$')
+    @glados.Module.rule('^(.*)$')
     async def on_message(self, message, match):
         # Reset timer if user just made a message
         # Doing it here has the nice side effect of making it impossible to mention yourself

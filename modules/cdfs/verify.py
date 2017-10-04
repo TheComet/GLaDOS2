@@ -65,7 +65,7 @@ class Verify(glados.Module):
         await self.client.purge_from(welcome_channel, check=check_message_for_deletion)
 
     @glados.Permissions.spamalot
-    @glados.Module.rule('^.*$')
+    @glados.Module.rule('^.*$', ignorecommands=False)
     async def delete_this(self, message, match):
         asyncio.ensure_future(self.clean_up_shit_messages())
         return tuple()

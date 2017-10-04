@@ -331,7 +331,7 @@ class Module(object):
         return factory
 
     @staticmethod
-    def rule(rule, ignorecommands=False):
+    def rule(rule, ignorecommands=True):
         """
         This should be used as a decorator for your module member functions that handle responding to specific patterns
         in messages. You can specify a list of regular expressions as arguments. If a message posted on Discord matches
@@ -356,7 +356,7 @@ class Module(object):
         return factory
 
     @staticmethod
-    def bot_rule(rule, ignorecommands=False):
+    def bot_rule(rule, ignorecommands=True):
         """
         Same as rules(), except only messages that originate from bots (that aren't our own) are passed.
         :param rule: A regular expression to match messages sent on Discord with.

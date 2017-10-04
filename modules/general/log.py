@@ -20,7 +20,7 @@ class Log(glados.Module):
             self.memory['log file'] = open(os.path.join(self.memory['log path'], 'chanlog-{}'.format(self.memory['date'])), 'a')
 
     @glados.Permissions.spamalot
-    @glados.Module.rule('^.*$')
+    @glados.Module.rule('^.*$', ignorecommands=False)
     async def on_message(self, message, match):
         server_name = message.server.name if message.server else ''
         self.__open_new_log_if_necessary()

@@ -55,9 +55,8 @@ class R9K(glados.Module):
 
         await self.client.send_message(message.channel, msg)
 
-    # matches everything except strings beginning with a ".xxx" to ignore commands
     @glados.Permissions.spamalot
-    @glados.Module.rule('^((?!\.\w+).*)$')
+    @glados.Module.rule('^(.*)$')
     async def on_message(self, message, match):
         # Remove anything that is not alphanumeric
         phrase = match.group(1)

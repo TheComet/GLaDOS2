@@ -60,7 +60,7 @@ class Mentions(glados.Module):
             f.write(json.dumps(self.memory['last seen']))
 
     @glados.Permissions.spamalot
-    @glados.Module.rule('^((?!\.\w+).*)$')
+    @glados.Module.rule('^(.*)$')
     async def record(self, message, match):
         with codecs.open(self.memory['log file'], 'a', encoding='utf-8') as f:
             f.write(datetime.now().isoformat()[:19] + "  " + message.author.name + ": " + message.clean_content + "\n")
