@@ -24,7 +24,7 @@ ignored_sites = [
     'wiki.xkcd.com',
     'what-if.xkcd.com',
 ]
-sites_query = ' site:xkcd.com -site:' + ' -site:'.join(ignored_sites)
+sites_query = ' site:xkcd.com'
 
 
 def get_info(number=None):
@@ -37,27 +37,32 @@ def get_info(number=None):
     return data
 
 
-r_duck = re.compile(r'nofollow" class="[^"]+" href="(?!https?:\/\/r\.search\.yahoo)(.*?)">')
-
 
 def duck_search(query):
     query = query.replace('!', '')
     uri = 'http://duckduckgo.com/html/?q=%s&kl=uk-en' % query
-    bytes = urllib.request.urlopen(uri).read().decode('utf-8')
-    if 'web-result' in bytes:  # filter out the adds on top of the page
-        bytes = bytes.split('web-result')[1]
-    m = r_duck.search(bytes)
-    if m:
-        return m.group(1)
-
-
-def google(query):
-    url = duck_search(query + sites_query)
-    if not url:
+    bytes = ""
+    try:
+        bytes = urllib.request.urlopen(uri).read().decode('utf-8')
+    except Exception as e:
+        print(e)
         return None
-    match = re.match('(?:https?://)?xkcd.com/(\d+)/?', url)
-    if match:
-        return match.group(1)
+    results = bytes.split('result__url')
+    iterresults = iter(results)
+    next(iterresults) #skip first entry with unnecessary stuff.
+    for r in iterresults:
+        #print(r)
+        if 'https' in r:
+            r = r.split('https')[1].split('"')[0]
+            r = "https"+urllib.parse.unquote(r)
+            match = re.match('(?:https?://)?xkcd.com/(\d+)/?', r)
+            if match:
+                return match.group(1)
+    return None
+                
+
+def google(query):    
+    return duck_search(query + sites_query)
 
 
 class XKCD(glados.Module):
