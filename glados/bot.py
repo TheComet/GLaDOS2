@@ -96,6 +96,7 @@ class Bot(object):
                         await module.provide_help(callback.commands[-1][0], message)
                         continue
 
+                module.switch_memory()
                 await callback(message, content)
 
             # Write settings dict to disc (and print a diff) if a command changed it in any way
@@ -109,9 +110,9 @@ class Bot(object):
         @self.client.event
         async def on_server_available(server):
             self.__set_current_server(server)
-            self.permissions.lazy_memory_initializer()
+            self.permissions.switch_memory()
             for m in self.get_available_modules_for(server):
-                m.lazy_memory_initializer()
+                m.switch_memory()
 
     async def __auto_join_channels(self):
         for url in self.settings['auto join']['invite urls']:
