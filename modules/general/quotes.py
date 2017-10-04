@@ -79,22 +79,12 @@ class Quotes(glados.Module):
             search_query = content.strip()
         else:
             members, roles, error = self.parse_members_roles(message, content_parts[-1])
-            await self.client.send_message(message.channel, members)
-            await self.client.send_message(message.channel, error)
-            search_query = ' '.join(content_parts[:-1]).strip()
-
-'''
-        if len(message.mentions) == 1:
-            author = message.mentions[0].name
-            content = content.replace('@' + author, '')
-        elif len(message.mentions) > 1:
-            await self.client.send_message(message.channel,
-                                            'Multiple mentions are not supported. What are you trying to do?')
-            return
-        else:
-            author = message.author.name
-            '''
-        search_query = content.strip()
+            if error:
+                author = message.author.name
+                search_query = content.strip()
+            else:
+                search_query = ' '.join(content_parts[:-1]).strip()
+                author = members.pop().name
 
         lines = self.get_quote_lines(author)
         if search_query:
