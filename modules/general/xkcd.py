@@ -129,7 +129,7 @@ class XKCD(glados.Module):
         if not os.path.isfile(img_file):
             urllib.request.urlretrieve(requested['img'], img_file)
 
-        response = '{} [{}]'.format(requested['url'], requested['title'])
+        response = '<{}> [{}]'.format(requested['url'], requested['title'])
         try:
             await self.client.send_file(message.channel, img_file)
         except discord.errors.Forbidden:
