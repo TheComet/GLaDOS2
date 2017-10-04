@@ -16,6 +16,9 @@ from os.path import isfile
 comment_pattern = re.compile('`(.*?)`')
 
 
+server_lock = asyncio.Lock()
+
+
 class Bot(object):
     def __init__(self):
         self.client = discord.Client()
@@ -55,49 +58,51 @@ class Bot(object):
             if not message.server:
                 return ()
 
-            self.__set_current_server(message.server)
+            with await server_lock:
 
-            # Check if this bot has been authorized by the owner to be on this server (if enabled)
-            if not self.permissions.is_server_authorized() \
-                    and not self.permissions.require_owner(message.author):
-                return ()
-            commands = self.extract_commands_from_message(message)
-            commands_to_process = self.__get_commands_that_could_be_executed(message, commands)
-            commands_to_process += self.__get_matches_that_could_be_executed(message)
+                self.__set_current_server(message.server)
 
-            punish_checked = False
-            user_is_punished = False
-            for callback, module, content in commands_to_process:
-                code = self.permissions.check_permissions(message.author, callback)
-                if code < 0:
-                    cooldown = self.__apply_cooldown(message)
-                    if cooldown:
-                        await self.client.send_message(message.author, cooldown)
-                    else:
-                        await self.permissions.inform_about_failure(message, code)
-                    continue
+                # Check if this bot has been authorized by the owner to be on this server (if enabled)
+                if not self.permissions.is_server_authorized() \
+                        and not self.permissions.require_owner(message.author):
+                    return ()
+                commands = self.extract_commands_from_message(message)
+                commands_to_process = self.__get_commands_that_could_be_executed(message, commands)
+                commands_to_process += self.__get_matches_that_could_be_executed(message)
 
-                if code == Permissions.PUNISHABLE:
-                    if not punish_checked and not hasattr(callback, 'spamalot'):
+                punish_checked = False
+                user_is_punished = False
+                for callback, module, content in commands_to_process:
+                    code = self.permissions.check_permissions(message.author, callback)
+                    if code < 0:
                         cooldown = self.__apply_cooldown(message)
                         if cooldown:
-                            user_is_punished = True
                             await self.client.send_message(message.author, cooldown)
-                        punish_checked = True
-                    if user_is_punished:
+                        else:
+                            await self.permissions.inform_about_failure(message, code)
                         continue
 
-                # Convenient: If the help string of the command contains brackets, check that the user has supplied the
-                # correct number of arguments. If not, provide help instead of executing the command.
-                if hasattr(callback, 'commands'):
-                    arg_string = callback.commands[-1][1]  # first command (if more than one), argument list string
-                    required_arg_count = len(arg_string.split('<')) - 1
-                    if len(content.split()) < required_arg_count:
-                        await module.provide_help(callback.commands[-1][0], message)
-                        continue
+                    if code == Permissions.PUNISHABLE:
+                        if not punish_checked and not hasattr(callback, 'spamalot'):
+                            cooldown = self.__apply_cooldown(message)
+                            if cooldown:
+                                user_is_punished = True
+                                await self.client.send_message(message.author, cooldown)
+                            punish_checked = True
+                        if user_is_punished:
+                            continue
 
-                module.switch_memory()
-                await callback(message, content)
+                    # Convenient: If the help string of the command contains brackets, check that the user has supplied the
+                    # correct number of arguments. If not, provide help instead of executing the command.
+                    if hasattr(callback, 'commands'):
+                        arg_string = callback.commands[-1][1]  # first command (if more than one), argument list string
+                        required_arg_count = len(arg_string.split('<')) - 1
+                        if len(content.split()) < required_arg_count:
+                            await module.provide_help(callback.commands[-1][0], message)
+                            continue
+
+                    module.switch_memory()
+                    await callback(message, content)
 
             # Write settings dict to disc (and print a diff) if a command changed it in any way
             self.__check_if_settings_changed()
