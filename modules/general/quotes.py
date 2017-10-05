@@ -70,18 +70,20 @@ class Quotes(glados.Module):
 
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
 
-    @glados.Module.command('findquote', '<user> <text>', 'Dig up a quote the user once said containing the specified text.')
+    @glados.Module.command('findquote', '<text> [user]', 'Dig up a quote the user once said containing the specified text.')
     async def findquote(self, message, content):
-        if len(message.mentions) == 1:
-            author = message.mentions[0].name
-            content = content.replace('@' + author, '')
-        elif len(message.mentions) > 1:
-            await self.client.send_message(message.channel,
-                                            'Multiple mentions are not supported. What are you trying to do?')
-            return
-        else:
+        content_parts = content.split(' ')
+        if len(content_parts) == 1:
             author = message.author.name
-        search_query = content.strip()
+            search_query = content.strip()
+        else:
+            members, roles, error = self.parse_members_roles(message, content_parts[-1])
+            if error:
+                author = message.author.name
+                search_query = content.strip()
+            else:
+                search_query = ' '.join(content_parts[:-1]).strip()
+                author = members.pop().name
 
         lines = self.get_quote_lines(author)
         if search_query:
@@ -93,7 +95,7 @@ class Quotes(glados.Module):
             return
 
         line = random.choice(lines).strip('\n')
-        line = self.remove_mentions(line)
+        line = self.remove_mentions(line).replace(search_query, '**{}**'.format(search_query))
 
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(author, line))
 
