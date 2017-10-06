@@ -82,6 +82,7 @@ class Reputation(glados.Module):
     def _update_activity_limit(self, member):
         config = self._get_file('config')
         user_activity = activity.get(member.name, { 'votes': 0, 'date': date.today()})
+        activity[member.name] = user_activity
         if user_activity['date'] < date.today():
             user_activity['date'] = date.today()
             user_activity['votes'] = 0
