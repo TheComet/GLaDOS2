@@ -15,5 +15,5 @@ class Reputation(glados.Module):
             new_reputation = reputation.get(member, 0) + 1
             reputation[member] = new_reputation
             response.append('{} reputation is {}'.format(member, new_reputation))
-        await self.client.send_message(', '.join(response))
+        await self.client.send_message(message.channel, ', '.join(response))
         return
