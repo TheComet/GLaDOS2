@@ -251,20 +251,24 @@ class Module(object):
         if len(roles) == 0 and len(members) == 0:
             for name in content.split():
                 name = name.strip('@').split('#')[0]
+                submembers = []
+                subroles = []
                 for member in self.current_server.members:
                     if member.nick == name or member.name == name:
-                        members.add(member)
+                        submembers.add(member)
                 for role in self.current_server.roles:
                     if role.name == name:
-                        roles.add(role)
+                        subroles.add(role)
 
                 # These errors can only occur if the members/roles were not mentioned
-                if len(members) > 0 and len(roles) > 0:
+                if len(submembers) > 0 and len(subroles) > 0:
                     return (), (), 'Error: One or more member(s) have a name identical to a role name "{}".' \
                                 'Try again by mentioning the user/role'.format(name)
-                if len(members) > 1 or len(roles) > 1:
+                if len(submembers) > 1 or len(subroles) > 1:
                     return (), (), 'Error: Multiple members/roles share the name "{}".' \
                                 'Try again by mentioning the user.'.format(name)
+                members += submembers
+                roles += subroles
 
         if len(members) == 0 and len(roles) == 0:
             return (), (), 'Error: No member or role found!'

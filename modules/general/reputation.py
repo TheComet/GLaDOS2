@@ -1,8 +1,9 @@
 import glados
 
 
+reputation = {}
+
 class Reputation(glados.Module):
-    reputation = {}
 
     @glados.Module.command('upvote', '<user>', 'Add reputation to a user')
     async def upvote(self, message, content):
