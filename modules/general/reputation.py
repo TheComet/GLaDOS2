@@ -15,7 +15,7 @@ class Reputation(glados.Module):
         for member in members:
             new_reputation = reputation.get(member, 0) + 1
             reputation[member] = new_reputation
-            response.append('{}\'s reputation is {}'.format(member.split('#')[0], new_reputation))
+            response.append('{}\'s reputation is {}'.format(member.name, new_reputation))
         await self.client.send_message(message.channel, ', '.join(response))
 
     @glados.Module.command('downvote', '<user>', 'Remove reputation from a user')
@@ -28,7 +28,7 @@ class Reputation(glados.Module):
         for member in members:
             new_reputation = reputation.get(member, 0) - 1
             reputation[member] = new_reputation
-            response.append('{}\'s reputation is {}'.format(member.split('#')[0], new_reputation))
+            response.append('{}\'s reputation is {}'.format(member.name, new_reputation))
         await self.client.send_message(message.channel, ', '.join(response))
 
     @glados.Module.command('reputation', '<user>', 'See a user\'s reputation')
@@ -37,5 +37,5 @@ class Reputation(glados.Module):
         if error:
             await self.client.send_message(message.channel, error)
             return
-        response = ['{}\'s reputation is {}'.format(member.split('#')[0], reputation.get(member, 0)) for member in members ]
+        response = ['{}\'s reputation is {}'.format(member.name, reputation.get(member, 0)) for member in members ]
         await self.client.send_message(message.channel, ', '.join(response))
