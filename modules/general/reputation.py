@@ -37,7 +37,7 @@ class Reputation(glados.Module):
         for member in members:
             new_reputation = reputation.get(member.name, 0) + 1
             reputation[member.name] = new_reputation
-            response.append('{}\'s reputation is {}'.format(member.name, new_reputation))
+            response.append(_reputation_text(member.name, new_reputation))
         self._update_reputation(reputation)
         await self.client.send_message(message.channel, ', '.join(response))
 
@@ -52,7 +52,7 @@ class Reputation(glados.Module):
         for member in members:
             new_reputation = reputation.get(member.name, 0) - 1
             reputation[member.name] = new_reputation
-            response.append('{}\'s reputation is {}'.format(member.name, new_reputation))
+            response.append(_reputation_text(member.name, new_reputation))
         self._update_reputation(reputation)
         await self.client.send_message(message.channel, ', '.join(response))
 
@@ -63,5 +63,8 @@ class Reputation(glados.Module):
             await self.client.send_message(message.channel, error)
             return
         reputation = self._get_reputation()
-        response = ['{}\'s reputation is {}'.format(member.name, reputation.get(member.name, 0)) for member in members ]
+        response = [_reputation_text(member.name, reputation.get(member.name, 0)) for member in members ]
         await self.client.send_message(message.channel, ', '.join(response))
+    
+def _reputation_text(name, reputation):
+    return '{}\'{} reputation is {}'.format(name, '' if name.endswith('s') else 's', reputation)
