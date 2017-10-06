@@ -88,7 +88,7 @@ class Reputation(glados.Module):
             user_activity['votes'] = 0
         user_limit = config['override'].get(member.name, config['daily_limit'])
         if user_activity['votes'] + 1 > user_limit:
-            raise Exception('Vote limit exceeded. Your limit is {},'.format(user_limit))
+            raise Exception('Vote limit exceeded. Your limit is {}.'.format(user_limit))
         user_activity['votes'] = user_activity['votes'] + 1
         user_activity['date'] = date.today()
 
@@ -145,12 +145,21 @@ class Reputation(glados.Module):
         response = [_reputation_text(member.name, reputation.get(member.name, 0)) for member in members ]
         await self.client.send_message(message.channel, ', '.join(response))
     
-    @glados.Module.command('toprep', '', 'See users with top 5 reputation')
+    @glados.Module.command('toprep', '', 'See the five users with most reputation')
     async def toprep(self, message, content):
         reputation = self._get_reputation()
         top = sorted(list(reputation.items()), key=lambda x: x[1], reverse=True)[:5]
         response = []
         for member in top:
+            response.append('{}: {}'.format(*member))
+        await self.client.send_message(message.channel, '\n'.join(response))
+    
+    @glados.Module.command('bottomrep', '', 'See the five users with least reputation')
+    async def bottomrep(self, message, content):
+        reputation = self._get_reputation()
+        bottom = sorted(list(reputation.items()), key=lambda x: x[1])[:5]
+        response = []
+        for member in bottom:
             response.append('{}: {}'.format(*member))
         await self.client.send_message(message.channel, '\n'.join(response))
     
