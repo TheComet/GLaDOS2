@@ -11,6 +11,9 @@ class Reputation(glados.Module):
         if error:
             await self.client.send_message(message.channel, error)
             return
+        if message.author in members:
+            await self.client.send_message(message.channel, '{}, you should not upvote yourself.'.format(message.author.name))
+            return
         response = []
         for member in members:
             new_reputation = reputation.get(member, 0) + 1
