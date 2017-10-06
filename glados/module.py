@@ -207,13 +207,8 @@ class Module(object):
                 if len(submembers) > 1 or len(subroles) > 1:
                     return (), (), 'Error: Multiple members/roles share the name "{}".' \
                                 'Try again by mentioning the user.'.format(name)
-<<<<<<< 111252144223e6e60c04eba9c170da9f83d0f0c4
                 members = members.union(submembers)
                 roles = roles.union(subroles)
-=======
-                members += submembers
-                roles += subroles
->>>>>>> Fix parse_members_roles to return multiple members
 
         if len(members) == 0 and len(roles) == 0:
             return (), (), 'Error: No member or role found!'
