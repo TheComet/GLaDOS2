@@ -30,7 +30,7 @@ COMEBACKS = [
 ]
 
 DEFAULT_CONFIG = {
-    daily_limit: 200,
+    'daily_limit': 200,
 }
 
 class Reputation(glados.Module):
