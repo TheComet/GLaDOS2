@@ -36,6 +36,7 @@ class Emotes(glados.Module):
         self.raw_emote_list = []
         self.is_running = True
         asyncio.ensure_future(self.build_emote_db())
+        self.build_dir(join(self.emotes_path, "tmp"))
 
 
     def setup_memory(self):
@@ -48,14 +49,18 @@ class Emotes(glados.Module):
         if isfile(self.memory['config_path']):
             self.memory['blacklist'] = json.loads(open(self.memory['config_path']).read())
 
-    def save_blacklist(self):
+    def build_dir(self, path):
         try:
-            os.makedirs(os.path.dirname(self.memory['config_path']))
+            os.makedirs(os.path.dirname(path))
         except Exception as E:
             if "File exists" not in str(E):
                 print(E)
-                return
-                # do nothing as the dirs probably already exist
+                return False
+        return True
+            
+    def save_blacklist(self):
+        if not self.build_dir(self.memory['config_path']):
+            return
         f = open(self.memory['config_path'], "w")
         if f:
             f.write(json.dumps(self.memory['blacklist']))

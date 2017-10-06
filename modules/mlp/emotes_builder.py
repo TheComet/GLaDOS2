@@ -30,6 +30,16 @@ class BuildEmotes(glados.Module):
         self.worker_threads = 16
         self.building_db = ""
         self.is_running = False
+        self.build_dir(join(self.emotedb_path, 'tmp'))
+
+    def build_dir(self, path):
+        try:
+            os.makedirs(os.path.dirname(path))
+        except Exception as E:
+            if "File exists" not in str(E):
+                print(E)
+                return False
+        return True
 
     def save_target_image(self, source, name, x_offset, y_offset, x_size, y_size, flip, convert):
         m_img = Image.open(source)
