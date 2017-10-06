@@ -112,7 +112,7 @@ class Reputation(glados.Module):
         response = [_reputation_text(member.name, reputation.get(member.name, 0)) for member in members ]
         await self.client.send_message(message.channel, ', '.join(response))
     
-    @glados.Module.command('toprep', 'See users with top 5 reputation')
+    @glados.Module.command('toprep', '', 'See users with top 5 reputation')
     async def toprep(self, message, content):
         reputation = self._get_reputation()
         top = sorted(list(reputation.items()), key=lambda x: x[1], reverse=True)[:5]
