@@ -251,8 +251,8 @@ class Module(object):
         if len(roles) == 0 and len(members) == 0:
             for name in content.split():
                 name = name.strip('@').split('#')[0]
-                submembers = []
-                subroles = []
+                submembers = set()
+                subroles = set()
                 for member in self.current_server.members:
                     if member.nick == name or member.name == name:
                         submembers.add(member)
@@ -267,8 +267,8 @@ class Module(object):
                 if len(submembers) > 1 or len(subroles) > 1:
                     return (), (), 'Error: Multiple members/roles share the name "{}".' \
                                 'Try again by mentioning the user.'.format(name)
-                members += submembers
-                roles += subroles
+                members = members.union(submembers)
+                roles = roles.union(subroles)
 
         if len(members) == 0 and len(roles) == 0:
             return (), (), 'Error: No member or role found!'
