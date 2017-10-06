@@ -38,6 +38,8 @@ DEFAULT_CONFIG = {
 
 activity = {}
 
+reputation = {}
+
 class Reputation(glados.Module):
 
     def setup_memory(self):
