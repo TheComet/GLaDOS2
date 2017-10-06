@@ -4,6 +4,8 @@ import json
 import os.path
 import random
 
+from datetime import date
+
 
 COMEBACKS = [
     '{}, whom are you trying to fool?',
@@ -30,8 +32,11 @@ COMEBACKS = [
 ]
 
 DEFAULT_CONFIG = {
-    'daily_limit': 200,
+    'daily_limit': 20,
+    'override': {},
 }
+
+activity = {}
 
 class Reputation(glados.Module):
 
@@ -61,13 +66,30 @@ class Reputation(glados.Module):
             json.dump(data, f)
     
     def _get_reputation(self):
-        with codecs.open(self.memory['reputation']['reputation'], 'r', encoding='utf-8') as f:
+        return self._get_file('reputation')
+    
+    def _get_file(self, key):
+        with codecs.open(self.memory['reputation'][key], 'r', encoding='utf-8') as f:
             return json.load(f)
     
+    def _update_file(self, key, data):
+        with codecs.open(self.memory['reputation'][key], 'w', encoding='utf-8') as f:
+            json.dump(data, f)
+    
     def _get_comeback(self):
-        with codecs.open(self.memory['reputation']['comebacks'], 'r', encoding='utf-8') as f:
-            comebacks = json.load(f)
-            return random.choice(comebacks)
+        return random.choice(self._get_file('comebacks'))
+
+    def _update_activity_limit(self, member):
+        config = self._get_file('config')
+        user_activity = activity.get(member.name, { 'votes': 0, 'date': date.today()})
+        if user_activity['date'] < date.today():
+            user_activity['date'] = date.today()
+            user_activity['votes'] = 0
+        user_limit = config['override'].get(member.name, config['daily_limit'])
+        if user_activity['votes'] + 1 > user_limit:
+            raise Exception('Vote limit exceeded. Your limit is {},'.format(user_limit))
+        user_activity['votes'] = user_activity['votes'] + 1
+        user_activity['date'] = date.today()
 
     @glados.Module.command('upvote', '<user>', 'Add reputation to a user')
     async def upvote(self, message, content):
@@ -77,6 +99,11 @@ class Reputation(glados.Module):
             return
         if message.author in members:
             await self.client.send_message(message.channel, self._get_comeback().format(message.author.name))
+            return
+        try:
+            self._update_activity_limit(message.author)
+        except Exception as e:
+            await self.client.send_message(message.author, e)
             return
         response = []
         reputation = self._get_reputation()
@@ -92,6 +119,11 @@ class Reputation(glados.Module):
         members, roles, error = self.parse_members_roles(message, content)
         if error:
             await self.client.send_message(message.channel, error)
+            return
+        try:
+            self._update_activity_limit(message.author)
+        except Exception as e:
+            await self.client.send_message(message.author, e)
             return
         response = []
         reputation = self._get_reputation()
@@ -120,6 +152,27 @@ class Reputation(glados.Module):
         for member in top:
             response.append('{}: {}'.format(*member))
         await self.client.send_message(message.channel, '\n'.join(response))
+    
+    @glados.Module.command('repertoire', '<user> <amount>', 'Change the daily votes for a user')
+    async def repertoire(self, message, content):
+        if not self.require_moderator(message.author):
+            await self.client.send_message(message.channel, 'Only mods can do this.')
+            return
+        amount = 0
+        try:
+            amount = int(content.split()[1])
+        except ValueError:
+            await self.client.send_message(message.channel, 'Amount should be a number.')
+            return
+        members, roles, error = self.parse_members_roles(content.split()[0])
+        if error:
+            await self.client.send_message(message.channel, error)
+            return
+        config = self._get_file('config')
+        name = members.pop().name
+        config['override'][name] = amount
+        self._update_file('config', config)
+        await self.client.send_message(message.channel, '{} daily votes set to {}.'.format(name, amount))
 
 
 def _reputation_text(name, reputation):
