@@ -8,8 +8,16 @@ import random
 COMEBACKS = [
     '{}, whom are you trying to fool?',
     '{}, you should not upvote yourself.',
-    'Listen everybody, {} is trying to upvote themself!',
-    'I think you are a bit full of yourself, {}.'
+    'Listen everypony, {} is trying to upvote themself!',
+    'I think you are a bit full of yourself, {}.',
+    'One day you might get downvoted instead, {}.',
+    'Thou shalt not upvote thyself.',
+    'You think you\'re slick, huh?',
+    'Trying to get a head start, aren\'t we, {}?',
+    'I suggest you change your username to *Narcissus*, {}.',
+    'That\'s not what they mean by "one person, one vote"',
+    'Psssh. Not today, sweetie. Not today.',
+    'Try not to flatter yourself, okay?'
 ]
 
 class Reputation(glados.Module):
