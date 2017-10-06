@@ -164,7 +164,7 @@ class Reputation(glados.Module):
         except ValueError:
             await self.client.send_message(message.channel, 'Amount should be a number.')
             return
-        members, roles, error = self.parse_members_roles(content.split()[0])
+        members, roles, error = self.parse_members_roles(message, content.split()[0])
         if error:
             await self.client.send_message(message.channel, error)
             return
