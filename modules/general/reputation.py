@@ -2,25 +2,31 @@ import glados
 import codecs
 import json
 import os.path
+import random
 
+
+COMEBACKS = [
+    '{}, whom are you trying to fool?',
+    '{}, you should not upvote yourself.',
+    'Listen everybody, {} is trying to upvote themself!',
+    'I think you are a bit full of yourself, {}.'
+]
 
 class Reputation(glados.Module):
 
     def setup_memory(self):
-        self.memory['reputation path'] = os.path.join(self.data_dir, 'reputation')
-        if not os.path.exists(self.memory['reputation path']):
-            os.makedirs(self.memory['reputation path'])
+        rep_file = os.path.join(self.data_dir, 'reputation.json')
+        self.memory['reputation file'] = rep_file
+        if not os.path.exists(rep_file):
+            with codecs.open(rep_file, 'w', encoding='utf-8') as f:
+                json.dump({}, f)
     
     def _update_reputation(self, data):
-        rep_file = os.path.join(self.memory['reputation path'], 'reputation.json')
-        with codecs.open(rep_file, 'w', encoding='utf-8') as f:
+        with codecs.open(self.memory['reputation file'], 'w', encoding='utf-8') as f:
             json.dump(data, f)
     
     def _get_reputation(self):
-        rep_file = os.path.join(self.memory['reputation path'], 'reputation.json')
-        if not os.path.exists(rep_file):
-            return {}
-        with codecs.open(rep_file, 'r', encoding='utf-8') as f:
+        with codecs.open(self.memory['reputation file'], 'r', encoding='utf-8') as f:
             return json.load(f)
 
     @glados.Module.command('upvote', '<user>', 'Add reputation to a user')
@@ -30,7 +36,7 @@ class Reputation(glados.Module):
             await self.client.send_message(message.channel, error)
             return
         if message.author in members:
-            await self.client.send_message(message.channel, '{}, you should not upvote yourself.'.format(message.author.name))
+            await self.client.send_message(message.channel, random.choice(COMEBACKS).format(message.author.name))
             return
         response = []
         reputation = self._get_reputation()
