@@ -37,14 +37,15 @@ class Reputation(glados.Module):
 
     def setup_memory(self):
         rep_file = os.path.join(self.data_dir, 'reputation', 'reputation.json')
-        comebacks_file = os.path.join(self.data_dir, 'reputation', 'comebacks.json'),
+        comebacks_file = os.path.join(self.data_dir, 'reputation', 'comebacks.json')
         config_file = os.path.join(self.data_dir, 'reputation', 'config.json')
         self.memory['reputation'] = {
             'reputation': rep_file,
             'comebacks': comebacks_file,
             'config': config_file,
         }
-        os.makedirs(os.path.join(self.data_dir, 'reputation'))
+        if not os.path.exists(os.path.join(self.data_dir, 'reputation')):
+            os.makedirs(os.path.join(self.data_dir, 'reputation'))
         if not os.path.exists(rep_file):
             with codecs.open(rep_file, 'w', encoding='utf-8') as f:
                 json.dump({}, f)
