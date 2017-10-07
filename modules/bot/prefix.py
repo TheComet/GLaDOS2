@@ -11,5 +11,5 @@ class Prefix(Module):
             return
 
         was = self.command_prefix
-        new = self.settings['command prefix'][self.current_server.id] = content
+        new = self.settings['command prefix'][self.server.id] = content
         await self.client.send_message(message.channel, 'Changed command prefix from `{}` to `{}`'.format(was, new))
