@@ -35,8 +35,4 @@ class EightBall(glados.Module):
     @glados.Module.command('8', '<question>', 'Ask the magical 8-ball a yes/no question')
     @glados.Module.command('8ball', '', '')
     async def ball(self, message, content):
-        if content == '':
-            await self.provide_help('8', message)
-            return
-
         await self.client.send_message(message.channel, random.choice(messages))

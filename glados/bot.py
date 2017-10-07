@@ -14,6 +14,7 @@ from .tools.path import add_import_paths
 from .DummyPermissions import DummyPermissions
 from .DummyModuleManager import DummyModuleManager
 from os.path import isfile
+from .module import Module
 comment_pattern = re.compile('`(.*?)`')
 
 
@@ -226,7 +227,22 @@ class Bot(object):
             # Apparently on_server_available doesn't get called for all servers somehow
             if message.server.id not in self.server_instances:
                 await on_server_available(message.server)
-            await self.server_instances[message.server.id].process_message(message)
+
+            try:
+                await self.server_instances[message.server.id].process_message(message)
+            except Exception as e:
+                for member in self.client.get_all_members():
+                    if member.id == self.settings['permissions']['bot owner']:
+                        bot_owner = member
+                        strings = ['**An exception occurred while processing a message:**']
+                        strings += ('```' + traceback.format_exc() + '```').split('\n')
+                        strings += ['**Message:**: ```{}```'.format(message.content)]
+                        strings += ['**Server:**: ```{}```'.format(message.server.name)]
+                        strings += ['**Feel free to submit this info to the issue tracker:**']
+                        strings += ['https://github.com/TheComet/GLaDOS2/issues']
+                        for msg in Module.pack_into_messages(strings):
+                            await self.client.send_message(bot_owner, msg)
+                        break
 
             # Write settings dict to disc (and print a diff) if a command changed it in any way
             self.__check_if_settings_changed()
