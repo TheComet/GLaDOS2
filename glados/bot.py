@@ -11,7 +11,8 @@ import os
 from .Log import log
 from .cooldown import Cooldown
 from .tools.path import add_import_paths
-from .Permissions import Permissions
+from .DummyPermissions import DummyPermissions
+from .DummyModuleManager import DummyModuleManager
 from os.path import isfile
 comment_pattern = re.compile('`(.*?)`')
 
@@ -26,6 +27,7 @@ class ServerInstance(object):
         self.server = server
         self.callbacks = list()
         self.permissions = None
+        self.module_manager = None
         self.__cooldown = Cooldown()
 
         self.root_data_dir = self.settings.setdefault('modules', {}).setdefault('data', 'data')
@@ -42,11 +44,15 @@ class ServerInstance(object):
                          if hasattr(member, 'commands') or hasattr(member, 'rules') or hasattr(member, 'bot_rules')]
 
             # Need access to the permissions module for managing things like admins/botmods
-            if full_name == 'bot.permissions.Permissions':
+            if full_name.split('.')[-1] == 'Permissions':
                 self.permissions = obj
+            if full_name.split('.')[-1] == 'ModuleManager':
+                self.module_manager = obj
 
         if self.permissions is None:
-            self.permissions = Permissions(self, 'bot.dummy.DummyPermissions')
+            self.permissions = DummyPermissions(self, 'bot.dummy.DummyPermissions')
+        if self.module_manager is None:
+            self.module_manager = DummyModuleManager(self, 'bot.dummy.DummyModuleManager')
 
         if not os.path.isdir(self.global_data_dir):
             os.mkdir(self.global_data_dir)
@@ -66,7 +72,7 @@ class ServerInstance(object):
 
     @property
     def active_modules(self):
-        return set(obj for obj, c in self.callbacks if not obj.is_blacklisted)
+        return set(obj for obj, c in self.callbacks if not self.module_manager.is_blacklisted(obj))
 
     @property
     def available_modules(self):
@@ -74,7 +80,7 @@ class ServerInstance(object):
 
     @property
     def blacklisted_modules(self):
-        return set(obj for obj, c in self.callbacks if obj.is_blacklisted)
+        return set(obj for obj, c in self.callbacks if self.module_manager.is_blacklisted(obj))
 
     def __get_commands_that_could_be_executed(self, message, commands):
         ret = list()
@@ -85,7 +91,7 @@ class ServerInstance(object):
 
         # check if any issued commands match anything in the loaded callbacks
         for obj, callback in self.callbacks:
-            if obj.is_blacklisted:
+            if self.module_manager.is_blacklisted(obj):
                 continue
             if hasattr(callback, 'commands'):
                 callback_commands = list(zip(*callback.commands))[0]
@@ -97,7 +103,7 @@ class ServerInstance(object):
     def __get_matches_that_could_be_executed(self, message):
         ret = list()
         for obj, callback in self.callbacks:
-            if obj.is_blacklisted:
+            if self.module_manager.is_blacklisted(obj):
                 continue
 
             # process bot messages
@@ -170,7 +176,7 @@ class ServerInstance(object):
                     await self.permissions.inform_about_failure(message, code)
                 continue
 
-            if code == Permissions.PUNISHABLE:
+            if code == DummyPermissions.PUNISHABLE:
                 if not punish_checked and not hasattr(callback, 'spamalot'):
                     cooldown = self.__apply_cooldown(message)
                     if cooldown:

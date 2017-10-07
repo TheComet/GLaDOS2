@@ -3,8 +3,8 @@ import glados
 
 class Fetish(glados.Module):
 
-    @glados.Permissions.moderator
-    @glados.Permissions.command('fetish', '<user>', 'Grant the user access to the fetish channel')
+    @glados.DummyPermissions.moderator
+    @glados.DummyPermissions.command('fetish', '<user>', 'Grant the user access to the fetish channel')
     async def fetish(self, message, content):
         members, roles, error = self.parse_members_roles(message, content)
         if len(members) == 0:
@@ -18,8 +18,8 @@ class Fetish(glados.Module):
         await self.client.send_message(message.channel,
             'Assigned "{}" to user(s) {}'.format(roles[0].name, ' '.join(x.name for x in members)))
 
-    @glados.Permissions.moderator
-    @glados.Permissions.command('unfetish', '<user>', 'Remove a user\'s access to the fetish channel')
+    @glados.DummyPermissions.moderator
+    @glados.DummyPermissions.command('unfetish', '<user>', 'Remove a user\'s access to the fetish channel')
     async def unfetish(self, message, content):
         members, roles, error = self.parse_members_roles(message, content)
         if len(members) == 0:

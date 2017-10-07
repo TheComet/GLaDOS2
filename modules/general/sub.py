@@ -150,7 +150,7 @@ class Sub(glados.Module):
             msg += '  #{} `{}`'.format(i+1, regex)
         await self.client.send_message(message.channel, msg)
 
-    @glados.Permissions.spamalot
+    @glados.DummyPermissions.spamalot
     @glados.Module.rule('^(.*)$')
     async def on_message(self, message, match):
         # Reset timer if user just made a message

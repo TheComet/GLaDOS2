@@ -3,7 +3,7 @@ import json
 import asyncio
 from datetime import datetime, timezone, timedelta
 from os.path import join, isfile
-from glados import Module, Permissions
+from glados import Module, DummyPermissions
 
 
 class AnnounceInfo(object):
@@ -105,7 +105,7 @@ class Announcements(Module):
             await a.client.send_message(a.channel, a.message)
             self.__running_tasks.pop(a.ID)
 
-    @Permissions.admin
+    @DummyPermissions.admin
     @Module.command('addannouncement', '<hours|date> <message>', 'Causes <message> to be sent either every <hours> '
                     'number of hours, or once at <date>. The date format is ISO 8601 (YYYY-MM-DDThh:mm:ss). For '
                     'example, the 23rd of Sep 2011 at 2am would be: 2011-09-23T02:00:00')
@@ -119,7 +119,7 @@ class Announcements(Module):
 
         await self.client.send_message(message.channel, 'Added announcement #{}'.format(a.ID))
 
-    @Permissions.admin
+    @DummyPermissions.admin
     @Module.command('rmannouncement', '<ID>', 'Removes the specified announcement. You can get the ID with lsannouncements')
     async def rmannouncement(self, message, content):
         if self.__rm_announcement(content):
@@ -127,7 +127,7 @@ class Announcements(Module):
         else:
             await self.client.send_message(message.channel, 'No such announcement with ID #{}'.format(content))
 
-    @Permissions.admin
+    @DummyPermissions.admin
     @Module.command('lsannouncements', '', 'Lists all active announcements and their IDs.')
     async def lsannouncements(self, message, content):
         strings = list()
@@ -141,7 +141,7 @@ class Announcements(Module):
         for msg in self.pack_into_messages(strings):
             await self.client.send_message(message.channel, msg)
 
-    @Permissions.admin
+    @DummyPermissions.admin
     @Module.command('modifyannouncement', '<ID> <hours|date|message>', 'Change either the interval, the date, or the '
                     'message of an announcement')
     async def modifyannouncement(self, message, content):
