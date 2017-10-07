@@ -33,30 +33,31 @@ def readable_timestamp(delta):
 
 
 class Lugaru(glados.Module):
+    def __init__(self, server_instance, full_name):
+        super(Lugaru, self).__init__(server_instance, full_name)
 
-    def setup_memory(self):
-        self.memory['db file'] = os.path.join(self.local_data_dir, 'lugaru.json')
-        self.memory['db'] = dict()
+        self.db_file = os.path.join(self.local_data_dir, 'lugaru.json')
+        self.db = dict()
         self.__load_db()
 
     def __load_db(self):
-        if os.path.isfile(self.memory['db file']):
-            self.memory['db'] = json.loads(open(self.memory['db file'], 'r').read())
-        if not 'timestamp' in self.memory['db']:
-            self.memory['db']['timestamp'] = datetime.now().strftime(FORMAT)
-        if not 'author' in self.memory['db']:
-            self.memory['db']['author'] = '(this is the first mention)'
-        if not 'record' in self.memory['db']:
-            self.memory['db']['record'] = 0
+        if os.path.isfile(self.db_file):
+            self.db = json.loads(open(self.db_file, 'r').read())
+        if not 'timestamp' in self.db:
+            self.db['timestamp'] = datetime.now().strftime(FORMAT)
+        if not 'author' in self.db:
+            self.db['author'] = '(this is the first mention)'
+        if not 'record' in self.db:
+            self.db['record'] = 0
 
     def __save_db(self):
-        open(self.memory['db file'], 'w').write(json.dumps(self.memory['db']))
+        open(self.db_file, 'w').write(json.dumps(self.db))
 
     def __get_data(self):
         now = datetime.now()
-        last_mentioned = datetime.strptime(self.memory['db']['timestamp'], FORMAT)
-        author = self.memory['db']['author']
-        record = self.memory['db']['record']
+        last_mentioned = datetime.strptime(self.db['timestamp'], FORMAT)
+        author = self.db['author']
+        record = self.db['record']
         delta = now - last_mentioned
         if int(record) < delta.days:
             record = delta.days
@@ -68,9 +69,9 @@ class Lugaru(glados.Module):
         delta, author, record = self.__get_data()
         await self.client.send_message(message.channel, 'Days since `lugaru` was mentioned: :zero: :zero: :zero: :zero: (record was {} day(s) by {})'.format(record, author))
 
-        self.memory['db']['record'] = delta.days
-        self.memory['db']['timestamp'] = datetime.now().strftime(FORMAT)
-        self.memory['db']['author'] = message.author.name
+        self.db['record'] = delta.days
+        self.db['timestamp'] = datetime.now().strftime(FORMAT)
+        self.db['author'] = message.author.name
         self.__save_db()
 
     @glados.Module.command('lugaru', '', 'Days since lugaru was mentioned')
