@@ -34,7 +34,7 @@ class ServerInstance(object):
         self.global_data_dir = os.path.join(self.root_data_dir, 'global_cache')
         self.local_data_dir = os.path.join(self.root_data_dir, self.server.id)
 
-    def instantiate_modules(self, class_list, whitelist, blacklist):
+    def instantiate_modules(self, class_list, whitelist):
         for full_name, class_ in sorted(class_list):
             if len(whitelist) > 0 and full_name not in whitelist:
                 continue
@@ -207,7 +207,6 @@ class Bot(object):
         self.class_list = list()  # (fullname, class)
         self.server_instances = dict()
         self.whitelist = dict()
-        self.blacklist = dict()
 
         self.settings.setdefault('command prefix', {}).setdefault('default', '.')
         self.settings.setdefault('auto join', {
@@ -238,7 +237,7 @@ class Bot(object):
         async def on_server_available(server):
             log('Server {} became available'.format(server.name))
             s = ServerInstance(self.client, self.settings, server)
-            s.instantiate_modules(self.class_list, self.whitelist, self.blacklist)
+            s.instantiate_modules(self.class_list, self.whitelist)
             self.server_instances[server.id] = s
 
         @self.client.event
@@ -276,13 +275,10 @@ class Bot(object):
             'modules'  # all default glados modules are in this folder
         ]))
 
-        # Need whitelist and blacklist so we know which classes to load
+        # Need whitelist so we know which classes to load
         for server_id, modnames in self.settings['modules'].setdefault('whitelist', {}).items():
             for modname in modnames:
                 self.whitelist.setdefault(modname, set()).add(server_id)
-        for server_id, modnames in self.settings['modules'].setdefault('blacklist', {}).items():
-            for modname in modnames:
-                self.blacklist.setdefault(modname, set()).add(server_id)
 
         # compose a complete set of modules that need to be loaded. These are global modules + whitelisted modules
         modules_to_import = set(self.settings['modules'].setdefault('names', [
@@ -340,7 +336,7 @@ class Bot(object):
             server.name = 'default'
             server.id = 'default'  # This is also a hack, so we don't create an extra entry in "command prefix"
             s = ServerInstance(self.client, self.settings, server)
-            s.instantiate_modules(self.class_list, self.whitelist, self.blacklist)
+            s.instantiate_modules(self.class_list, self.whitelist)
 
             self.__check_if_settings_changed()
             return ()
