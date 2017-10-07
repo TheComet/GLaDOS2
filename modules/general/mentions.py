@@ -41,7 +41,7 @@ def get_author(msg):
 
 class Mentions(glados.Module):
     def setup_memory(self):
-        mentions_data_path = os.path.join(self.data_dir, 'mentions')
+        mentions_data_path = os.path.join(self.local_data_dir, 'mentions')
         if not os.path.exists(mentions_data_path):
             os.makedirs(mentions_data_path)
 

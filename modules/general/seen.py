@@ -41,7 +41,7 @@ class Seen(glados.Module):
 
     def setup_memory(self):
         self.memory['dict'] = dict()
-        self.memory['config file'] = os.path.join(self.data_dir, 'seen.json')
+        self.memory['config file'] = os.path.join(self.local_data_dir, 'seen.json')
 
         self.__load_dict()
 

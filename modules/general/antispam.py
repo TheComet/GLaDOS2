@@ -17,7 +17,7 @@ class AntiSpam(glados.Module):
         self.__times = dict()
 
     def setup_memory(self):
-        self.memory['db file'] = join(self.data_dir, 'antispam.json')
+        self.memory['db file'] = join(self.local_data_dir, 'antispam.json')
         self.memory.setdefault('db', {})
         self.__load_db()
 

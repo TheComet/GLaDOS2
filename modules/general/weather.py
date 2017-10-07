@@ -119,7 +119,7 @@ def get_wind(parsed):
 class Weather(glados.Module):
     def setup_memory(self):
         self.memory['woeid db'] = dict()
-        self.memory['woeid db file'] = os.path.join(self.data_dir, 'woeid_db.json')
+        self.memory['woeid db file'] = os.path.join(self.local_data_dir, 'woeid_db.json')
         self.__load_locations()
 
     def __load_locations(self):

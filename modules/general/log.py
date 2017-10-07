@@ -5,7 +5,7 @@ from datetime import datetime
 
 class Log(glados.Module):
     def setup_memory(self):
-        self.memory['log path'] = os.path.join(self.data_dir, 'log')
+        self.memory['log path'] = os.path.join(self.local_data_dir, 'log')
         if not os.path.exists(self.memory['log path']):
             os.makedirs(self.memory['log path'])
 

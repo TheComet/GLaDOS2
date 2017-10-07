@@ -35,8 +35,8 @@ def create_author():
 
 class Activity(glados.Module):
     def setup_memory(self):
-        self.memory['log_dir'] = path.join(self.data_dir, 'log')
-        self.memory['cache dir'] = path.join(self.data_dir, 'activity')
+        self.memory['log_dir'] = path.join(self.local_data_dir, 'log')
+        self.memory['cache dir'] = path.join(self.local_data_dir, 'activity')
         self.memory['cache file'] = path.join(self.memory['cache dir'], 'activity_cache.json')
         self.memory['cache'] = None
 

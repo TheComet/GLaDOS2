@@ -82,7 +82,7 @@ class Announcements(Module):
         self.__running_tasks = dict()
 
     def setup_memory(self):
-        self.memory['db file'] = join(self.data_dir, 'announcements.json')
+        self.memory['db file'] = join(self.local_data_dir, 'announcements.json')
         self.memory.setdefault('db', {})
         self.__load_db()
 

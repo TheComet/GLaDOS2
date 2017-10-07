@@ -34,7 +34,7 @@ class WolframAlpha(glados.Module):
         self.__wolfram_client = wolframalpha.Client(key)
 
     def setup_memory(self):
-        self.memory['cache dir'] = os.path.join(self.data_dir, 'wolfram')
+        self.memory['cache dir'] = os.path.join(self.local_data_dir, 'wolfram')
         if not os.path.exists(self.memory['cache dir']):
             os.makedirs(self.memory['cache dir'])
 

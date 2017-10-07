@@ -70,7 +70,7 @@ class Reminder(glados.Module):
         super(Reminder, self).__init__()
 
     def setup_memory(self):
-        self.memory['reminder_file'] = os.path.join(self.data_dir, 'reminders.db')
+        self.memory['reminder_file'] = os.path.join(self.local_data_dir, 'reminders.db')
         self.memory['rdb'] = self.__load_database()
 
         async def monitor():

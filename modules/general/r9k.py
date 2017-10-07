@@ -13,7 +13,7 @@ class R9K(glados.Module):
             self.memory['channels'].add(channel_id)
 
         # directory where r9k stuff is stored
-        self.memory['path'] = os.path.join(self.data_dir, 'r9k')
+        self.memory['path'] = os.path.join(self.local_data_dir, 'r9k')
         if not os.path.exists(self.memory['path']):
             os.makedirs(self.memory['path'])
 

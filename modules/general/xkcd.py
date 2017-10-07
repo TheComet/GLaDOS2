@@ -59,9 +59,9 @@ def duck_search(query):
             if match:
                 return match.group(1)
     return None
-                
 
-def google(query):    
+
+def google(query):
     return duck_search(query + sites_query)
 
 
@@ -71,7 +71,7 @@ class XKCD(glados.Module):
         self.__tmp_dir = None
 
     def setup_memory(self):
-        self.__tmp_dir = os.path.join(self.data_dir, 'xkcd')
+        self.__tmp_dir = os.path.join(self.local_data_dir, 'xkcd')
         if not os.path.exists(self.__tmp_dir):
             os.makedirs(self.__tmp_dir)
 

@@ -12,7 +12,7 @@ import enchant
 
 class Quotes(glados.Module):
     def setup_memory(self):
-        self.memory['quotes path'] = os.path.join(self.data_dir, 'quotes')
+        self.memory['quotes path'] = os.path.join(self.local_data_dir, 'quotes')
         if not os.path.exists(self.memory['quotes path']):
             os.makedirs(self.memory['quotes path'])
 
