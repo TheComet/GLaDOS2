@@ -239,6 +239,9 @@ class Bot(object):
 
         @self.client.event
         async def on_server_available(server):
+            if server.id in self.server_instances:
+                return ()
+
             log('Server {} became available'.format(server.name))
             s = ServerInstance(self.client, self.settings, server)
             s.instantiate_modules(self.class_list, self.whitelist)
@@ -247,7 +250,7 @@ class Bot(object):
         @self.client.event
         async def on_server_unavailable(server):
             log('Server {} became unavailable, cleaning up instances'.format(server.name))
-            self.server_instances.pop(server.id)
+            self.server_instances.pop(server.id, None)
 
     async def __auto_join_channels(self):
         for url in self.settings['auto join']['invite urls']:
