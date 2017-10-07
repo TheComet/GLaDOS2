@@ -42,7 +42,7 @@ class Emotes(glados.Module):
     def setup_memory(self):
         self.memory['blacklist'] = {}
         self.memory['blacklist']['allow_nsfw'] = False
-        self.memory['config_path'] = join(self.data_dir, "emotes.json")
+        self.memory['config_path'] = join(self.local_data_dir, "emotes.json")
         self.load_blacklist()
 
     def load_blacklist(self):
@@ -80,11 +80,11 @@ class Emotes(glados.Module):
             m_img.save(join(self.emotes_path, name) + ".png", transparency=255, optimize=True)
         else:
             m_img.save(join(self.emotes_path, name) + ".png", optimize=True)
-    
+
     def sanitize_name(self, name):
         # we use replace to strip any symbols that'd allow file naviagation.
         return name.replace('/', '').replace('\\', '').replace('.', '')
-    
+
     def build_emote(self, name, image_path, x_offset, y_offset, x_size, y_size, flip, convert):
         # print("Emote: '" + name + "' Img: " + ImagePath + " o: " + str(xOffset) + " " + str(yOffset) + " s: " + str(xSize) + " " + str(ySize))
         name_base = name + ".tmp"
@@ -100,7 +100,7 @@ class Emotes(glados.Module):
                 frame_cnt = APNGLib.MakeGIF(name_base, join(self.emotes_path, name) + ".gif", transform, x_offset, y_offset,
                                         x_size, y_size)
             else:
-                frame_cnt = 1 
+                frame_cnt = 1
             if frame_cnt == 1:
                 # we tell the function the  not to save if there is only 1 frame, so we can save it as a png instead.
                 self.save_target_image(name_base, name, x_offset, y_offset, x_size, y_size, flip, convert)
@@ -126,7 +126,7 @@ class Emotes(glados.Module):
             except:
                 time.sleep(1)
         return True
-                
+
     async def build_emote_db(self):
         self.tag_list = {}
         self.emote_list = {}
@@ -317,10 +317,10 @@ class Emotes(glados.Module):
         is_nsfw = False
         if emote:
             return await self.client.send_message(message.channel, 'emote name is already in use.')
-        
+
         if not self.build_emote(name, csplit[1], 0, 0, 0, 0, False, False):
             return await self.client.send_message(message.channel, 'Failed to create emote.')
-        
+
         #append new emote into our bot's json file.
         jinfo_file = open(join(self.infodb_path, self.custom_emote_filename))
         jtag_file = open(join(self.tagdb_path,self.custom_emote_filename))
@@ -353,8 +353,8 @@ class Emotes(glados.Module):
         #add emote to existing db.
         self.emote_list[name] = Eemote(name, csplit[1], 0, 0, 0, 0, False, is_nsfw)
         self.raw_emote_list.append(name)
-        return await self.client.send_message(message.channel, 'Added '+name+' to emote list.') 
-        
+        return await self.client.send_message(message.channel, 'Added '+name+' to emote list.')
+
     @glados.Module.command('ponylist', '[subreddit | tags]', "pm's you a list of emotes in the specefied subreddits, "
                            "or tagged emotes(i.e: +v) or sends a list of all subreddits if empty.")
     async def get_pony_list(self, message, content):

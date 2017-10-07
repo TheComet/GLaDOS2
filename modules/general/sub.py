@@ -37,7 +37,7 @@ def timeout_match(regex, message):
 class Sub(glados.Module):
 
     def setup_memory(self):
-        self.memory['subs file'] = os.path.join(self.data_dir, 'subs.json')
+        self.memory['subs file'] = os.path.join(self.local_data_dir, 'subs.json')
         self.memory['subs'] = dict()
         self.memory['times'] = dict()
 

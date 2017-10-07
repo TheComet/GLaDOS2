@@ -35,7 +35,7 @@ def readable_timestamp(delta):
 class Lugaru(glados.Module):
 
     def setup_memory(self):
-        self.memory['db file'] = os.path.join(self.data_dir, 'lugaru.json')
+        self.memory['db file'] = os.path.join(self.local_data_dir, 'lugaru.json')
         self.memory['db'] = dict()
         self.__load_db()
 

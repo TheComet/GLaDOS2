@@ -5,25 +5,12 @@ import sys
 
 class Module(object):
 
-    def __init__(self, bot, full_name):
-        # Managed externally, stores server IDs
-        self.server_whitelist = set()
-        self.server_blacklist = set()
+    def __init__(self, server_instance, full_name):
         # reference to the bot object, required for getting the client object or a list of all loaded modules
-        self.__bot = bot
+        self.__server_instance = server_instance
         # set when the module is loaded. It will be something like "test.foo.Hello".
         self.__full_name = full_name
-
-        # Maintain a "Memory" dict per server, for isolation purposes
-        self.__memories = dict()
-        self.__current_memory = None
-
-    def switch_memory(self):
-        # lazy memory init for modules
-        self.__current_memory = self.__memories.get(self.current_server.id, None)
-        if self.__current_memory is None:
-            self.__current_memory = self.__memories[self.current_server.id] = dict()
-            self.setup_memory()  # calls derived
+        self.is_blacklisted = False
 
     @property
     def settings(self):
@@ -31,7 +18,11 @@ class Module(object):
         :return: Reference to global settings.json file. You can write things back into it. Changes will be saved after
         your command returns.
         """
-        return self.__bot.settings
+        return self.__server_instance.settings
+
+    @property
+    def server(self):
+        return self.__server_instance.server
 
     @property
     def full_name(self):
@@ -42,42 +33,14 @@ class Module(object):
 
     @property
     def command_prefix(self):
-        return self.__bot.command_prefix
-
-    @property
-    def current_server(self):
-        """
-        :return: A reference to the currently active discord server object (from which the message originated).
-        """
-        return self.__bot.current_server
-
-    def is_active_for(self, server):
-        """
-        Return whether this module is currently running and accessible by users on the current server.
-        :return: True or False.
-        """
-        return self.is_available_for(server) and server.id not in self.server_blacklist
-
-    def is_available_for(self, server):
-        """
-        Return whether this module is whitelisted for the specified server.
-        :return: True or False.
-        """
-        return len(self.server_whitelist) == 0 or server.id in self.server_whitelist
-
-    def is_blacklisted_for(self, server):
-        """
-        Return whether this module is disabled for the current server.
-        :return: True or False.
-        """
-        return server.id in self.server_blacklist
+        return self.__server_instance.command_prefix
 
     @property
     def client(self):
         """
         :return: A reference to the discord client object.
         """
-        return self.__bot.client
+        return self.__server_instance.client
 
     @property
     def active_modules(self):
@@ -85,21 +48,21 @@ class Module(object):
         :return: A set of all of the loaded modules that are active on the current server and are not
         blacklisted.
         """
-        return self.__bot.get_active_modules_for(self.current_server)
+        return self.__server_instance.active_modules
 
     @property
     def available_modules(self):
         """
         :return: A set of all of the available modules that could be activated on the current server.
         """
-        return self.__bot.get_available_modules_for(self.current_server)
+        return self.__server_instance.available_modules
 
     @property
     def blacklisted_modules(self):
         """
         :return: A set of the modules that were blacklisted for the current server.
         """
-        return self.__bot.get_blacklisted_modules_for(self.current_server)
+        return self.__server_instance.blacklisted_modules
 
     @property
     def global_data_dir(self):
@@ -107,37 +70,15 @@ class Module(object):
         :return: Returns the path to a directory where modules can store data that is common among all servers.
         If you want to store data only for specific servers, then use data_dir() instead.
         """
-        return self.__bot.global_data_dir
+        return self.__server_instance.global_data_dir
 
     @property
-    def data_dir(self):
+    def local_data_dir(self):
         """
         Returns the path in which modules can store their data. Modules **must** use this function and not retrieve it
         from the "settings" dict. It changes depending on which server a message originated from.
         """
-        return self.__bot.data_dir
-
-    @property
-    def memory(self):
-        """
-        Returns the server specific memory. Modules can store whatever they want in here.
-        :return: A dictionary. Store whatever you want
-        """
-        return self.__current_memory
-
-    def setup_memory(self):
-        """
-        Gets called once for every server on demand. This is useful when modules want to create the server specific
-        directories and set up memory storage.
-        """
-        pass
-
-    def shutdown(self):
-        """
-        Gets called once when the bot is about to terminate execution. You can do various cleanup
-        stuff here like saving files.
-        """
-        pass
+        return self.__server_instance.local_data_dir
 
     def is_banned(self, member):
         """
@@ -145,7 +86,7 @@ class Module(object):
         :param member: A discord member object.
         :return: True if banned, False if otherwise
         """
-        return self.__bot.permissions.is_banned(member)
+        return self.__server_instance.permissions.is_banned(member)
 
     def is_blessed(self, member):
         """
@@ -153,7 +94,7 @@ class Module(object):
         :param member: A discord member object.
         :return: True if blessed, False if otherwise
         """
-        return self.__bot.permissions.is_blessed(member)
+        return self.__server_instance.permissions.is_blessed(member)
 
     def require_moderator(self, member):
         """
@@ -161,7 +102,7 @@ class Module(object):
         :param member: A discord member object.
         :return: True if so, False if otherwise.
         """
-        return self.__bot.permissions.require_moderator(member)
+        return self.__server_instance.permissions.require_moderator(member)
 
     def require_admin(self, member):
         """
@@ -169,7 +110,7 @@ class Module(object):
         :param member: A discord member object.
         :return: True if so, False if otherwise.
         """
-        return self.__bot.permissions.require_admin(member)
+        return self.__server_instance.permissions.require_admin(member)
 
     def require_owner(self, member):
         """
@@ -177,7 +118,7 @@ class Module(object):
         :param member: A discord member object.
         :return: True if so, False if otherwise.
         """
-        return self.__bot.permissions.require_owner(member)
+        return self.__server_instance.permissions.require_owner(member)
 
     async def provide_help(self, command, message):
         """
@@ -253,10 +194,10 @@ class Module(object):
                 name = name.strip('@').split('#')[0]
                 submembers = set()
                 subroles = set()
-                for member in self.current_server.members:
+                for member in self.server.members:
                     if member.nick == name or member.name == name:
                         submembers.add(member)
-                for role in self.current_server.roles:
+                for role in self.server.roles:
                     if role.name == name:
                         subroles.add(role)
 

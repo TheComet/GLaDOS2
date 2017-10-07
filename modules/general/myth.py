@@ -8,7 +8,7 @@ import random
 class Myth(glados.Module):
 
     def setup_memory(self):
-        self.memory['data path'] = os.path.join(self.data_dir, 'myths')
+        self.memory['data path'] = os.path.join(self.local_data_dir, 'myths')
         if not os.path.isdir(self.memory['data path']):
             os.mkdir(self.memory['data path'])
         self.memory['data file'] = os.path.join(self.memory['data path'], 'myths.txt')
