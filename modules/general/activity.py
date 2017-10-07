@@ -1,7 +1,7 @@
 import glados
 import re
 import time
-import types
+import asyncio
 import pylab as plt
 import json
 from os import path, listdir, makedirs
@@ -34,29 +34,31 @@ def create_author():
 
 
 class Activity(glados.Module):
-    def setup_memory(self):
-        self.memory['log_dir'] = path.join(self.local_data_dir, 'log')
-        self.memory['cache dir'] = path.join(self.local_data_dir, 'activity')
-        self.memory['cache file'] = path.join(self.memory['cache dir'], 'activity_cache.json')
-        self.memory['cache'] = None
+    def __init__(self, server_instance, full_name):
+        super(Activity, self).__init__(server_instance, full_name)
 
-        if not path.exists(self.memory['cache dir']):
-            makedirs(self.memory['cache dir'])
+        self.log_dir = path.join(self.local_data_dir, 'log')
+        self.cache_dir = path.join(self.local_data_dir, 'activity')
+        self.cache_file = path.join(self.cache_dir, 'activity_cache.json')
+        self.cache = None
 
-        if path.isfile(self.memory['cache file']):
-            self.memory['cache'] = json.loads(open(self.memory['cache file']).read())
+        if not path.exists(self.cache_dir):
+            makedirs(self.cache_dir)
+
+        if path.isfile(self.cache_file):
+            self.cache = json.loads(open(self.cache_file).read())
 
     def __cache_is_stale(self):
         date = datetime.now().strftime('%Y-%m-%d')
-        if self.memory['cache'] is None or not self.memory['cache']['date'] == date:
+        if self.cache is None or not self.cache['date'] == date:
             return True
         return False
 
     async def __reprocess_cache(self):
         # Get list of all channel log files
-        files = [join(self.memory['log_dir'], f) for f in listdir(self.memory['log_dir']) if isfile(join(self.memory['log_dir'], f))]
-        self.memory['cache'] = dict()
-        self.memory['cache']['date'] = datetime.now().strftime('%Y-%m-%d')
+        files = [join(self.log_dir, f) for f in listdir(self.log_dir) if isfile(join(self.log_dir, f))]
+        self.cache = dict()
+        self.cache['date'] = datetime.now().strftime('%Y-%m-%d')
         authors = dict()
 
         for f in files:
@@ -93,10 +95,7 @@ class Activity(glados.Module):
                         a['weekly_day_cycle'][log_stamp][int(m.stamp.tm_hour)] += 1
 
                 # This process does take some time
-                @types.coroutine
-                def switch():
-                    yield
-                await switch()
+                await asyncio.sleep(0)
 
         # Normalise the 24h per day statistic over the number of days the author has made messages
         for author_name, author in authors.items():
@@ -139,10 +138,10 @@ class Activity(glados.Module):
             for hour, message_count in enumerate(author['recent_day_cycle']):
                 server_stats['recent_day_cycle'][hour] += message_count
 
-        self.memory['cache']['authors'] = authors
-        self.memory['cache']['server'] = server_stats
-        with open(self.memory['cache file'], 'w') as f:
-            f.write(json.dumps(self.memory['cache']))
+        self.cache['authors'] = authors
+        self.cache['server'] = server_stats
+        with open(self.cache_file, 'w') as f:
+            f.write(json.dumps(self.cache))
 
     @glados.Module.command('ranks', '', 'Top users who post the most shit')
     async def ranks(self, message, users):
@@ -150,7 +149,7 @@ class Activity(glados.Module):
             await self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
             self.__reprocess_cache()
 
-        authors = self.memory['cache']['authors']
+        authors = self.cache['authors']
         authors_total = dict()
         for author_name, author in authors.items():
             authors_total[author_name] = sum(v for k, v in author['participation_per_day'].items())
@@ -174,10 +173,10 @@ class Activity(glados.Module):
             await self.__reprocess_cache()
 
         if user_name == '':
-            user = self.memory['cache']['server']
+            user = self.cache['server']
             user_name = 'Server'
         else:
-            authors = self.memory['cache']['authors']
+            authors = self.cache['authors']
             if not user_name in authors:
                 await self.client.send_message(message.channel, 'Unknown user "{}". Try mentioning him?'.format(user_name))
                 return
@@ -234,6 +233,6 @@ class Activity(glados.Module):
         for label in ax3.xaxis.get_ticklabels()[::spacing]:
             label.set_visible(False)
 
-        image_file_name = path.join(self.memory['cache dir'], user_name + '.png')
+        image_file_name = path.join(self.cache_dir, user_name + '.png')
         fig.savefig(image_file_name)
         return image_file_name

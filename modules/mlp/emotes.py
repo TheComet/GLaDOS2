@@ -24,8 +24,9 @@ class Eemote:
 
 
 class Emotes(glados.Module):
-    def __init__(self, bot, full_name):
-        super(Emotes, self).__init__(bot, full_name)
+    def __init__(self, server_instance, full_name):
+        super(Emotes, self).__init__(server_instance, full_name)
+
         this_dir = dirname(realpath(__file__))
         self.emotes_path = join(this_dir, 'emotesdb')
         self.infodb_path = join(this_dir, 'emote_info_db')
@@ -37,28 +38,26 @@ class Emotes(glados.Module):
         self.is_running = True
         asyncio.ensure_future(self.build_emote_db())
 
-
-    def setup_memory(self):
-        self.memory['blacklist'] = {}
-        self.memory['blacklist']['allow_nsfw'] = False
-        self.memory['config_path'] = join(self.local_data_dir, "emotes.json")
+        self.blacklist = {}
+        self.allow_nsfw = False
+        self.config_path = join(self.local_data_dir, "emotes.json")
         self.load_blacklist()
 
     def load_blacklist(self):
-        if isfile(self.memory['config_path']):
-            self.memory['blacklist'] = json.loads(open(self.memory['config_path']).read())
+        if isfile(self.config_path):
+            self.blacklist = json.loads(open(self.config_path).read())
 
     def save_blacklist(self):
         try:
-            os.makedirs(os.path.dirname(self.memory['config_path']))
+            os.makedirs(os.path.dirname(self.config_path))
         except Exception as E:
             if "File exists" not in str(E):
                 print(E)
                 return
                 # do nothing as the dirs probably already exist
-        f = open(self.memory['config_path'], "w")
+        f = open(self.config_path, "w")
         if f:
-            f.write(json.dumps(self.memory['blacklist']))
+            f.write(json.dumps(self.blacklist))
 
     def save_target_image(self, source, name, x_offset, y_offset, x_size, y_size, flip, convert):
         m_img = Image.open(source)
@@ -232,10 +231,10 @@ class Emotes(glados.Module):
                 await self.client.send_message(message.channel, 'Unknown emoticon.')
             return
 
-        if self.memory['blacklist'].get(emote.name):
+        if self.blacklist.get(emote.name):
             await self.client.send_message(message.channel, 'Emote is blacklisted on this server.')
             return
-        if not self.memory['blacklist']['allow_nsfw'] and emote.is_nsfw:
+        if not self.allow_nsfw and emote.is_nsfw:
             await self.client.send_message(message.channel, 'Emote is tagged as nsfw.')
             return
 
@@ -261,7 +260,7 @@ class Emotes(glados.Module):
                 await self.client.send_message(message.channel, 'Unknown emoticon.')
             return
 
-        self.memory['blacklist'][emote.name] = 1
+        self.blacklist[emote.name] = 1
 
         self.save_blacklist()
         await self.client.send_message(message.channel, 'blacklisted emote.')
@@ -279,7 +278,7 @@ class Emotes(glados.Module):
                 await self.client.send_message(message.channel, 'Unknown emoticon.')
             return
 
-        self.memory['blacklist'].pop(emote.name, None)
+        self.blacklist.pop(emote.name, None)
         self.save_blacklist()
         await self.client.send_message(message.channel, 'removed emote from blacklist.')
 
@@ -291,7 +290,7 @@ class Emotes(glados.Module):
             await self.provide_help('ponynsfw', message)
             return
         enable = content == "enable"
-        self.memory['blacklist']['allow_nsfw'] = enable
+        self.allow_nsfw = enable
         self.save_blacklist()
         if enable:
             await self.client.send_message(message.channel, 'nsfw emotes have been enabled.')

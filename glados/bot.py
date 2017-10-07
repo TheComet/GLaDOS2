@@ -107,23 +107,21 @@ class ServerInstance(object):
                 continue
 
             # process bot messages
-            if message.author.bot and hasattr(callback, 'bot_rules'):
-                for rule, ignorecommands in callback.bot_rules:
-                    if ignorecommands and message.content.startswith(self.server.command_prefix):
-                        continue
-                    match = rule.match(message.content)
-                    if match is None:
-                        continue
-                    ret.append((callback, match))
-
-            # Bots can't trigger normal rules
             if message.author.bot:
+                if hasattr(callback, 'bot_rules'):
+                    for rule, ignorecommands in callback.bot_rules:
+                        if ignorecommands and message.content.startswith(self.command_prefix):
+                            continue
+                        match = rule.match(message.content)
+                        if match is None:
+                            continue
+                        ret.append((callback, match))
                 continue
 
             # process message responses
             if hasattr(callback, 'rules'):
                 for rule, ignorecommands in callback.rules:
-                    if ignorecommands and message.content.startswith(self.server.command_prefix):
+                    if ignorecommands and message.content.startswith(self.command_prefix):
                         continue
                     match = rule.match(message.content)
                     if match is None:
@@ -234,6 +232,7 @@ class Bot(object):
         async def on_ready():
             await self.__auto_join_channels()
             log('Running as {}'.format(self.client.user.name))
+            self.__check_if_settings_changed()
 
         @self.client.event
         async def on_server_available(server):
@@ -334,8 +333,15 @@ class Bot(object):
             args.append(email)
             args.append(password)
 
-        # create settings.json and then let it be changed before actually logging in.
+        # Kind of hackish, we have to instantiate all loaded modules (to call their __init__) in case any module
+        # decides to make additions to the settings.json file. If settings.json doesn't exist, we have to do this.
         if not isfile('settings.json'):
+            server = type('Server', (object,), {})
+            server.name = 'default'
+            server.id = 'default'  # This is also a hack, so we don't create an extra entry in "command prefix"
+            s = ServerInstance(self.client, self.settings, server)
+            s.instantiate_modules(self.class_list, self.whitelist, self.blacklist)
+
             self.__check_if_settings_changed()
             return ()
         self.__check_if_settings_changed()

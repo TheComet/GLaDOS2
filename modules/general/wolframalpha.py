@@ -25,18 +25,14 @@ CANNOT_UNDERSTAND = [
 
 
 class WolframAlpha(glados.Module):
-    def __init__(self, bot, full_name):
-        super(WolframAlpha, self).__init__(bot, full_name)
-        self.__wolfram_client = None
+    def __init__(self, server_instance, full_name):
+        super(WolframAlpha, self).__init__(server_instance, full_name)
 
-    def setup_global(self):
         key = self.settings.setdefault('wolfram alpha', {}).setdefault('key', '<please enter WA key>')
         self.__wolfram_client = wolframalpha.Client(key)
-
-    def setup_memory(self):
-        self.memory['cache dir'] = os.path.join(self.local_data_dir, 'wolfram')
-        if not os.path.exists(self.memory['cache dir']):
-            os.makedirs(self.memory['cache dir'])
+        self.cache_dir = os.path.join(self.local_data_dir, 'wolfram')
+        if not os.path.exists(self.cache_dir):
+            os.makedirs(self.cache_dir)
 
     @staticmethod
     def __format_info(spellcheck, delimiters, reinterpret):
@@ -108,7 +104,7 @@ class WolframAlpha(glados.Module):
                     img = requests.get(subpod['img']['@src'], stream=True)
                     img.raw.decode_content = True
 
-                    image_file_name = os.path.join(self.memory['cache dir'], message.author.name + '.gif')
+                    image_file_name = os.path.join(self.cache_dir, message.author.name + '.gif')
                     with open(image_file_name, 'w+b') as f:
                         f.write(img.raw.read())
                     await self.client.send_file(message.channel, image_file_name,
@@ -121,7 +117,7 @@ class WolframAlpha(glados.Module):
                     img = requests.get(subpod['img']['@src'], stream=True)
                     img.raw.decode_content = True
 
-                    image_file_name = os.path.join(self.memory['cache dir'], message.author.name + '.gif')
+                    image_file_name = os.path.join(self.cache_dir, message.author.name + '.gif')
                     with open(image_file_name, 'w+b') as f:
                         f.write(img.raw.read())
                     await self.client.send_file(message.channel, image_file_name,
