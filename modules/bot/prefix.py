@@ -1,8 +1,8 @@
-from glados import Module, Permissions
+from glados import Module, DummyPermissions
 
 
 class Prefix(Module):
-    @Permissions.admin
+    @DummyPermissions.admin
     @Module.command('prefix', '<prefix>', 'Sets the command prefix for the current server. Default is "."')
     async def set_prefix(self, message, content):
         content = content.strip()

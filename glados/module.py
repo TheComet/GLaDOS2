@@ -10,7 +10,6 @@ class Module(object):
         self.__server_instance = server_instance
         # set when the module is loaded. It will be something like "test.foo.Hello".
         self.__full_name = full_name
-        self.is_blacklisted = False
 
     @property
     def settings(self):

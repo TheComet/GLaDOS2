@@ -5,7 +5,7 @@ import dateutil.parser
 from datetime import datetime, timedelta
 
 
-class Permissions(glados.Permissions):
+class Permissions(glados.DummyPermissions):
 
     def __init__(self, bot, full_name):
         super(Permissions, self).__init__(bot, full_name)
@@ -118,7 +118,7 @@ class Permissions(glados.Permissions):
         for msg in self.pack_into_messages(strings):
             await self.client.send_message(message.channel, msg)
 
-    @glados.Permissions.moderator
+    @glados.DummyPermissions.moderator
     @glados.Module.command('ban', '<user/role> [user/role...] [hours=24]', 'Blacklist the specified user(s) or '
                            'roles from using the bot for the specified number of hours. The default number of hours is '
                            '24. Specifying a value of 0 will cause the user to be perma-banned. The ban is based on '
@@ -150,7 +150,7 @@ class Permissions(glados.Permissions):
         await self.client.send_message(message.channel,
                 self.__mark_command(members, roles, duration, 'banned'))
 
-    @glados.Permissions.moderator
+    @glados.DummyPermissions.moderator
     @glados.Module.command('unban', '<user/role> [user/role...]', 'Allow a banned user(s) to use the bot again')
     async def unban_command(self, message, content):
         members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
@@ -161,7 +161,7 @@ class Permissions(glados.Permissions):
         await self.client.send_message(message.channel,
                 self.__unmark_command(members, roles, 'banned'))
 
-    @glados.Permissions.moderator
+    @glados.DummyPermissions.moderator
     @glados.Module.command('bless', '<user/role> [user/role...] [hours=1]', 'Allow the specified user to evade the '
                            'punishment system for a specified number of hours. Specifying 0 means forever. This '
                            'allows the user to excessively use the bot without consequences.')
@@ -174,7 +174,7 @@ class Permissions(glados.Permissions):
         await self.client.send_message(message.channel,
                 self.__mark_command(members, roles, duration, 'blessed'))
 
-    @glados.Permissions.moderator
+    @glados.DummyPermissions.moderator
     @glados.Module.command('unbless', '<user/role> [user/role...]', 'Removes a user\'s blessing so he is punished '
                            'for excessive use of the authorized serversbot again.')
     async def unbless_command(self, message, content):
@@ -186,7 +186,7 @@ class Permissions(glados.Permissions):
         await self.client.send_message(message.channel,
                 self.__unmark_command(members, roles, 'blessed'))
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('mod', '<user/role> [user/role...] [hours=0]', 'Assign moderator status to a user or role.'
                            ' Moderators are able to bless, unbless, ban or unban users, but they cannot use any admin '
                            'commands.')
@@ -204,7 +204,7 @@ class Permissions(glados.Permissions):
         await self.client.send_message(message.channel,
                 self.__mark_command(members, roles, duration, 'moderator'))
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('unmod', '<user/role> [user/role]', 'Removes moderator status from users or roles.')
     async def unmod_command(self, message, content):
         members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
@@ -215,7 +215,7 @@ class Permissions(glados.Permissions):
         await self.client.send_message(message.channel,
                 self.__unmark_command(members, roles, 'moderator'))
 
-    @glados.Permissions.owner
+    @glados.DummyPermissions.owner
     @glados.Module.command('admin', '<user/role> [user/role] [hours=0]', 'Assign admin status to a user or role. '
                            'Admins can do everything moderators can, including major bot internal stuff (such as '
                            'reloading the config, managig databases, etc.) They can also assign moderator status to '
@@ -230,7 +230,7 @@ class Permissions(glados.Permissions):
         msg = self.__mark_command(members, roles, duration, 'admin')
         await self.client.send_message(message.channel, msg)
 
-    @glados.Permissions.owner
+    @glados.DummyPermissions.owner
     @glados.Module.command('unadmin', '<user/role> [user/role]', 'Removes admin status from users or roles.')
     async def unadmin_command(self, message, content):
         members, roles, duration, error = self.__parse_members_roles_duration(message, content, 0)
@@ -241,7 +241,7 @@ class Permissions(glados.Permissions):
         await self.client.send_message(message.channel,
                 self.__unmark_command(members, roles, 'admin'))
 
-    @glados.Permissions.owner
+    @glados.DummyPermissions.owner
     @glados.Module.command('addserver', '', 'Allows the bot to interact with this server. If this is not set, then the '
                            'bot will simply ignore all queries sent to it.')
     async def addserver(self, message, content):
@@ -253,7 +253,7 @@ class Permissions(glados.Permissions):
         else:
             await self.client.send_message(message.channel, 'Server already authorized')
 
-    @glados.Permissions.owner
+    @glados.DummyPermissions.owner
     @glados.Module.command('rmserver', '[server index]', 'Remove the bot from a server. The bot doesn\'t leave but it '
                            'will stop responding to queries.')
     async def rmserver(self, message, content):
@@ -276,7 +276,7 @@ class Permissions(glados.Permissions):
         except ValueError:
             await self.client.send_message(message.channel, 'Server already removed.'.format(server.name))
 
-    @glados.Permissions.owner
+    @glados.DummyPermissions.owner
     @glados.Module.command('serverlist', '', 'List all servers the bot has joined')
     async def serverlist(self, message, content):
         servers_auths = [(server.name, server.id in self.settings['permissions']['authorized servers'])
@@ -292,7 +292,7 @@ class Permissions(glados.Permissions):
         for msg in strings:
             await self.client.send_message(message.channel, msg)
 
-    @glados.Permissions.owner
+    @glados.DummyPermissions.owner
     @glados.Module.command('serverauth', '<enable|disable>', 'Enable or disable the server authorization feature')
     async def serverauth(self, message, content):
         if content == 'enable':
@@ -376,21 +376,17 @@ class Permissions(glados.Permissions):
             f.write(s)
 
     def __is_member_still_marked_as(self, member, key):
-        expiry_dates = list()
         try:
-            expiry_dates.append(
+            expiry_dates = [
                 ('IDs', member.id, self.db[key]['IDs'][member.id])
-            )
+            ]
         except KeyError:
-            pass
-
-        try:
             member_role_names = set(x.name for x in member.roles)
             key_role_names = set(self.db[key]['roles'])
-            expiry_dates += [('roles', x, self.db[key]['roles'][x])
+            expiry_dates = [('roles', x, self.db[key]['roles'][x])
                             for x in member_role_names.intersection(key_role_names)]
-        except KeyError:
-            pass
+            if len(expiry_dates) == 0:
+                return False
 
         # NOTE: expiry_dates contains a list of tuples, where each tuple is:
         #   (type_key, item_key, expiry_date)

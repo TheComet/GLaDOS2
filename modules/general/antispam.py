@@ -21,7 +21,7 @@ class AntiSpam(glados.Module):
         self.memory.setdefault('db', {})
         self.__load_db()
 
-    @glados.Permissions.spamalot
+    @glados.DummyPermissions.spamalot
     @glados.Module.rule('^.*$')
     async def on_message(self, message, match):
         # No need to do anything if there is no mute role
@@ -59,7 +59,7 @@ class AntiSpam(glados.Module):
             except discord.Forbidden:
                 await self.client.send_message(message.channel, 'I don\' have permission to mute you, but I would')
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('muterole', '<role name|none>', 'Activates/deactivates anti-spam. When a user spams too '
                            'much, the bot will assign him the specified role. You can configure this role\'s '
                            'permissions within discord to mute any person with this role, for example.')
@@ -96,7 +96,7 @@ class AntiSpam(glados.Module):
         else:
             await self.client.send_message(message.channel, 'No role with name "{}" found'.format(content))
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('mutelength', '<hours>', 'Configures how long the bot should wait before removing the '
                            'mute role automatically again. Specifying 0 means the role will never be removed. Default is 0')
     async def mutelength(self, message, content):
@@ -114,7 +114,7 @@ class AntiSpam(glados.Module):
             'forever' if hours == 0 else '{} hours'.format(hours)
         ))
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('mutemessage', '<msg>', 'The message to print when a user is muted. You can use python-like '
                            'syntax "{0}" to refer the user\'s name and "{1}" to refer to the date of expiry, e.g. '
                            '"Sorry {0}, you were muted until {1}"')
@@ -124,7 +124,7 @@ class AntiSpam(glados.Module):
         msg = content.replace('{0}', '<user>').replace('{1}', '<expiry>')
         await self.client.send_message(message.channel, 'Message changed to "{}"'.format(msg))
 
-    @glados.Permissions.moderator
+    @glados.DummyPermissions.moderator
     @glados.Module.command('mute', '<user> [user...] [duration]', 'Mutes the specified user(s)')
     async def mute(self, message, content):
         if 'role' not in self.memory['db']:
@@ -148,7 +148,7 @@ class AntiSpam(glados.Module):
         await self.client.send_message(message.channel, 'User(s) {} were muted for {} hour(s)'.format(
             ' '.join(x.name for x in members), length))
 
-    @glados.Permissions.moderator
+    @glados.DummyPermissions.moderator
     @glados.Module.command('unmute', '<user> [user...]', 'Unmutes the specified user(s)')
     async def unmute(self, message, content):
         if 'role' not in self.memory['db']:

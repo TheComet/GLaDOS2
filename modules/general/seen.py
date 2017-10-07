@@ -57,7 +57,7 @@ class Seen(glados.Module):
         with open(self.memory['config file'], 'w') as f:
             f.write(json.dumps(self.memory['dict']))
 
-    @glados.Permissions.spamalot
+    @glados.DummyPermissions.spamalot
     @glados.Module.rule('^.*$', ignorecommands=False)
     async def on_message(self, message, match):
         author = message.author.name

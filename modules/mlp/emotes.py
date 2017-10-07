@@ -248,7 +248,7 @@ class Emotes(glados.Module):
             path = self.find_emote_path(emote.name)
         await self.client.send_file(message.channel, path)
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('ponydel', '<emote>', 'blacklists the specified pony emote from the database for that '
                            'server, only a mod or admin can run this command.')
     async def delete_pony_emote(self, message, content):
@@ -266,7 +266,7 @@ class Emotes(glados.Module):
         self.save_blacklist()
         await self.client.send_message(message.channel, 'blacklisted emote.')
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('ponyundel', '<emote>', 'unblacklists the specified pony emote from the database for that '
                            'server, only a mod or admin can run this command.')
     async def undelete_pony_emote(self, message, content):
@@ -283,7 +283,7 @@ class Emotes(glados.Module):
         self.save_blacklist()
         await self.client.send_message(message.channel, 'removed emote from blacklist.')
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('ponynsfw', '<enable/disable>', 'sets a flag allowing or disallowing nsfw emotes on the '
                            'specefied server, only a mod or admin can run this command.')
     async def pony_nsfw(self, message, content):
@@ -300,7 +300,7 @@ class Emotes(glados.Module):
         return
 
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('ponyadd', '<emote> <pngimagepath> [Optional tags]', 'adds a custom pony emote to the bot, and adds it the servers json file')
     async def pony_add(self, message, content):
         csplit = content.split()

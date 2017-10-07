@@ -163,7 +163,7 @@ class BuildEmotes(glados.Module):
         print("Finished thread!")
         return
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('ponybuild', '[db] [db...]', 'Admin only usable, use to rebuild the '
                            'entire pony emote cache db, or only a partial db specefied by Opetiondb(i.e: mylittlepony only '
                            'builds for the mylittlepony.json db)')
