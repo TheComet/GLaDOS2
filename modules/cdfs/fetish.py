@@ -12,7 +12,7 @@ class Fetish(glados.Module):
             await self.client.send_message(message.channel, error)
             return
 
-        roles = [role for role in self.current_server.roles if role.name == 'Dirty Pony']
+        roles = [role for role in self.server.roles if role.name == 'Dirty Pony']
         for member in members:
             await self.client.add_roles(member, *roles)
         await self.client.send_message(message.channel,
@@ -27,7 +27,7 @@ class Fetish(glados.Module):
             await self.client.send_message(message.channel, error)
             return
 
-        roles = [role for role in self.current_server.roles if role.name == 'Dirty Pony']
+        roles = [role for role in self.server.roles if role.name == 'Dirty Pony']
         for member in members:
             await self.client.remove_roles(member, *roles)
         await self.client.send_message(message.channel,

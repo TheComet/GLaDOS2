@@ -22,8 +22,9 @@ class Eemote:
 
 
 class BuildEmotes(glados.Module):
-    def __init__(self, bot, full_name):
-        super(BuildEmotes, self).__init__(bot, full_name)
+    def __init__(self, server_instance, full_name):
+        super(BuildEmotes, self).__init__(server_instance, full_name)
+
         this_dir = dirname(realpath(__file__))
         self.emotedb_path = join(this_dir, 'emotesdb')
         self.configdb_path = join(this_dir, 'emote_info_db')

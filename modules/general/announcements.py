@@ -79,14 +79,13 @@ class AnnounceInfo(object):
 class Announcements(Module):
     def __init__(self, bot, full_name):
         super(Announcements, self).__init__(bot, full_name)
-        self.__running_tasks = dict()
 
-    def setup_memory(self):
-        self.memory['db file'] = join(self.local_data_dir, 'announcements.json')
-        self.memory.setdefault('db', {})
+        self.__running_tasks = dict()
+        self.db_file = join(self.local_data_dir, 'announcements.json')
+        self.db = dict()
         self.__load_db()
 
-        for ID, announcement in self.memory['db'].items():
+        for ID, announcement in self.db.items():
             a = self.__load_announcement(ID)
             self.__start_announce_task(a)
 
@@ -131,7 +130,7 @@ class Announcements(Module):
     @Module.command('lsannouncements', '', 'Lists all active announcements and their IDs.')
     async def lsannouncements(self, message, content):
         strings = list()
-        for ID, a_dict in self.memory['db'].items():
+        for ID, a_dict in self.db.items():
             try:
                 a = self.__load_announcement(ID)
             except RuntimeError:
@@ -148,7 +147,7 @@ class Announcements(Module):
         pass
 
     def __new_announcement(self, message, content):
-        announcement_dict = self.memory['db']
+        announcement_dict = self.db
         ID = 1
         while str(ID) in announcement_dict:
             ID += 1
@@ -158,16 +157,16 @@ class Announcements(Module):
 
     def __load_announcement(self, ID):
         a = AnnounceInfo(self.client, ID)
-        a.read_from_db(self.memory['db'])
+        a.read_from_db(self.db)
         return a
 
     def __write_announcement(self, a):
-        a.write_to_db(self.memory['db'])
+        a.write_to_db(self.db)
         self.__save_db()
 
     def __rm_announcement(self, ID):
         try:
-            self.memory['db'].pop(str(ID))
+            self.db.pop(str(ID))
             self.__save_db()
             task = self.__running_tasks.get(ID, None)
             if task:
@@ -177,9 +176,9 @@ class Announcements(Module):
             return False
 
     def __load_db(self):
-        if isfile(self.memory['db file']):
-            self.memory['db'] = json.loads(open(self.memory['db file']).read())
+        if isfile(self.db_file):
+            self.db = json.loads(open(self.db_file).read())
 
     def __save_db(self):
-        with open(self.memory['db file'], 'w') as f:
-            f.write(json.dumps(self.memory['db'], indent=2, sort_keys=True))
+        with open(self.db_file, 'w') as f:
+            f.write(json.dumps(self.db, indent=2, sort_keys=True))

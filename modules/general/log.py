@@ -4,20 +4,22 @@ from datetime import datetime
 
 
 class Log(glados.Module):
-    def setup_memory(self):
-        self.memory['log path'] = os.path.join(self.local_data_dir, 'log')
-        if not os.path.exists(self.memory['log path']):
-            os.makedirs(self.memory['log path'])
+    def __init__(self, server_instance, full_name):
+        super(Log, self).__init__(server_instance, full_name)
 
-        self.memory['date'] = datetime.now().strftime('%Y-%m-%d')
-        self.memory['log file'] = open(os.path.join(self.memory['log path'], 'chanlog-{}'.format(self.memory['date'])), 'a')
+        self.log_path = os.path.join(self.local_data_dir, 'log')
+        if not os.path.exists(self.log_path):
+            os.makedirs(self.log_path)
+
+        self.date = datetime.now().strftime('%Y-%m-%d')
+        self.log_file = open(os.path.join(self.log_path, 'chanlog-{}'.format(self.date)), 'a')
 
     def __open_new_log_if_necessary(self):
         date = datetime.now().strftime('%Y-%m-%d')
-        if not self.memory['date'] == date:
-            self.memory['log file'].close()
-            self.memory['date'] = date
-            self.memory['log file'] = open(os.path.join(self.memory['log path'], 'chanlog-{}'.format(self.memory['date'])), 'a')
+        if not self.date == date:
+            self.log_file.close()
+            self.date = date
+            self.log_file = open(os.path.join(self.log_path, 'chanlog-{}'.format(self.date)), 'a')
 
     @glados.DummyPermissions.spamalot
     @glados.Module.rule('^.*$', ignorecommands=False)
@@ -30,6 +32,6 @@ class Log(glados.Module):
                                                     message.author.name,
                                                     message.clean_content)
 
-        self.memory['log file'].write(info)
-        self.memory['log file'].flush()
-        return tuple()
+        self.log_file.write(info)
+        self.log_file.flush()
+        return ()

@@ -7,12 +7,6 @@ UD_URL = 'http://api.urbandictionary.com/v0/define?term='
 
 
 class Urban(glados.Module):
-
-    def get_help_list(self):
-        return [
-            glados.Help('urban', '<term>', 'Look up a term on urban dictionary.')
-        ]
-
     @staticmethod
     def get_def(word):
         url = UD_URL + urllib.parse.quote(word)
