@@ -36,7 +36,8 @@ class ServerInstance(object):
 
     def instantiate_modules(self, class_list, whitelist):
         for full_name, class_ in sorted(class_list):
-            if len(whitelist) > 0 and full_name not in whitelist:
+            mod_whitelist = whitelist.get(full_name, ())
+            if len(mod_whitelist) > 0 and self.server.id not in mod_whitelist:
                 continue
             log('Instantiating module {} for server {}'.format(full_name, self.server.name))
             obj = class_(self, full_name)
