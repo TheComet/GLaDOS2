@@ -223,6 +223,9 @@ class Bot(object):
             if not message.server:
                 return ()
 
+            # Apparently on_server_available doesn't get called for all servers somehow
+            if message.server.id not in self.server_instances:
+                await on_server_available(message.server)
             await self.server_instances[message.server.id].process_message(message)
 
             # Write settings dict to disc (and print a diff) if a command changed it in any way
