@@ -35,31 +35,32 @@ def timeout_match(regex, message):
 
 
 class Sub(glados.Module):
+    def __init__(self, server_instance, full_name):
+        super(Sub, self).__init__(server_instance, full_name)
 
-    def setup_memory(self):
-        self.memory['subs file'] = os.path.join(self.data_dir, 'subs.json')
-        self.memory['subs'] = dict()
-        self.memory['times'] = dict()
+        self.subs_file = os.path.join(self.local_data_dir, 'subs.json')
+        self.subs = dict()
+        self.items = dict()
 
-        if os.path.isfile(self.memory['subs file']):
-            glados.log('Loading subscriptions from {}'.format(self.memory['subs file']))
-            self.memory['subs'] = json.loads(open(self.memory['subs file']).read())
+        if os.path.isfile(self.subs_file):
+            glados.log('Loading subscriptions from {}'.format(self.subs_file))
+            self.subs = json.loads(open(self.subs_file).read())
 
         self.__recompile_regex()
 
     def __recompile_regex(self):
-        self.memory['regex'] = list()
-        for author_id, regexes in self.memory['subs'].items():
+        self.regex = list()
+        for author_id, regexes in self.subs.items():
             for regex in regexes:
                 try:
                     compiled_regex = re.compile(regex, flags=re.IGNORECASE)
-                    self.memory['regex'].append((compiled_regex, author_id))
+                    self.regex.append((compiled_regex, author_id))
                 except re.error:
                     pass
 
     def __save_subs(self):
-        with open(self.memory['subs file'], 'w') as f:
-            f.write(json.dumps(self.memory['subs']))
+        with open(self.subs_file, 'w') as f:
+            f.write(json.dumps(self.subs))
 
     @glados.Module.command('sub', '<regex>', 'Get notified when a message matches the regex. The regex is **case '
                            'insensitive** and does not have to match the entire message, it searches for substrings '
@@ -83,17 +84,17 @@ class Sub(glados.Module):
             await self.client.send_message(message.channel, str(e))
             return
 
-        if message.author.id not in self.memory['subs']:
-            self.memory['subs'][message.author.id] = list()
-        if len(self.memory['subs'][message.author.id]) >= 15:
+        if message.author.id not in self.subs:
+            self.subs[message.author.id] = list()
+        if len(self.subs[message.author.id]) >= 15:
             await self.client.send_message(message.channel, 'Limit of 15 rules exceeded!')
             return
 
-        self.memory['subs'][message.author.id].append(regex)
-        self.memory['regex'].append((compiled_regex, message.author))
+        self.subs[message.author.id].append(regex)
+        self.regex.append((compiled_regex, message.author))
         self.__save_subs()
 
-        await self.client.send_message(message.channel, '{} added subscription #{} (``{}``)'.format(message.author.name, len(self.memory['subs'][message.author.id]), regex))
+        await self.client.send_message(message.channel, '{} added subscription #{} (``{}``)'.format(message.author.name, len(self.subs[message.author.id]), regex))
 
     @glados.Module.command('unsub', '<number> [user]', 'Stop getting notifications. Use .sublist to get the number')
     async def unsubscribe(self, message, args):
@@ -101,22 +102,22 @@ class Sub(glados.Module):
             await self.provide_help('unsub', message)
             return
 
-        if message.author.id not in self.memory['subs']:
+        if message.author.id not in self.subs:
             await self.client.send_message(message.channel, '{} has no subscriptions'.format(message.author.name))
             return
 
         try:
             indices = [int(x) for x in args.split()]
-            if any(i > len(self.memory['subs'][message.author.id]) or i < 1 for i in indices):
+            if any(i > len(self.subs[message.author.id]) or i < 1 for i in indices):
                 raise ValueError('Out of range')
         except ValueError:
             await self.client.send_message(message.channel, 'Invalid parameter! (Is it a number?)')
             return
 
-        self.memory['subs'][message.author.id] = [x for i, x in enumerate(self.memory['subs'][message.author.id])
+        self.subs[message.author.id] = [x for i, x in enumerate(self.subs[message.author.id])
                                              if i+1 not in indices]
-        if len(self.memory['subs'][message.author.id]) == 0:
-            del self.memory['subs'][message.author.id]
+        if len(self.subs[message.author.id]) == 0:
+            del self.subs[message.author.id]
         self.__recompile_regex()
         self.__save_subs()
 
@@ -133,7 +134,7 @@ class Sub(glados.Module):
             else:
                 user_name = user.strip('@').split('#')[0]
                 member = None
-                for m in self.current_server.members:
+                for m in self.server.members:
                     if m.name == user_name:
                         member = m
                         break
@@ -141,36 +142,36 @@ class Sub(glados.Module):
                     await self.client.send_message(message.channel, 'User "{}" not found'.format(user_name))
                     return
 
-        if member.id not in self.memory['subs']:
+        if member.id not in self.subs:
             await self.client.send_message(message.channel, 'User "{}" has no subscriptions'.format(member.name))
             return
 
         msg = '{} is subscribed to\n'.format(member.name)
-        for i, regex in enumerate(self.memory['subs'][member.id]):
+        for i, regex in enumerate(self.subs[member.id]):
             msg += '  #{} `{}`'.format(i+1, regex)
         await self.client.send_message(message.channel, msg)
 
-    @glados.Permissions.spamalot
+    @glados.DummyPermissions.spamalot
     @glados.Module.rule('^(.*)$')
     async def on_message(self, message, match):
         # Reset timer if user just made a message
         # Doing it here has the nice side effect of making it impossible to mention yourself
-        self.memory['times'][message.author.id] = datetime.now()
+        self.items[message.author.id] = datetime.now()
 
         # buffer all mentions, in case multiple people are mentioned (to avoid spamming chat)
         msg = ''
 
         members_to_remove = list()
 
-        for i, tup in enumerate(self.memory['regex']):
+        for i, tup in enumerate(self.regex):
             regex, subscribed_author = tup[0], tup[1]
 
             # may need to retrieve the author (this doesn't happen when first loading from JSON)
             if isinstance(subscribed_author, str):
-                for member in self.current_server.members:
+                for member in self.server.members:
                     if member.id == subscribed_author:
                         subscribed_author = member
-                        self.memory['regex'][i] = (regex, member)
+                        self.regex[i] = (regex, member)
                 if isinstance(subscribed_author, str):
                     # failed at getting member, remove all settings (fuck you!)
                     members_to_remove.append(subscribed_author)
@@ -188,24 +189,24 @@ class Sub(glados.Module):
 
             # Only perform the mention if enough time has passed
             dt = timedelta(hours=24)  # larger than below, in case time stamp doesn't exist yet
-            if subscribed_author.id in self.memory['times']:
-                dt = datetime.now() - self.memory['times'][subscribed_author.id]
+            if subscribed_author.id in self.items:
+                dt = datetime.now() - self.items[subscribed_author.id]
             if dt > timedelta(minutes=1):
                 # Make sure the member is even still part of the server (thanks Helper...)
-                if any(member.id == subscribed_author.id for member in self.current_server.members):
+                if any(member.id == subscribed_author.id for member in self.server.members):
                     pattern = regex.pattern
                     if len(pattern) > 30:
                         pattern = pattern[:30] + '...'
                     await self.client.send_message(subscribed_author, '[sub][{}][{}] (``{}``) ```{}: {}```'.format(message.server.name, message.channel.name, pattern, message.author.name, message.content))
                     #msg += ' {} (`{}`)'.format(subscribed_author.mention, pattern)
-                    self.memory['times'][subscribed_author.id] = datetime.now()
+                    self.items[subscribed_author.id] = datetime.now()
                 else:
                     # Remove all settings entirely (fuck you!)
                     members_to_remove.append(subscribed_author.id)
 
         for member_id in members_to_remove:
             try:
-                del self.memory['subs'][member_id]
+                del self.subs[member_id]
             except KeyError:
                 pass
         if len(members_to_remove) > 0:

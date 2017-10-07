@@ -3,7 +3,7 @@ import json
 import asyncio
 from datetime import datetime, timezone, timedelta
 from os.path import join, isfile
-from glados import Module, Permissions
+from glados import Module, DummyPermissions
 
 
 class AnnounceInfo(object):
@@ -79,14 +79,13 @@ class AnnounceInfo(object):
 class Announcements(Module):
     def __init__(self, bot, full_name):
         super(Announcements, self).__init__(bot, full_name)
-        self.__running_tasks = dict()
 
-    def setup_memory(self):
-        self.memory['db file'] = join(self.data_dir, 'announcements.json')
-        self.memory.setdefault('db', {})
+        self.__running_tasks = dict()
+        self.db_file = join(self.local_data_dir, 'announcements.json')
+        self.db = dict()
         self.__load_db()
 
-        for ID, announcement in self.memory['db'].items():
+        for ID, announcement in self.db.items():
             a = self.__load_announcement(ID)
             self.__start_announce_task(a)
 
@@ -105,7 +104,7 @@ class Announcements(Module):
             await a.client.send_message(a.channel, a.message)
             self.__running_tasks.pop(a.ID)
 
-    @Permissions.admin
+    @DummyPermissions.admin
     @Module.command('addannouncement', '<hours|date> <message>', 'Causes <message> to be sent either every <hours> '
                     'number of hours, or once at <date>. The date format is ISO 8601 (YYYY-MM-DDThh:mm:ss). For '
                     'example, the 23rd of Sep 2011 at 2am would be: 2011-09-23T02:00:00')
@@ -119,7 +118,7 @@ class Announcements(Module):
 
         await self.client.send_message(message.channel, 'Added announcement #{}'.format(a.ID))
 
-    @Permissions.admin
+    @DummyPermissions.admin
     @Module.command('rmannouncement', '<ID>', 'Removes the specified announcement. You can get the ID with lsannouncements')
     async def rmannouncement(self, message, content):
         if self.__rm_announcement(content):
@@ -127,11 +126,11 @@ class Announcements(Module):
         else:
             await self.client.send_message(message.channel, 'No such announcement with ID #{}'.format(content))
 
-    @Permissions.admin
+    @DummyPermissions.admin
     @Module.command('lsannouncements', '', 'Lists all active announcements and their IDs.')
     async def lsannouncements(self, message, content):
         strings = list()
-        for ID, a_dict in self.memory['db'].items():
+        for ID, a_dict in self.db.items():
             try:
                 a = self.__load_announcement(ID)
             except RuntimeError:
@@ -141,14 +140,14 @@ class Announcements(Module):
         for msg in self.pack_into_messages(strings):
             await self.client.send_message(message.channel, msg)
 
-    @Permissions.admin
+    @DummyPermissions.admin
     @Module.command('modifyannouncement', '<ID> <hours|date|message>', 'Change either the interval, the date, or the '
                     'message of an announcement')
     async def modifyannouncement(self, message, content):
         pass
 
     def __new_announcement(self, message, content):
-        announcement_dict = self.memory['db']
+        announcement_dict = self.db
         ID = 1
         while str(ID) in announcement_dict:
             ID += 1
@@ -158,16 +157,16 @@ class Announcements(Module):
 
     def __load_announcement(self, ID):
         a = AnnounceInfo(self.client, ID)
-        a.read_from_db(self.memory['db'])
+        a.read_from_db(self.db)
         return a
 
     def __write_announcement(self, a):
-        a.write_to_db(self.memory['db'])
+        a.write_to_db(self.db)
         self.__save_db()
 
     def __rm_announcement(self, ID):
         try:
-            self.memory['db'].pop(str(ID))
+            self.db.pop(str(ID))
             self.__save_db()
             task = self.__running_tasks.get(ID, None)
             if task:
@@ -177,9 +176,9 @@ class Announcements(Module):
             return False
 
     def __load_db(self):
-        if isfile(self.memory['db file']):
-            self.memory['db'] = json.loads(open(self.memory['db file']).read())
+        if isfile(self.db_file):
+            self.db = json.loads(open(self.db_file).read())
 
     def __save_db(self):
-        with open(self.memory['db file'], 'w') as f:
-            f.write(json.dumps(self.memory['db'], indent=2, sort_keys=True))
+        with open(self.db_file, 'w') as f:
+            f.write(json.dumps(self.db, indent=2, sort_keys=True))

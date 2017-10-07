@@ -38,26 +38,26 @@ def readable_timestamp(delta):
 
 
 class Seen(glados.Module):
+    def __init__(self, server_instance, full_name):
+        super(Seen, self).__init__(server_instance, full_name)
 
-    def setup_memory(self):
-        self.memory['dict'] = dict()
-        self.memory['config file'] = os.path.join(self.data_dir, 'seen.json')
-
+        self.db = dict()
+        self.db_file = os.path.join(self.local_data_dir, 'seen.json')
         self.__load_dict()
 
     def __load_dict(self):
-        if os.path.isfile(self.memory['config file']):
-            self.memory['dict'] = json.loads(open(self.memory['config file']).read())
+        if os.path.isfile(self.db_file):
+            self.db = json.loads(open(self.db_file).read())
         # make sure all keys exists
-        for k, v in self.memory['dict'].items():
+        for k, v in self.db.items():
             if not 'author' in v: v['author'] = k
             if not 'channel' in v: v['channel'] = 'unknown_channel'
 
     def __save_dict(self):
-        with open(self.memory['config file'], 'w') as f:
-            f.write(json.dumps(self.memory['dict']))
+        with open(self.db_file, 'w') as f:
+            f.write(json.dumps(self.db))
 
-    @glados.Permissions.spamalot
+    @glados.DummyPermissions.spamalot
     @glados.Module.rule('^.*$', ignorecommands=False)
     async def on_message(self, message, match):
         author = message.author.name
@@ -65,7 +65,7 @@ class Seen(glados.Module):
         channel = message.channel.name
         msg = message.clean_content
         ts = datetime.now().isoformat()
-        self.memory['dict'][key] = {'author': str(key),
+        self.db[key] = {'author': str(key),
                                     'message': str(msg),
                                     'channel': str(channel),
                                     'timestamp': str(ts)}
@@ -76,23 +76,23 @@ class Seen(glados.Module):
     async def on_seen(self, message, content):
         if content == "":
             # Count how many users in total have been seen
-            await self.client.send_message(message.channel, '{} users have been seen saying at least something.'.format(len(self.memory['dict'])))
+            await self.client.send_message(message.channel, '{} users have been seen saying at least something.'.format(len(self.db)))
             return
 
         author = content.strip('@').split('#')[0]
         key = author.lower()
-        if key not in self.memory['dict']:
+        if key not in self.db:
             if key == 'glados':
                 await self.client.send_message(message.channel, '{0} Do you see me? I see you.')
             else:
                 await self.client.send_message(message.channel, '{0} has never been seen.'.format(author))
             return
 
-        stamp = get_time(self.memory['dict'][key]['timestamp'])
+        stamp = get_time(self.db[key]['timestamp'])
         elapsed = datetime.now() - stamp
         await self.client.send_message(message.channel, '{0} was last seen {1} in #{2} saying: "{3}"'.format(
-            self.memory['dict'][key]['author'],
+            self.db[key]['author'],
             readable_timestamp(elapsed),
-            self.memory['dict'][key]['channel'],
-            self.memory['dict'][key]['message']
+            self.db[key]['channel'],
+            self.db[key]['message']
         ))

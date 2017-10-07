@@ -11,12 +11,14 @@ import enchant
 
 
 class Quotes(glados.Module):
-    def setup_memory(self):
-        self.memory['quotes path'] = os.path.join(self.data_dir, 'quotes')
-        if not os.path.exists(self.memory['quotes path']):
-            os.makedirs(self.memory['quotes path'])
+    def __init__(self, server_instance, full_name):
+        super(Quotes, self).__init__(server_instance, full_name)
 
-        self.memory['dictionaries'] = [
+        self.quotes_path = os.path.join(self.local_data_dir, 'quotes')
+        if not os.path.exists(self.quotes_path):
+            os.makedirs(self.quotes_path)
+
+        self.dictionaries = [
             enchant.Dict('en_US'),
             enchant.Dict('en_GB')
         ]
@@ -36,9 +38,9 @@ class Quotes(glados.Module):
         return None
 
     def quotes_file_name(self, author):
-        return os.path.join(self.memory['quotes path'], author) + '.txt'
+        return os.path.join(self.quotes_path, author) + '.txt'
 
-    @glados.Permissions.spamalot
+    @glados.DummyPermissions.spamalot
     @glados.Module.rule('^(.*)$')
     async def record(self, message, match):
         author = message.author.name
@@ -103,7 +105,7 @@ class Quotes(glados.Module):
         '''Remove any mentions from the quote and replace them with actual member names'''
         mentioned_ids = [x.strip('<@!>') for x in re.findall('<@!?[0-9]+>', text)]
         for mentioned_id in mentioned_ids:
-            for member in self.current_server.members:
+            for member in self.server.members:
                 if member.id == mentioned_id:
                     text = text.replace('<@{}>'.format(id), member.name).replace('<@!{}>'.format(id), member.name)
                     break
@@ -161,7 +163,7 @@ class Quotes(glados.Module):
 
     def filter_to_english_words(self, words_list):
         return [word for word in words_list
-                    if any(d.check(word) for d in self.memory['dictionaries'])
+                    if any(d.check(word) for d in self.dictionaries)
                     and (len(word) > 1 or len(word) == 1 and word in 'aAI')]
 
     @glados.Module.command('grep', '<word> [User]', 'Find how many times a user has said a particular word. Case-insensitive')

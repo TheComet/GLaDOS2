@@ -41,7 +41,7 @@ def get_author(msg):
 
 class Mentions(glados.Module):
     def setup_memory(self):
-        mentions_data_path = os.path.join(self.data_dir, 'mentions')
+        mentions_data_path = os.path.join(self.local_data_dir, 'mentions')
         if not os.path.exists(mentions_data_path):
             os.makedirs(mentions_data_path)
 
@@ -59,7 +59,7 @@ class Mentions(glados.Module):
         with open(self.memory['seen file'], 'w') as f:
             f.write(json.dumps(self.memory['last seen']))
 
-    @glados.Permissions.spamalot
+    @glados.DummyPermissions.spamalot
     @glados.Module.rule('^(.*)$')
     async def record(self, message, match):
         with codecs.open(self.memory['log file'], 'a', encoding='utf-8') as f:

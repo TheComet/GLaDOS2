@@ -1,8 +1,8 @@
-from glados import Module, Permissions
+from glados import Module, DummyPermissions
 
 
 class Prefix(Module):
-    @Permissions.admin
+    @DummyPermissions.admin
     @Module.command('prefix', '<prefix>', 'Sets the command prefix for the current server. Default is "."')
     async def set_prefix(self, message, content):
         content = content.strip()
@@ -11,5 +11,5 @@ class Prefix(Module):
             return
 
         was = self.command_prefix
-        new = self.settings['command prefix'][self.current_server.id] = content
+        new = self.settings['command prefix'][self.server.id] = content
         await self.client.send_message(message.channel, 'Changed command prefix from `{}` to `{}`'.format(was, new))

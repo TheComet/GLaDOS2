@@ -122,7 +122,7 @@ class IRCBridge(glados.Module):
     def get_help_list(self):
         return list()
 
-    @glados.Permissions.spamalot
+    @glados.DummyPermissions.spamalot
     @glados.Module.rule('^.*$')
     async def on_discord_message(self, message, match):
         if isinstance(message.channel, discord.Object):
@@ -140,7 +140,7 @@ class IRCBridge(glados.Module):
         self.send_to_all_channels('<{}> {}'.format(author, content))
         return ()
 
-    @glados.Permissions.admin
+    @glados.DummyPermissions.admin
     @glados.Module.command('irc')
     async def on_irc_enable(self, message, args):
         self.bridge_enable = not self.bridge_enable

@@ -2,7 +2,7 @@ import glados
 
 
 class Say(glados.Module):
-    @glados.Permissions.owner
+    @glados.DummyPermissions.owner
     @glados.Module.command('say',  '<server> <channel> <message>', 'Have the bot send an arbitrary message to any server')
     async def say(self, message, content):
         try:
