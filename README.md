@@ -1,34 +1,72 @@
-# Discord Bot framework
+# Discord Bot Framework
 
-This is a bot for [Discord](https://discordapp.com/) that provides you with a framework to easily extend functionality.
+This is a bot for [Discord](https://discordapp.com/) that provides you with a very easy way to write your own bot commands.
 
-## Running
+How easy? Check it out!
 
-To run the bot, you need [Python](https://www.python.org/) and [discord.py](https://github.com/Rapptz/discord.py).
+Here's a module that responds to people who say "hello" in chat:
+
+```python
+import random
+from glados import Module
+
+responses = [
+    'Hello, {}!',
+    'Hi, {}!',
+    'What\'s up, {}?',
+    'Welcome back {}!'
+]
+
+class RespondHello(Module):
+    @Module.rule('^(?i)(hello|hey|hi|sup).*$')
+    def respond_to_hello(self, message, match):
+        yield from self.client.send_message(message.channel,
+                random.choice(responses).format(message.author.name))
+```
+
+Here's a module that generates a random fact whenever someone types ```.fact``` into chat:
+
+```python
+import urllib.request
+from glados import Module
+from bs4 import BeautifulSoup
+
+class Fact(glados.Module):
+    @Module.command('fact', '', 'Look up a random fact')
+    async def fact(self, message, args):
+        response = urllib.request.urlopen('http://randomfactgenerator.net/').read().decode('utf-8')
+        soup = BeautifulSoup(response, 'lxml')
+        fact_div = soup.find('div', {'id': 'z'})
+        if len(fact_div.contents) == 0:
+            await self.client.send_message(message.channel, 'Something broke.')
+        else:
+            await self.client.send_message(message.channel, fact_div.contents[0])
+```
+
+## Installing and Running
+
+To run the bot, you need [Python3.5](https://www.python.org/) or later (we're using the new async keywords, which were introduced in 3.5).
+
+I recommend setting up a virtual environment. The complete process looks as follows:
+
+```sh
+$ git clone git://github.com/TheComet/GLaDOS2.git
+$ cd GLaDOS2
+$ virtualenv -p /usr/bin/python3.6 env
+$ source env/bin/activate
+$ pip install -r requirements.txt
+$ python glados.py
+```
 
 Running the bot for the first time will produce the `settings.json` file. You should edit this, then run the bot again.
 
+Refer to the wiki for more information on all of the things you can configure in ```settings.json```.
+
 ## Dependencies
 
-From pip:
- + discord.py
- + python-dateutil
- + requests
- + pyenchant
- + beautifulsoup4
- + PySocks
- + lxml
- + nltk
- + matplotlib
- + wolframalpha
- + Pillow
- + APNGLib
- + DerPyBooru
-```
-pip install discord.py python-dateutil requests pyenchant beautifulsoup4 PySocks lxml nltk matplotlib wolframalpha Pillow APNGLib derpybooru
-```
+The bot itself only depends on ```asyncio```. However, there are a lot of modules that pull in a lot of additional dependencies, some of which are almost impossible to install if you are on Windows (scipy, for example). There is currently no easy way to figure out which modules require which dependencies. The file `requirements.txt` will pull in ALL dependencies so you can load ALL modules.
 
-## Optional dependencies
+## Experimental Dependencies
 
 Here are a list of experimental dependencies, which are not loaded by default
 
@@ -52,43 +90,9 @@ $ (source the virtualenv)
 $ cd python/
 $ python setup.py install
 $ cp -r build/lib/google ../../env/lib/site-packages/
-```
+``` 
 
-## Settings
-
-### Login
-
-The email and password used to login to the account. It is recommended that you create a separate account for running bots. Alternatively, you can provide an OAuth2 token, in which case the e-mail and password are not required.
-
-### Modules
-
-It is possible to add a list of paths, in which the bot modules will be searched for. 
-
-### Writing modules
-
-You can use this as a framework for your module.
-```python
-import glados
-
-class MyModule(glados.Module):
-
-    @glados.Module.command('hello', '<name>', 'Says hello to the specified user')
-    def respond_to_hello(self, client, message, arg):
-        
-        # User forgot to supply the command with an argument
-        if arg == '':
-            yield from self.provide_help('hello', client, message)
-            return
-
-        yield from client.send_message(message.channel, 'Hello, {}!'.format(arg))
-
-    @glados.Module.rule('^.*(hello).*$')
-    @glados.Module.rule('^.*(hi).*$')
-    def someone_said_hello_or_hi(self, client, message, match)
-        yield from client.send_message(message.channel, 'Hello, {}!'.format(message.author.name))
-```
-
-## Contributions
+## Contributors
 
 Avalander
  + findquote refactor
