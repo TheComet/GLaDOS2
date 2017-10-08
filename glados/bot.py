@@ -218,15 +218,14 @@ class Bot(object):
 
         self.load_classlist()
 
-        @self.client.event
-        async def on_message(message):
+        async def __message_processor(message):
             # disallow direct messages
             if not message.server:
                 return ()
 
             # Apparently on_server_available doesn't get called for all servers somehow
             if message.server.id not in self.server_instances:
-                await on_server_available(message.server)
+                await self.__init__.on_server_available(message.server)
 
             try:
                 await self.server_instances[message.server.id].process_message(message)
@@ -246,6 +245,14 @@ class Bot(object):
 
             # Write settings dict to disc (and print a diff) if a command changed it in any way
             self.__check_if_settings_changed()
+
+        @self.client.event
+        async def on_message(message):
+            await __message_processor(message)
+
+        @self.client.event
+        async def on_message_edit(before, after):
+            await __message_processor(after)
 
         @self.client.event
         async def on_ready():
