@@ -225,7 +225,7 @@ class Bot(object):
 
             # Apparently on_server_available doesn't get called for all servers somehow
             if message.server.id not in self.server_instances:
-                await self.__init__.on_server_available(message.server)
+                await on_server_available(message.server)
 
             try:
                 await self.server_instances[message.server.id].process_message(message)
