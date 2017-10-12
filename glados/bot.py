@@ -117,7 +117,7 @@ class ServerInstance(object):
                         match = rule.match(message.content)
                         if match is None:
                             continue
-                        ret.append((callback, match))
+                        ret.append((obj, callback, match))
                 continue
 
             # process message responses
