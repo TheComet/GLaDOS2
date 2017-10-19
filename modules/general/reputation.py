@@ -79,7 +79,7 @@ class Reputation(glados.Module):
     def _get_comeback(self):
         return random.choice(self._get_file('comebacks'))
 
-    def _update_activity_limit(self, member):
+    def _update_activity_limit(self, member, amount=1):
         config = self._get_file('config')
         user_activity = activity.get(member.name, { 'votes': 0, 'date': date.today()})
         activity[member.name] = user_activity
@@ -87,9 +87,9 @@ class Reputation(glados.Module):
             user_activity['date'] = date.today()
             user_activity['votes'] = 0
         user_limit = config['override'].get(member.name, config['daily_limit'])
-        if user_activity['votes'] + 1 > user_limit:
+        if user_activity['votes'] + amount > user_limit:
             raise Exception('Vote limit exceeded. Your limit is {}.'.format(user_limit))
-        user_activity['votes'] = user_activity['votes'] + 1
+        user_activity['votes'] = user_activity['votes'] + amount
         user_activity['date'] = date.today()
 
     @glados.Module.command('upvote', '<user>', 'Add reputation to a user')
@@ -102,7 +102,7 @@ class Reputation(glados.Module):
             await self.client.send_message(message.channel, self._get_comeback().format(message.author.name))
             return
         try:
-            self._update_activity_limit(message.author)
+            self._update_activity_limit(message.author, len(members))
         except Exception as e:
             await self.client.send_message(message.author, e)
             return
@@ -122,7 +122,7 @@ class Reputation(glados.Module):
             await self.client.send_message(message.channel, error)
             return
         try:
-            self._update_activity_limit(message.author)
+            self._update_activity_limit(message.author, len(members))
         except Exception as e:
             await self.client.send_message(message.author, e)
             return
