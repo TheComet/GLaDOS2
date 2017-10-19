@@ -163,8 +163,8 @@ class Reputation(glados.Module):
             response.append('{}: {}'.format(*member))
         await self.client.send_message(message.channel, '\n'.join(response))
     
-    @glados.Module.command('repertoire', '<user> <amount>', 'Change the daily votes for a user')
-    async def repertoire(self, message, content):
+    @glados.Module.command('setrep', '<user> <amount>', 'Change the daily votes for a user')
+    async def setrep(self, message, content):
         if not self.require_moderator(message.author):
             await self.client.send_message(message.channel, 'Only mods can do this.')
             return
