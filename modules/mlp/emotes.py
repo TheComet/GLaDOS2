@@ -36,26 +36,35 @@ class Emotes(glados.Module):
         self.emote_list = {}
         self.raw_emote_list = []
         self.is_running = True
-        asyncio.ensure_future(self.build_emote_db())
         self.build_dir(join(self.emotes_path, "tmp"))
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
         self.blacklist = {}
         self.allow_nsfw = False
         self.config_path = join(self.local_data_dir, "emotes.json")
         self.load_blacklist()
 
+        asyncio.ensure_future(self.build_emote_db())
+
     def load_blacklist(self):
         if isfile(self.config_path):
             self.blacklist = json.loads(open(self.config_path).read())
 
-    def build_dir(self, path):
+    @staticmethod
+    def build_dir(path):
         try:
             os.makedirs(os.path.dirname(self.config_path))
         except Exception as E:
             if "File exists" not in str(E):
                 print(E)
-                return
-                # do nothing as the dirs probably already exist
+                return False
+        return True
+
+    def save_blacklist(self):
+        if not self.build_dir(self.config_path):
+            return
         f = open(self.config_path, "w")
         if f:
             f.write(json.dumps(self.blacklist))
@@ -185,26 +194,6 @@ class Emotes(glados.Module):
         if len(r) > 0:
             return r[0]
         return ""
-
-    @staticmethod
-    def __concat_into_valid_message(list_of_strings):
-        ret = list()
-        temp = list()
-        l = 0
-        max_length = 1000
-
-        if len(list_of_strings) == 0:
-            return ret
-
-        for s in list_of_strings:
-            l += len(s)
-            if l >= max_length:
-                ret.append('\n'.join(temp))
-                l = len(s)
-                temp = list()
-            temp.append(s)
-        ret.append('\n'.join(temp))
-        return ret
 
     def find_emote_path(self, emotename):
         path = join(self.emotes_path, self.sanitize_name(emotename))
@@ -389,6 +378,5 @@ class Emotes(glados.Module):
             if i != 0:
                 response.append("``" + temp + "``")
         response.append('')
-        rlist = self.__concat_into_valid_message(response)
-        for msg in rlist:
+        for msg in self.pack_into_messages(response):
             await self.client.send_message(message.author, msg)
