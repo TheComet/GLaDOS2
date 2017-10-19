@@ -37,10 +37,6 @@ class Emotes(glados.Module):
         self.raw_emote_list = []
         self.is_running = True
         self.build_dir(join(self.emotes_path, "tmp"))
-<<<<<<< HEAD
-
-=======
->>>>>>> master
         self.blacklist = {}
         self.allow_nsfw = False
         self.config_path = join(self.local_data_dir, "emotes.json")
@@ -55,7 +51,7 @@ class Emotes(glados.Module):
     @staticmethod
     def build_dir(path):
         try:
-            os.makedirs(os.path.dirname(self.config_path))
+            os.makedirs(os.path.dirname(path))
         except Exception as E:
             if "File exists" not in str(E):
                 print(E)
