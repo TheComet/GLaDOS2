@@ -7,29 +7,37 @@ import random
 from datetime import date
 
 
-COMEBACKS = [
-    '{}, whom are you trying to fool?',
-    '{}, you should not upvote yourself.',
-    'Listen everypony, {} is trying to upvote himself!',
-    'Listen everypony, {} is trying to upvote herself!',
-    'I think you are a bit full of yourself, {}.',
-    'One day you might get downvoted instead, {}.',
-    'Thou shalt not upvote thyself.',
-    'You think you\'re slick, huh?',
-    'Trying to get a head start, aren\'t we, {}?',
-    'I suggest you change your username to *Narcissus* instead, {}.',
-    'That\'s not what they mean by "one person, one vote".',
-    'Psssh. Not today, sweetie. Not today.',
-    'Try not to flatter yourself too much, okay?',
-    'YOLO, vote all the {}s!',
-    'Did you just assume your vote, {}?',
-    'Doesn\'t anybody else like you, {}',
-    'Did you really think that would work, {}?',
-    '{} is upvoting himself because nopony else would.',
-    '{} is upvoting herself because nopony else would.',
-    'Nope.',
-    'A big fat no.',
-]
+COMEBACKS = {
+    'upvote': [
+        '{}, whom are you trying to fool?',
+        '{}, you should not upvote yourself.',
+        'Listen everypony, {} is trying to upvote himself!',
+        'Listen everypony, {} is trying to upvote herself!',
+        'I think you are a bit full of yourself, {}.',
+        'One day you might get downvoted instead, {}.',
+        'Thou shalt not upvote thyself.',
+        'You think you\'re slick, huh?',
+        'Trying to get a head start, aren\'t we, {}?',
+        'I suggest you change your username to *Narcissus* instead, {}.',
+        'That\'s not what they mean by "one person, one vote".',
+        'Psssh. Not today, sweetie. Not today.',
+        'Try not to flatter yourself too much, okay?',
+        'YOLO, vote all the {}s!',
+        'Did you just assume your vote, {}?',
+        'Doesn\'t anybody else like you, {}',
+        'Did you really think that would work, {}?',
+        '{} is upvoting himself because nopony else would.',
+        '{} is upvoting herself because nopony else would.',
+        'Nope.',
+        'A big fat no.',
+    ],
+    'downvote': [
+        'You\'re gonna hurt yourself, {}.',
+        'Why would you do that?',
+        'I am strongly concerned about you, {}.',
+        'Are you doing well?',
+    ]
+}
 
 DEFAULT_CONFIG = {
     'daily_limit': 20,
@@ -46,14 +54,16 @@ def with_members(func):
         await func(obj, message, content, members)
     return wrapper
 
-def no_author(func):
-    async def wrapper(obj, message, content, members):
-        if message.author in members:
-            comeback = random.choice(COMEBACKS)
-            await obj.client.send_message(message.channel, comeback.format(message.author.name))
-            return
-        await func(obj, message, content, members)
-    return wrapper
+def no_author(comebacks):
+    def outer(func):
+        async def wrapper(obj, message, content, members):
+            if message.author in members:
+                comeback = random.choice(comebacks)
+                await obj.client.send_message(message.channel, comeback.format(message.author.name))
+                return
+            await func(obj, message, content, members)
+        return wrapper
+    return outer
 
 def limit_activity(func):
     async def wrapper(obj, message, content, members):
@@ -79,7 +89,6 @@ class Reputation(glados.Module):
         if not os.path.exists(self.rep_dir):
             os.makedirs(self.rep_dir)
         create_json_file(self.rep_dir, 'reputation.json', {})
-        create_json_file(self.rep_dir, 'comebacks.json', COMEBACKS)
         create_json_file(self.rep_dir, 'config.json', DEFAULT_CONFIG)
         self.activity = {}
     
@@ -90,9 +99,6 @@ class Reputation(glados.Module):
     def _update_file(self, key, data):
         with codecs.open(os.path.join(self.rep_dir, '{}.json'.format(key)), 'w', encoding='utf-8') as f:
             json.dump(data, f)
-    
-    def _get_comeback(self):
-        return random.choice(self._get_file('comebacks'))
 
     def _update_activity_limit(self, member, amount=1):
         config = self._get_file('config')
@@ -109,19 +115,9 @@ class Reputation(glados.Module):
 
     @glados.Module.command('upvote', '<user>', 'Add reputation to a user')
     @with_members
-    @no_author
+    @no_author(COMEBACKS['upvote'])
     @limit_activity
     async def upvote(self, message, content, members):
-        '''
-        if message.author in members:
-            await self.client.send_message(message.channel, self._get_comeback().format(message.author.name))
-            return
-        try:
-            self._update_activity_limit(message.author, len(members))
-        except Exception as e:
-            await self.client.send_message(message.author, e)
-            return
-        '''
         response = []
         reputation = self._get_file('reputation')
         for member in members:
@@ -136,19 +132,16 @@ class Reputation(glados.Module):
 
     @glados.Module.command('downvote', '<user>', 'Remove reputation from a user')
     @with_members
+    @no_author(COMEBACKS['downvote'])
     @limit_activity
     async def downvote(self, message, content, members):
-        '''
-        try:
-            self._update_activity_limit(message.author, len(members))
-        except Exception as e:
-            await self.client.send_message(message.author, e)
-            return
-        '''
         response = []
         reputation = self._get_file('reputation')
         for member in members:
-            new_reputation = reputation.get(member.name, 0) - 1
+             if member.id == self.client.user.id:
+                new_reputation = reputation.get(member.name, 0) + 1
+            else:
+                new_reputation = reputation.get(member.name, 0) - 1
             author_reputation = reputation.get(message.author.name, 0) - 1
             reputation[member.name] = new_reputation
             reputation[message.author.name] = author_reputation
