@@ -46,14 +46,6 @@ def with_members(func):
         await func(obj, message, content, members)
     return wrapper
 
-def no_author(func, get_comeback):
-    async def wrapper(obj, message, content, members):
-        if message.author in members:
-            await obj.client.send_message(message.channel, get_comeback().format(message.author.name))
-            return
-        await func(obj, message, content, members)
-    return wrapper
-
 def limit_activity(func):
     async def wrapper(obj, message, content, members):
         try:
@@ -107,6 +99,7 @@ class Reputation(glados.Module):
         user_activity['date'] = date.today()
 
     @glados.Module.command('upvote', '<user>', 'Add reputation to a user')
+    @glados.Module.command('++', '', '')
     @with_members
     async def upvote(self, message, content, members):
         '''
@@ -133,6 +126,7 @@ class Reputation(glados.Module):
         await self.client.send_message(message.channel, ', '.join(response))
 
     @glados.Module.command('downvote', '<user>', 'Remove reputation from a user')
+    @glados.Module.command('--', '', '')
     async def downvote(self, message, content):
         members, roles, error = self.parse_members_roles(message, content)
         if error:
@@ -153,6 +147,7 @@ class Reputation(glados.Module):
         await self.client.send_message(message.channel, ', '.join(response))
 
     @glados.Module.command('reputation', '<user>', 'See a user\'s reputation')
+    @glados.Module.command('rep', '', '')
     async def reputation(self, message, content):
         members, roles, error = self.parse_members_roles(message, content)
         if error:
