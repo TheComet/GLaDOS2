@@ -46,6 +46,22 @@ def with_members(func):
         func(self, message, content, members)
     return wrapper
 
+def no_author(func, get_comeback):
+    def wrapper(self, message, content, members):
+        if message.author in members:
+            await self.client.send_message(message.channel, get_comeback().format(message.author.name))
+            return
+        func(self, message, content, members)
+
+def limit_activity(func):
+    def wrapper(*args):
+        try:
+            self._update_activity_limit(message.author, len(members))
+        except Exception as e:
+            await self.client.send_message(message.author, e)
+            return
+        func(self, message, content, members)
+
 def create_json_file(path, name, data):
     filepath = os.path.join(path, name)
     if not os.path.exists(filepath):
@@ -56,20 +72,20 @@ def create_json_file(path, name, data):
 class Reputation(glados.Module):
     def __init__(self, server_instance, full_name):
         super(Reputation, self).__init__(self, server_instance, full_name)
-        rep_dir = os.path.join(self.local_data_dir, 'reputation')
-        if not os.path.exists(rep_dir):
-            os.makedirs(rep_dir)
-        create_json_file(rep_dir, 'reputation.json', {})
-        create_json_file(rep_dir, 'comebacks.json', COMEBACKS)
-        create_json_file(rep_dir, 'config.json', DEFAULT_CONFIG)
+        self.rep_dir = os.path.join(self.local_data_dir, 'reputation')
+        if not os.path.exists(self.rep_dir):
+            os.makedirs(self.rep_dir)
+        create_json_file(self.rep_dir, 'reputation.json', {})
+        create_json_file(self.rep_dir, 'comebacks.json', COMEBACKS)
+        create_json_file(self.rep_dir, 'config.json', DEFAULT_CONFIG)
         self.activity = {}
     
     def _get_file(self, key):
-        with codecs.open(self.memory['reputation'][key], 'r', encoding='utf-8') as f:
+        with codecs.open(os.path.join(self.rep_dir, '{}.json'.format(key)), 'r', encoding='utf-8') as f:
             return json.load(f)
     
     def _update_file(self, key, data):
-        with codecs.open(self.memory['reputation'][key], 'w', encoding='utf-8') as f:
+        with codecs.open(os.path.join(self.rep_dir, '{}.json'.format(key)), 'w', encoding='utf-8') as f:
             json.dump(data, f)
     
     def _get_comeback(self):
