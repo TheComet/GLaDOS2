@@ -37,6 +37,31 @@ DEFAULT_CONFIG = {
 }
 
 
+def with_members(func):
+    def wrapper(obj, message, content):
+        members, roles, error = obj.parse_members_roles(message, content)
+        if error:
+            await obj.client.send_message(message.channel, error)
+            return
+        func(obj, message, content, members)
+    return wrapper
+
+def no_author(func, get_comeback):
+    def wrapper(obj, message, content, members):
+        if message.author in members:
+            await obj.client.send_message(message.channel, get_comeback().format(message.author.name))
+            return
+        func(obj, message, content, members)
+
+def limit_activity(func):
+    def wrapper(obj, message, content, members):
+        try:
+            obj._update_activity_limit(message.author, len(members))
+        except Exception as e:
+            await obj.client.send_message(message.author, e)
+            return
+        func(obj, message, content, members)
+
 def create_json_file(path, name, data):
     filepath = os.path.join(path, name)
     if not os.path.exists(filepath):
@@ -80,11 +105,14 @@ class Reputation(glados.Module):
         user_activity['date'] = date.today()
 
     @glados.Module.command('upvote', '<user>', 'Add reputation to a user')
-    async def upvote(self, message, content):
+    @with_members
+    async def upvote(self, message, content, members):
+        '''
         members, roles, error = self.parse_members_roles(message, content)
         if error:
             await self.client.send_message(message.channel, error)
             return
+        '''
         if message.author in members:
             await self.client.send_message(message.channel, self._get_comeback().format(message.author.name))
             return
