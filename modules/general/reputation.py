@@ -46,6 +46,24 @@ def with_members(func):
         await func(obj, message, content, members)
     return wrapper
 
+def no_author(func):
+    async def wrapper(obj, message, content, members):
+        if message.author in members:
+            await self.client.send_message(message.channel, COMEBACKS.format(message.author.name))
+            return
+        await func(obj, message, content, members)
+    return wrapper
+
+def limit_activity(func):
+    async def wrapper(obj, message, content, members):
+        try:
+            obj._update_activity_limit(message.author, len(members))
+        except Exception as e:
+            await obj.client.send_message(message.author, e)
+            return
+        await func(obj, message, content, members)
+    return wrapper
+
 def create_json_file(path, name, data):
     filepath = os.path.join(path, name)
     if not os.path.exists(filepath):
@@ -90,7 +108,10 @@ class Reputation(glados.Module):
 
     @glados.Module.command('upvote', '<user>', 'Add reputation to a user')
     @with_members
+    @no_author
+    @limit_activity
     async def upvote(self, message, content, members):
+        '''
         if message.author in members:
             await self.client.send_message(message.channel, self._get_comeback().format(message.author.name))
             return
@@ -99,28 +120,36 @@ class Reputation(glados.Module):
         except Exception as e:
             await self.client.send_message(message.author, e)
             return
+        '''
         response = []
         reputation = self._get_file('reputation')
         for member in members:
-            new_reputation = reputation.get(member.name, 0) + 1
+            new_reputation = reputation.get(member.name, 0) + 3
+            author_reputation = reputation.get(message.author.name, 0) + 1
             reputation[member.name] = new_reputation
+            reputation[message.author.name] = author_reputation
             response.append(_reputation_text(member.name, new_reputation))
         self._update_file('reputation', reputation)
         await self.client.send_message(message.channel, ', '.join(response))
 
     @glados.Module.command('downvote', '<user>', 'Remove reputation from a user')
     @with_members
+    @limit_activity
     async def downvote(self, message, content, members):
+        '''
         try:
             self._update_activity_limit(message.author, len(members))
         except Exception as e:
             await self.client.send_message(message.author, e)
             return
+        '''
         response = []
         reputation = self._get_file('reputation')
         for member in members:
             new_reputation = reputation.get(member.name, 0) - 1
+            author_reputation = reputation.get(message.author.name, 0) - 1
             reputation[member.name] = new_reputation
+            reputation[message.author.name] = author_reputation
             response.append(_reputation_text(member.name, new_reputation))
         self._update_file('reputation', reputation)
         await self.client.send_message(message.channel, ', '.join(response))
