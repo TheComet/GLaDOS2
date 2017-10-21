@@ -189,21 +189,26 @@ class Module(object):
 
         # fall back to text based names, in which case we need to look up the member object
         if len(roles) == 0 and len(members) == 0:
-            name = content.split()[0].strip('@').split('#')[0]
-            for member in self.server.members:
-                if member.nick == name or member.name == name:
-                    members.add(member)
-            for role in self.server.roles:
-                if role.name == name:
-                    roles.add(role)
+            for name in content.split():
+                name = name.strip('@').split('#')[0]
+                submembers = set()
+                subroles = set()
+                for member in self.server.members:
+                    if member.nick == name or member.name == name:
+                        submembers.add(member)
+                for role in self.server.roles:
+                    if role.name == name:
+                        subroles.add(role)
 
-            # These errors can only occur if the members/roles were not mentioned
-            if len(members) > 0 and len(roles) > 0:
-                return (), (), 'Error: One or more member(s) have a name identical to a role name "{}".' \
-                               'Try again by mentioning the user/role'.format(name)
-            if len(members) > 1 or len(roles) > 1:
-                return (), (), 'Error: Multiple members/roles share the name "{}".' \
-                               'Try again by mentioning the user.'.format(name)
+                # These errors can only occur if the members/roles were not mentioned
+                if len(submembers) > 0 and len(subroles) > 0:
+                    return (), (), 'Error: One or more member(s) have a name identical to a role name "{}".' \
+                                'Try again by mentioning the user/role'.format(name)
+                if len(submembers) > 1 or len(subroles) > 1:
+                    return (), (), 'Error: Multiple members/roles share the name "{}".' \
+                                'Try again by mentioning the user.'.format(name)
+                members = members.union(submembers)
+                roles = roles.union(subroles)
 
         if len(members) == 0 and len(roles) == 0:
             return (), (), 'Error: No member or role found!'
