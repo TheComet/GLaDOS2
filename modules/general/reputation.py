@@ -138,7 +138,7 @@ class Reputation(glados.Module):
         response = []
         reputation = self._get_file('reputation')
         for member in members:
-             if member.id == self.client.user.id:
+            if member.id == self.client.user.id:
                 new_reputation = reputation.get(member.name, 0) + 1
             else:
                 new_reputation = reputation.get(member.name, 0) - 1
