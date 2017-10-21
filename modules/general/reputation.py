@@ -129,6 +129,7 @@ class Reputation(glados.Module):
             reputation[member.name] = new_reputation
             reputation[message.author.name] = author_reputation
             response.append(_reputation_text(member.name, new_reputation))
+        response.append(_reputation_text(message.author.name, reputation[message.author.name]))
         self._update_file('reputation', reputation)
         await self.client.send_message(message.channel, ', '.join(response))
 
@@ -151,6 +152,7 @@ class Reputation(glados.Module):
             reputation[member.name] = new_reputation
             reputation[message.author.name] = author_reputation
             response.append(_reputation_text(member.name, new_reputation))
+        response.append(_reputation_text(message.author.name, reputation[message.author.name]))
         self._update_file('reputation', reputation)
         await self.client.send_message(message.channel, ', '.join(response))
 
