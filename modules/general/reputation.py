@@ -36,39 +36,33 @@ DEFAULT_CONFIG = {
     'override': {},
 }
 
-activity = {}
 
-reputation = {}
+def with_members(func):
+    def wrapper(self, message, content):
+        members, roles, error = self.parse_members_roles(message, content)
+        if error:
+            await self.client.send_message(message.channel, error)
+            return
+        func(self, message, content, members)
+    return wrapper
+
+def create_json_file(path, name, data):
+    filepath = os.path.join(path, name)
+    if not os.path.exists(filepath):
+        with codecs.open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f)
+
 
 class Reputation(glados.Module):
-
-    def setup_memory(self):
-        rep_file = os.path.join(self.data_dir, 'reputation', 'reputation.json')
-        comebacks_file = os.path.join(self.data_dir, 'reputation', 'comebacks.json')
-        config_file = os.path.join(self.data_dir, 'reputation', 'config.json')
-        self.memory['reputation'] = {
-            'reputation': rep_file,
-            'comebacks': comebacks_file,
-            'config': config_file,
-        }
-        if not os.path.exists(os.path.join(self.data_dir, 'reputation')):
-            os.makedirs(os.path.join(self.data_dir, 'reputation'))
-        if not os.path.exists(rep_file):
-            with codecs.open(rep_file, 'w', encoding='utf-8') as f:
-                json.dump({}, f)
-        if not os.path.exists(comebacks_file):
-            with codecs.open(comebacks_file, 'w', encoding='utf-8') as f:
-                json.dump(COMEBACKS, f)
-        if not os.path.exists(config_file):
-            with codecs.open(config_file, 'w', encoding='utf-8') as f:
-                json.dump(DEFAULT_CONFIG, f)
-    
-    def _update_reputation(self, data):
-        with codecs.open(self.memory['reputation']['reputation'], 'w', encoding='utf-8') as f:
-            json.dump(data, f)
-    
-    def _get_reputation(self):
-        return self._get_file('reputation')
+    def __init__(self, server_instance, full_name):
+        super(Reputation, self).__init__(self, server_instance, full_name)
+        rep_dir = os.path.join(self.local_data_dir, 'reputation')
+        if not os.path.exists(rep_dir):
+            os.makedirs(rep_dir)
+        create_json_file(rep_dir, 'reputation.json', {})
+        create_json_file(rep_dir, 'comebacks.json', COMEBACKS)
+        create_json_file(rep_dir, 'config.json', DEFAULT_CONFIG)
+        self.activity = {}
     
     def _get_file(self, key):
         with codecs.open(self.memory['reputation'][key], 'r', encoding='utf-8') as f:
@@ -83,8 +77,8 @@ class Reputation(glados.Module):
 
     def _update_activity_limit(self, member, amount=1):
         config = self._get_file('config')
-        user_activity = activity.get(member.name, { 'votes': 0, 'date': date.today()})
-        activity[member.name] = user_activity
+        user_activity = self.activity.get(member.name, { 'votes': 0, 'date': date.today()})
+        self.activity[member.name] = user_activity
         if user_activity['date'] < date.today():
             user_activity['date'] = date.today()
             user_activity['votes'] = 0
@@ -109,12 +103,12 @@ class Reputation(glados.Module):
             await self.client.send_message(message.author, e)
             return
         response = []
-        reputation = self._get_reputation()
+        reputation = self._get_file('reputation')
         for member in members:
             new_reputation = reputation.get(member.name, 0) + 1
             reputation[member.name] = new_reputation
             response.append(_reputation_text(member.name, new_reputation))
-        self._update_reputation(reputation)
+        self._update_file('reputation', reputation)
         await self.client.send_message(message.channel, ', '.join(response))
 
     @glados.Module.command('downvote', '<user>', 'Remove reputation from a user')
@@ -129,12 +123,12 @@ class Reputation(glados.Module):
             await self.client.send_message(message.author, e)
             return
         response = []
-        reputation = self._get_reputation()
+        reputation = self._get_file('reputation')
         for member in members:
             new_reputation = reputation.get(member.name, 0) - 1
             reputation[member.name] = new_reputation
             response.append(_reputation_text(member.name, new_reputation))
-        self._update_reputation(reputation)
+        self._update_file('reputation', reputation)
         await self.client.send_message(message.channel, ', '.join(response))
 
     @glados.Module.command('reputation', '<user>', 'See a user\'s reputation')
@@ -143,13 +137,13 @@ class Reputation(glados.Module):
         if error:
             await self.client.send_message(message.channel, error)
             return
-        reputation = self._get_reputation()
+        reputation = self._get_file('reputation')
         response = [_reputation_text(member.name, reputation.get(member.name, 0)) for member in members ]
         await self.client.send_message(message.channel, ', '.join(response))
     
     @glados.Module.command('toprep', '', 'See the five users with most reputation')
     async def toprep(self, message, content):
-        reputation = self._get_reputation()
+        reputation = self._get_file('reputation')
         top = sorted(list(reputation.items()), key=lambda x: x[1], reverse=True)[:5]
         response = []
         for member in top:
