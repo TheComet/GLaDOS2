@@ -38,29 +38,14 @@ DEFAULT_CONFIG = {
 
 
 def with_members(func):
-    def wrapper(obj, message, content):
-        members, roles, error = obj.parse_members_roles(message, content)
+    def wrapper(*args):
+        members, roles, error = args[0].parse_members_roles(args[1], args[2])
         if error:
-            await obj.client.send_message(message.channel, error)
+            await args[0].client.send_message(args[1].channel, error)
             return
-        func(obj, message, content, members)
+        args.append[members]
+        func(*args)
     return wrapper
-
-def no_author(func, get_comeback):
-    def wrapper(obj, message, content, members):
-        if message.author in members:
-            await obj.client.send_message(message.channel, get_comeback().format(message.author.name))
-            return
-        func(obj, message, content, members)
-
-def limit_activity(func):
-    def wrapper(obj, message, content, members):
-        try:
-            obj._update_activity_limit(message.author, len(members))
-        except Exception as e:
-            await obj.client.send_message(message.author, e)
-            return
-        func(obj, message, content, members)
 
 def create_json_file(path, name, data):
     filepath = os.path.join(path, name)
