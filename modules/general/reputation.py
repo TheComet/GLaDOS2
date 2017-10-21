@@ -49,7 +49,8 @@ def with_members(func):
 def no_author(func):
     async def wrapper(obj, message, content, members):
         if message.author in members:
-            await obj.client.send_message(message.channel, COMEBACKS.format(message.author.name))
+            comeback = random.choice(COMEBACKS)
+            await obj.client.send_message(message.channel, comeback.format(message.author.name))
             return
         await func(obj, message, content, members)
     return wrapper
