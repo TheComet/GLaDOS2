@@ -173,7 +173,7 @@ class Reputation(glados.Module):
     
     @glados.Module.command('bottomrep', '', 'See the five users with least reputation')
     async def bottomrep(self, message, content):
-        reputation = self._get_reputation()
+        reputation = self._get_file('reputation')
         bottom = sorted(list(reputation.items()), key=lambda x: x[1])[:5]
         response = []
         for member in bottom:
