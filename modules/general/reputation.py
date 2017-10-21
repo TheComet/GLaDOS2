@@ -81,6 +81,9 @@ def create_json_file(path, name, data):
         with codecs.open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f)
 
+def reputation_text(name, reputation):
+    return '{}\'{} reputation is {}'.format(name, '' if name.endswith('s') else 's', reputation)
+
 
 class Reputation(glados.Module):
     def __init__(self, server_instance, full_name):
@@ -125,8 +128,8 @@ class Reputation(glados.Module):
             author_reputation = reputation.get(message.author.name, 0) + 1
             reputation[member.name] = new_reputation
             reputation[message.author.name] = author_reputation
-            response.append(_reputation_text(member.name, new_reputation))
-        response.append(_reputation_text(message.author.name, reputation[message.author.name]))
+            response.append(reputation_text(member.name, new_reputation))
+        response.append(reputation_text(message.author.name, reputation[message.author.name]))
         self._update_file('reputation', reputation)
         await self.client.send_message(message.channel, ', '.join(response))
 
@@ -145,8 +148,8 @@ class Reputation(glados.Module):
             author_reputation = reputation.get(message.author.name, 0) - 1
             reputation[member.name] = new_reputation
             reputation[message.author.name] = author_reputation
-            response.append(_reputation_text(member.name, new_reputation))
-        response.append(_reputation_text(message.author.name, reputation[message.author.name]))
+            response.append(reputation_text(member.name, new_reputation))
+        response.append(reputation_text(message.author.name, reputation[message.author.name]))
         self._update_file('reputation', reputation)
         await self.client.send_message(message.channel, ', '.join(response))
 
@@ -155,7 +158,7 @@ class Reputation(glados.Module):
     @with_members
     async def reputation(self, message, content, members):
         reputation = self._get_file('reputation')
-        response = [_reputation_text(member.name, reputation.get(member.name, 0)) for member in members ]
+        response = [reputation_text(member.name, reputation.get(member.name, 0)) for member in members ]
         await self.client.send_message(message.channel, ', '.join(response))
     
     @glados.Module.command('toprep', '', 'See the five users with most reputation')
@@ -196,7 +199,3 @@ class Reputation(glados.Module):
         config['override'][name] = amount
         self._update_file('config', config)
         await self.client.send_message(message.channel, '{} daily votes set to {}.'.format(name, amount))
-
-
-def _reputation_text(name, reputation):
-    return '{}\'{} reputation is {}'.format(name, '' if name.endswith('s') else 's', reputation)
