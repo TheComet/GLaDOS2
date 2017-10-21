@@ -46,7 +46,7 @@ def create_json_file(path, name, data):
 
 class Reputation(glados.Module):
     def __init__(self, server_instance, full_name):
-        super(Reputation, self).__init__(self, server_instance, full_name)
+        super(Reputation, self).__init__(server_instance, full_name)
         self.rep_dir = os.path.join(self.local_data_dir, 'reputation')
         if not os.path.exists(self.rep_dir):
             os.makedirs(self.rep_dir)
