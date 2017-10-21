@@ -43,7 +43,7 @@ def with_members(func):
         if error:
             await obj.client.send_message(message.channel, error)
             return
-        func(obj, message, content, members)
+        await func(obj, message, content, members)
     return wrapper
 
 def no_author(func, get_comeback):
@@ -51,7 +51,8 @@ def no_author(func, get_comeback):
         if message.author in members:
             await obj.client.send_message(message.channel, get_comeback().format(message.author.name))
             return
-        func(obj, message, content, members)
+        await func(obj, message, content, members)
+    return wrapper
 
 def limit_activity(func):
     async def wrapper(obj, message, content, members):
@@ -60,7 +61,8 @@ def limit_activity(func):
         except Exception as e:
             await obj.client.send_message(message.author, e)
             return
-        func(obj, message, content, members)
+        await func(obj, message, content, members)
+    return wrapper
 
 def create_json_file(path, name, data):
     filepath = os.path.join(path, name)
