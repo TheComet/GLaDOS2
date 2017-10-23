@@ -24,7 +24,7 @@ COMEBACKS = {
         'Try not to flatter yourself too much, okay?',
         'YOLO, vote all the {}s!',
         'Did you just assume your vote, {}?',
-        'Doesn\'t anybody else like you, {}',
+        'Doesn\'t anybody else like you, {}?',
         'Did you really think that would work, {}?',
         '{} is upvoting himself because nopony else would.',
         '{} is upvoting herself because nopony else would.',
@@ -142,9 +142,9 @@ class Reputation(glados.Module):
         reputation = self._get_file('reputation')
         for member in members:
             if member.id == self.client.user.id:
-                new_reputation = reputation.get(member.name, 0) + 1
+                new_reputation = reputation.get(member.name, 0) + 3
             else:
-                new_reputation = reputation.get(member.name, 0) - 1
+                new_reputation = reputation.get(member.name, 0) - 3
             author_reputation = reputation.get(message.author.name, 0) - 1
             reputation[member.name] = new_reputation
             reputation[message.author.name] = author_reputation
