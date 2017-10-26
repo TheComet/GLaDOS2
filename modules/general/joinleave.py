@@ -27,7 +27,7 @@ class JoinLeave(glados.Module):
                     await self.client.send_message(channel, msg)
             return ()
 
-    @glados.DummyPermissions.admin
+    @glados.Permissions.admin
     @glados.Module.command('addjoin', '<channel> <msg>', 'Add a message to print when a user joins. You can use '
                            'python-like "{}" syntax to insert the user\'s name, e.g. "Welcome to my server {}! Have a '
                            'nice stay!')
@@ -41,7 +41,7 @@ class JoinLeave(glados.Module):
         await self.client.send_message(message.channel, 'Added join message to channel {}: {}'.format(
             channel.name, msg.replace('{}', '<user>')))
 
-    @glados.DummyPermissions.admin
+    @glados.Permissions.admin
     @glados.Module.command('rmjoin', '<channel>', 'Remove a join message from a channel. You can specify a channel ID '
                            '#name.')
     async def rmjoin(self, message, content):
@@ -55,7 +55,7 @@ class JoinLeave(glados.Module):
             self.__save_db()
             await self.client.send_message(message.channel, 'Removed join message from channel {}'.format(channel.name))
 
-    @glados.DummyPermissions.admin
+    @glados.Permissions.admin
     @glados.Module.command('addleave', '<channel> <msg>', 'Add a message to print when a user leaves the server. You '
                            'can use python-like "{}" syntax to insert the user\'s name, e.g. "Sad to see you go, {}!')
     async def addleave(self, message, content):
@@ -68,7 +68,7 @@ class JoinLeave(glados.Module):
         await self.client.send_message(message.channel, 'Added leave message to channel {}: {}'.format(
             channel.name, msg.replace('{}', '<user>')))
 
-    @glados.DummyPermissions.admin
+    @glados.Permissions.admin
     @glados.Module.command('rmleave', '<channel>', 'Remove a leave message from a channel')
     async def rmleave(self, message, content):
         channel, msg = self.__parse_args(message, content + ' _')
@@ -81,7 +81,7 @@ class JoinLeave(glados.Module):
             self.__save_db()
             await self.client.send_message(message.channel, 'Removed leave message from channel {}'.format(channel.name))
 
-    @glados.DummyPermissions.admin
+    @glados.Permissions.admin
     @glados.Module.command('lsjoin', '', 'Shows the configured join messages for this server')
     async def lsjoin(self, message, content):
         strings = list()
@@ -95,7 +95,7 @@ class JoinLeave(glados.Module):
         for msg in self.pack_into_messages(strings):
             await self.client.send_message(message.channel, msg)
 
-    @glados.DummyPermissions.admin
+    @glados.Permissions.admin
     @glados.Module.command('lsleave', '', 'Shows the configured leave messages for this server')
     async def lsleave(self, message, content):
         strings = list()

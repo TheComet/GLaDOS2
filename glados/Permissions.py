@@ -1,7 +1,7 @@
 from .module import Module
 
 
-class DummyPermissions(Module):
+class Permissions(Module):
 
     BANNED = -1
     NEED_MODERATOR = -2

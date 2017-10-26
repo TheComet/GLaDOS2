@@ -59,7 +59,7 @@ class Mentions(glados.Module):
         with open(self.memory['seen file'], 'w') as f:
             f.write(json.dumps(self.memory['last seen']))
 
-    @glados.DummyPermissions.spamalot
+    @glados.Permissions.spamalot
     @glados.Module.rule('^(.*)$')
     async def record(self, message, match):
         with codecs.open(self.memory['log file'], 'a', encoding='utf-8') as f:

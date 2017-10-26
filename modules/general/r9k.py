@@ -57,7 +57,7 @@ class R9K(glados.Module):
 
         await self.client.send_message(message.channel, msg)
 
-    @glados.DummyPermissions.spamalot
+    @glados.Permissions.spamalot
     @glados.Module.rule('^(.*)$')
     async def on_message(self, message, match):
         # Remove anything that is not alphanumeric

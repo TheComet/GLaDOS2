@@ -40,7 +40,7 @@ class Quotes(glados.Module):
     def quotes_file_name(self, author):
         return os.path.join(self.quotes_path, author) + '.txt'
 
-    @glados.DummyPermissions.spamalot
+    @glados.Permissions.spamalot
     @glados.Module.rule('^(.*)$')
     async def record(self, message, match):
         author = message.author.name

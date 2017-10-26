@@ -64,7 +64,7 @@ class Verify(glados.Module):
         await asyncio.sleep(15)  # allow people to read the message
         await self.client.purge_from(welcome_channel, check=check_message_for_deletion)
 
-    @glados.DummyPermissions.spamalot
+    @glados.Permissions.spamalot
     @glados.Module.rule('^.*$', ignorecommands=False)
     async def delete_this(self, message, match):
         asyncio.ensure_future(self.clean_up_shit_messages())

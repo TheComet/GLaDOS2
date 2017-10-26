@@ -11,7 +11,7 @@ import os
 from .Log import log
 from .cooldown import Cooldown
 from .tools.path import add_import_paths
-from .DummyPermissions import DummyPermissions
+from .Permissions import Permissions
 from .DummyModuleManager import DummyModuleManager
 from os.path import isfile
 from .module import Module
@@ -52,7 +52,7 @@ class ServerInstance(object):
                 self.module_manager = obj
 
         if self.permissions is None:
-            self.permissions = DummyPermissions(self, 'bot.dummy.DummyPermissions')
+            self.permissions = Permissions(self, 'bot.dummy.DummyPermissions')
         if self.module_manager is None:
             self.module_manager = DummyModuleManager(self, 'bot.dummy.DummyModuleManager')
 
@@ -176,7 +176,7 @@ class ServerInstance(object):
                     await self.permissions.inform_about_failure(message, code)
                 continue
 
-            if code == DummyPermissions.PUNISHABLE:
+            if code == Permissions.PUNISHABLE:
                 if not punish_checked and not hasattr(callback, 'spamalot'):
                     cooldown = self.__apply_cooldown(message)
                     if cooldown:

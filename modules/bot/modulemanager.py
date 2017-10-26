@@ -1,6 +1,6 @@
 import glados
 import json
-from glados import DummyPermissions, Module
+from glados import Permissions, Module
 from os.path import join, isfile
 
 

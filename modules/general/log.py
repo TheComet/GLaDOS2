@@ -21,7 +21,7 @@ class Log(glados.Module):
             self.date = date
             self.log_file = open(os.path.join(self.log_path, 'chanlog-{}'.format(self.date)), 'a')
 
-    @glados.DummyPermissions.spamalot
+    @glados.Permissions.spamalot
     @glados.Module.rule('^.*$', ignorecommands=False)
     async def on_message(self, message, match):
         server_name = message.server.name if message.server else ''

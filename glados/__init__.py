@@ -2,6 +2,6 @@ from .bot import Bot
 from .module import Module
 from .Log import log
 from .cooldown import Cooldown
-from .DummyPermissions import DummyPermissions
+from .Permissions import Permissions
 from .DummyModuleManager import DummyModuleManager
 

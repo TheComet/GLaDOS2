@@ -57,7 +57,7 @@ class Seen(glados.Module):
         with open(self.db_file, 'w') as f:
             f.write(json.dumps(self.db))
 
-    @glados.DummyPermissions.spamalot
+    @glados.Permissions.spamalot
     @glados.Module.rule('^.*$', ignorecommands=False)
     async def on_message(self, message, match):
         author = message.author.name
