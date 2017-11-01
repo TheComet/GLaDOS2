@@ -8,6 +8,7 @@ import discord
 LATEX_FRAMEWORK = r"""
 \documentclass[varwidth=true]{standalone}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{color}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \usepackage{amsfonts}

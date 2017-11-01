@@ -15,7 +15,7 @@ class ModuleManager(glados.DummyModuleManager):
     def is_blacklisted(self, mod):
         return True if mod.full_name in self.db['module blacklist'] else False
 
-    @Module.Permissions.admin
+    @Permissions.admin
     @Module.command('modulelist', '', 'Dumps a list of all modules and which ones are whitelisted/blacklisted')
     async def modulelist(self, message, content):
         strings = ['**List of active modules**']
@@ -25,7 +25,7 @@ class ModuleManager(glados.DummyModuleManager):
         for msg in self.pack_into_messages(strings):
             await self.client.send_message(message.channel, msg)
 
-    @Module.Permissions.admin
+    @Permissions.admin
     @Module.command('moduleblack', '<module name> [module name...]', 'Blacklists the specified module(s), thus '
                                                                      'completely disabling them.')
     async def moduleblack(self, message, content):
@@ -53,7 +53,7 @@ class ModuleManager(glados.DummyModuleManager):
         for msg in self.pack_into_messages(strings, delimiter=' '):
             await self.client.send_message(message.channel, msg)
 
-    @Module.Permissions.admin
+    @Permissions.admin
     @Module.command('modulewhite', '<module name> [module name...]',
                     'Adds the specified module(s) to this server\'s whitelist. This does '
                     'two things: 1) The module will remain available on your server, even if it is removed from the '

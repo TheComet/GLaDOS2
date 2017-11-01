@@ -1,4 +1,5 @@
 import glados
+import discord
 import json
 import os
 import errno
@@ -200,9 +201,9 @@ class Sub(glados.Module):
                     # Thanks GTE (blocked the bot, which causes this to throw an exception)
                     try:
                         await self.client.send_message(subscribed_author, '[sub][{}][{}] (``{}``) ```{}: {}```'.format(message.server.name, message.channel.name, pattern, message.author.name, message.content))
-                    self.items[subscribed_author.id] = datetime.now()
+                        self.items[subscribed_author.id] = datetime.now()
                     except discord.Forbidden as e:
-                        await self.client.send_message(message.channel, '{} I am removing all of your subscriptions, because you blocked me :(')
+                        await self.client.send_message(message.channel, '{} I am removing all of your subscriptions, because you blocked me :('.format(subscribed_author.mention))
                         members_to_remove.append(subscribed_author.id)
                 else:
                     # Remove all settings entirely (fuck you!)

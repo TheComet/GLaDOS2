@@ -40,7 +40,6 @@ class ServerInstance(object):
             mod_whitelist = whitelist.get(full_name, ())
             if len(mod_whitelist) > 0 and self.server.id not in mod_whitelist:
                 continue
-            log('Instantiating module {} for server {}'.format(full_name, self.server.name))
             obj = class_(self, full_name)
             self.callbacks += [(obj, member) for name, member in inspect.getmembers(obj, predicate=inspect.ismethod)
                          if hasattr(member, 'commands') or hasattr(member, 'rules') or hasattr(member, 'bot_rules')]
