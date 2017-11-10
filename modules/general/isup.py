@@ -28,15 +28,15 @@ class IsUp(glados.Module):
             site += ".com"
 
         try:
-            response = urllib.request.urlopen(site).read()
+            response = urllib.request.urlopen(site, timeout=5).getcode()
         except Exception:
             await self.client.send_message(message.channel, site + ' looks down from here.')
             return
 
-        if response:
+        if response == 200:
             await self.client.send_message(message.channel, site + ' looks fine to me.')
         else:
-            await self.client.send_message(message.channel, site + ' is down from here.')
+            await self.client.send_message(message.channel, site + ' returned code {}'.format(response))
 
     @glados.Module.rule(r'(?i).*?(gdnet|gd.net|gamedev|gamedev.net).*?(down\??)')
     async def is_gdnet_down(self, message, match):
