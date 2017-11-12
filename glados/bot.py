@@ -337,7 +337,6 @@ class Bot(object):
             except:
                 log('Error: Failed to import class {0}\n{1}'.format(modfullname, traceback.print_exc()))
                 continue
-            log('Imported class {}'.format(modfullname))
 
     @staticmethod
     def __as_json(o):
