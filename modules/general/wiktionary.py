@@ -78,10 +78,6 @@ class Wiktionary(glados.Module):
     @glados.Module.command('define', '<word>', 'Look up a word on wiktionary')
     async def wiktionary(self, message, word):
         """Look up a word on Wiktionary."""
-        if word == '':
-            await self.provide_help('define', message)
-            return
-
         _etymology, definitions = wikt(word)
         if not definitions:
             await self.client.send_message(message.channel, 'Couldn\'t get any definitions for {}.'.format(word))

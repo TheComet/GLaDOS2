@@ -109,6 +109,7 @@ class Insult(glados.Module):
     @glados.Module.command('insult', '[user]', 'Generate a random insult and direct it at a user.')
     async def insult(self, message, content):
         if not content:
-            await self.client.send_message(message.channel, 'You {}!'.format(self.gen_insult()))
+            await self.client.send_message(message.channel, 'You {}!'.format(self.gen_insult()), tts=True)
         else:
-            await self.client.send_message(message.channel, '{0}: You {1}!'.format(content, self.gen_insult()))
+            await self.client.send_message(message.channel, '{0}: You {1}!'.format(content, self.gen_insult()), tts=True)
+

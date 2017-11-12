@@ -29,12 +29,12 @@ class IsUp(glados.Module):
 
         try:
             response = urllib.request.urlopen(site, timeout=5).getcode()
-        except Exception:
-            await self.client.send_message(message.channel, site + ' looks down from here.')
+        except Exception as e:
+            await self.client.send_message(message.channel, site + ' looks down from here. (Exception: {})'.format(str(e)))
             return
 
         if response == 200:
-            await self.client.send_message(message.channel, site + ' looks fine to me.')
+            await self.client.send_message(message.channel, site + ' looks fine to me. (Return code 200)')
         else:
             await self.client.send_message(message.channel, site + ' returned code {}'.format(response))
 
