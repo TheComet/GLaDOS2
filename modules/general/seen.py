@@ -72,11 +72,13 @@ class Seen(glados.Module):
         self.__save_dict()
         return ()
 
-    @glados.Module.command('seen', '<user>', 'Find the last message a user wrote, where he wrote it, and what it said')
+    @glados.Module.command('seen', '[user]', 'Find the last message a user wrote, where he wrote it, and what it said')
     async def on_seen(self, message, content):
         if content == "":
-            # Count how many users in total have been seen
-            await self.client.send_message(message.channel, '{} users have been seen saying at least something.'.format(len(self.db)))
+            # Count how many users in total have been seen saying something, and all users that are on the server
+            users_saying_something = len(self.db)
+            all_users = len(list(self.server.members))
+            await self.client.send_message(message.channel, '{} users have been seen saying at least something. There are {} users joined.'.format(users_saying_something, all_users))
             return
 
         author = content.strip('@').split('#')[0]
