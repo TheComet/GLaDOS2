@@ -37,8 +37,12 @@ class Quotes(glados.Module):
 
         return None
 
+    @staticmethod
+    def sanitize_file_name(name):
+        return name.replace('/', ':').replace('\\', ':')
+
     def quotes_file_name(self, author):
-        return os.path.join(self.quotes_path, author) + '.txt'
+        return os.path.join(self.quotes_path, self.sanitize_file_name(author)) + '.txt'
 
     @glados.Permissions.spamalot
     @glados.Module.rule('^(.*)$')
