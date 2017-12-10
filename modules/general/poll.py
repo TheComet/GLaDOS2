@@ -36,7 +36,7 @@ class Poll(glados.Module):
         self.polls[name]['options'] = options
         self.polls[name]['votes'] = dict()
 
-        msg = 'Poll "{}" created! Vote with ``{}pollvote {} <number>``'.format(self.command_prefix, name, name)
+        msg = 'Poll "{1}" created! Vote with ``{0}pollvote {1} <number>``'.format(self.command_prefix, name)
         msg = msg + '\n  ' + '\n  '.join(options)
         await self.client.send_message(message.channel, msg)
 
