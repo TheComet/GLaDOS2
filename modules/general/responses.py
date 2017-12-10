@@ -49,7 +49,7 @@ class Insult(glados.Module):
         "Do you think it wise, {0}, to insult me?",
         "{0} You know, if you'd said that to somebody else, they might devote their existence to exacting revenge. Luckily I'm a bigger person than that."
     ]
-    counter = 0
+    counter = random.randrange(0, len(phrases))
 
     async def respond(self, message):
         await self.client.send_message(message.channel, self.phrases[self.counter].format(message.author.name))
