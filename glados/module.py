@@ -10,6 +10,8 @@ class Module(object):
         self.__server_instance = server_instance
         # set when the module is loaded. It will be something like "test.foo.Hello".
         self.__full_name = full_name
+        # cache the discord.Member object of the bot owner
+        self.__owner = None
 
     @property
     def settings(self):
@@ -78,6 +80,19 @@ class Module(object):
         from the "settings" dict. It changes depending on which server a message originated from.
         """
         return self.__server_instance.local_data_dir
+
+    @property
+    def owner(self):
+        """
+        Returns the discord.Member object representing the bot owner
+        """
+        if self.__owner is not None:
+            return self.__owner
+        owner_id = self.settings['permissions']['bot owner']
+        for member in self.client.get_all_members():
+            if member.id == owner_id:
+                self.__owner = member
+                return self.__owner
 
     def is_banned(self, member):
         """
