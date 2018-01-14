@@ -28,8 +28,5 @@ class Urban(glados.Module):
     @glados.Module.command('urban', '<term>', 'Look up a term on urban dictionary.')
     @glados.Module.command('ud', '', '')
     async def urban(self, message, content):
-        if content == '':
-            await self.provide_help('urban', message)
-            return
         definition = self.get_def(content)
         await self.client.send_message(message.channel, definition)
