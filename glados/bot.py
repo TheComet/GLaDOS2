@@ -233,13 +233,16 @@ class Bot(object):
                     if member.id == self.settings['permissions']['bot owner']:
                         bot_owner = member
                         strings = ['**An exception occurred while processing a message:**']
-                        strings += ('```' + traceback.format_exc() + '```').split('\n')
-                        strings += ['**Message:**: ```{}```'.format(message.content)]
-                        strings += ['**Server:**: ```{}```'.format(message.server.name)]
-                        strings += ['**Feel free to submit this info to the issue tracker:**']
-                        strings += ['https://github.com/TheComet/GLaDOS2/issues']
-                        for msg in Module.pack_into_messages(strings):
+                        strings += traceback.format_exc().split('\n')
+                        msgs = ['```' + x + '```' for x in Module.pack_into_messages(strings)]
+                        msgs.append('**Message by {}:**: ```{}```\n'.format(message.author.name, message.content) +
+                                    '**Server:**: ```{}```\n'.format(message.server.name) +
+                                    '**Feel free to submit this info to the issue tracker:** ' +
+                                    'https://github.com/TheComet/GLaDOS2/issues')
+                        for msg in msgs:
                             await self.client.send_message(bot_owner, msg)
+                            if not message.author == bot_owner:
+                                await self.client.send_message(message.author, msg)
                         break
 
             # Write settings dict to disc (and print a diff) if a command changed it in any way
