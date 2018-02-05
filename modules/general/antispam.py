@@ -50,7 +50,7 @@ class AntiSpam(glados.Module):
         s = sum(x.total_seconds() for x in diffs)
         if s < TIME_THRESHOLD * BUFFER_LEN:
             try:
-                await self.__mute_user(message.author)
+                await self.__mute_user(message.author, self.db['length'])
                 msg = self.db['msg']
                 msg = msg.replace('{0}', message.author.mention)
                 msg = msg.replace('{1}', self.db['users'][message.author.id])
