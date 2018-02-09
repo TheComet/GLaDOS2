@@ -297,7 +297,8 @@ class Activity(glados.Module):
 
             # Determine botspam ratios
             top5 = sorted(self.cache['authors'].items(),
-                          key=lambda kv: float(kv[1]['commands_total'])/kv[1]['messages_total'],
+                          key=lambda kv: 0 if len(kv[1]['messages_total']) < 20  # There are people who come on and spam some bot commands, then never return
+                                         else float(kv[1]['commands_total'])/kv[1]['messages_total'],
                           reverse=True)
             if len(top5) > 0:
                 top5 = top5[:5]
