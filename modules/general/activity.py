@@ -122,7 +122,7 @@ class Activity(glados.Module):
                     authors[m.author]['day_cycle_acc'] = [0]*24
                     authors[m.author]['day_cycle_acc_day'] = deque([[0]*24], maxlen=1)
                     authors[m.author]['day_cycle_acc_week'] = deque([[0]*24], maxlen=7)
-                    authors[m.author]['commands_acc'] = deque(0, maxlen=7)
+                    authors[m.author]['commands_acc'] = deque([0], maxlen=7)
 
                 a = authors[m.author]
 
