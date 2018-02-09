@@ -34,6 +34,7 @@ def new_author_dict():
     author['day_cycle_avg_week'] = [0] * 24
     author['day_cycle_avg_day'] = [0] * 24
     author['commands_total'] = 0
+    author['commands_last_week'] = 0
     author['channels'] = dict()
     author['messages_per_day'] = dict()
     return author
@@ -44,8 +45,9 @@ def new_author_dict():
 #   "authors": {
 #     "author name1": {
 #       "messages_total": xxx,         the total number of messages this author has made (including bot commands)
-#       "messages_last_week": xxx,     the total number of messages over the last 7 days
+#       "messages_last_week": xxx,     the number of messages over the last 7 days
 #       "commands_total": xxx,         the total number of messages that contained bot commands
+#       "commands_last_week": xxx,     the number of messages that contained bot commands over the last 7 days
 #       "day_cycle_avg": [0]*24,       each value is the number of messages in that hour averaged over all time
 #       "day_cycle_avg_week": [0]*24,  each value is the number of messages in that hour averaged over the last week
 #       "day_cycle_avg_day": [0]*24,   each value is the number of messages in that hour averaged over the last day
@@ -108,6 +110,7 @@ class Activity(glados.Module):
             for k, v in authors.items():
                 v['day_cycle_acc_day'].appendleft([0]*24)
                 v['day_cycle_acc_week'].appendleft([0]*24)
+                v['commands_acc'].appendleft(0)
 
             for line in open(f, 'rb'):
                 # parse the message into its components (author, timestamps, channel, etc.)
@@ -119,6 +122,7 @@ class Activity(glados.Module):
                     authors[m.author]['day_cycle_acc'] = [0]*24
                     authors[m.author]['day_cycle_acc_day'] = deque([[0]*24], maxlen=1)
                     authors[m.author]['day_cycle_acc_week'] = deque([[0]*24], maxlen=7)
+                    authors[m.author]['commands_acc'] = deque(0, maxlen=7)
 
                 a = authors[m.author]
 
@@ -126,7 +130,9 @@ class Activity(glados.Module):
                 a['messages_total'] += 1
 
                 # See if message contains any commands
-                a['commands_total'] += len(command_regex.findall(m.message))
+                command_count = len(command_regex.findall(m.message))
+                a['commands_total'] += command_count
+                a['commands_acc'][0] += command_count
 
                 # Accumulate message count cycles for later averaging
                 a['day_cycle_acc'][int(m.stamp.tm_hour)] += 1
@@ -158,6 +164,7 @@ class Activity(glados.Module):
             # Days are easier, just use the first (and only) item
             a['day_cycle_avg_day'] = [float(x) for x in a['day_cycle_acc_day'][0]]
             a['messages_last_week'] = int(sum(sum(x) for x in zip(*a['day_cycle_acc_week'])))
+            a['commands_last_week'] = int(sum(a['commands_acc']))
 
             # Accumulate all of these stats into the server stats
             server_stats['messages_total'] += a['messages_total']
@@ -173,6 +180,7 @@ class Activity(glados.Module):
             del a['day_cycle_acc']
             del a['day_cycle_acc_day']
             del a['day_cycle_acc_week']
+            del a['commands_acc']
 
         # Finally, save cache
         self.cache['authors'] = authors
@@ -302,7 +310,7 @@ class Activity(glados.Module):
                           reverse=True)
             if len(top5) > 0:
                 top5 = top5[:5]
-                ax5.text(0, 0.1, 'Bot-to-message ratios')
+                ax5.text(0, 0.1, 'Bot-to-message ratios this week')
                 for i, a in enumerate(top5):
                     ax5.text(0.02, i*0.15+0.25, '{}. {} ({:.2f}%)'.format(
                         i+1, a[0], 100.0 * a[1]['commands_total'] / a[1]['messages_total']))
