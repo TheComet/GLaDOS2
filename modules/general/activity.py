@@ -96,12 +96,18 @@ class Activity(glados.Module):
         # matches words that are bot commands
         command_regex = re.compile(self.command_prefix + r'\w+')
 
-        for f in files:
+        for f in sorted(files):
             match = re.match('^.*/chanlog-([0-9]+-[0-9]+-[0-9]+)$', f)
             if match is None:
                 continue
+            print(f)
             log_stamp = time.mktime(strptime(match.group(1), '%Y-%m-%d'))
             total_days += 1
+
+            # Update cycle counters to the current day
+            for k, v in authors.items():
+                v['day_cycle_acc_day'].appendleft([0]*24)
+                v['day_cycle_acc_week'].appendleft([0]*24)
 
             for line in open(f, 'rb'):
                 # parse the message into its components (author, timestamps, channel, etc.)
@@ -132,11 +138,6 @@ class Activity(glados.Module):
 
                 # count how many messages the user makes for every day
                 a['messages_per_day'][log_stamp] = a['messages_per_day'].get(log_stamp, 0) + 1
-
-            # Update cycle counters to the current day
-            for k, v in authors.items():
-                v['day_cycle_acc_day'].append([0]*24)
-                v['day_cycle_acc_week'].append([0]*24)
 
             # This process does take some time
             await asyncio.sleep(0)
@@ -302,7 +303,7 @@ class Activity(glados.Module):
                 top5 = top5[:5]
                 ax5.text(0, 0.1, 'Bot-to-message ratios')
                 for i, a in enumerate(top5):
-                    ax5.text(0.02, i*0.15+0.25, '{}. {} ({:.0f}%)'.format(
+                    ax5.text(0.02, i*0.15+0.25, '{}. {} ({:.2f}%)'.format(
                         i+1, a[0], 100.0 * a[1]['commands_total'] / a[1]['messages_total']))
 
         image_file_name = path.join(self.cache_dir, user_name + '.png')
