@@ -18,9 +18,6 @@ from .module import Module
 comment_pattern = re.compile('`(.*?)`')
 
 
-server_lock = asyncio.Lock()
-
-
 class ServerInstance(object):
     def __init__(self, client, settings, server):
         self.client = client
