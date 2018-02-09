@@ -305,15 +305,15 @@ class Activity(glados.Module):
 
             # Determine botspam ratios
             top5 = sorted(self.cache['authors'].items(),
-                          key=lambda kv: 0 if kv[1]['messages_total'] < 20  # There are people who come on and spam some bot commands, then never return
-                                         else float(kv[1]['commands_total'])/kv[1]['messages_total'],
+                          key=lambda kv: 0 if kv[1]['messages_last_week'] < 5  # There are people who come on and spam some bot commands, then never return
+                                         else float(kv[1]['commands_last_week'])/kv[1]['messages_last_week'],
                           reverse=True)
             if len(top5) > 0:
                 top5 = top5[:5]
                 ax5.text(0, 0.1, 'Bot-to-message ratios this week')
                 for i, a in enumerate(top5):
                     ax5.text(0.02, i*0.15+0.25, '{}. {} ({:.2f}%)'.format(
-                        i+1, a[0], 100.0 * a[1]['commands_total'] / a[1]['messages_total']))
+                        i+1, a[0], 100.0 * a[1]['commands_last_week'] / a[1]['messages_last_week']))
 
         image_file_name = path.join(self.cache_dir, user_name + '.png')
         fig.savefig(image_file_name)
