@@ -94,7 +94,7 @@ class Activity(glados.Module):
         total_days = 0
 
         # matches words that are bot commands
-        command_regex = re.compile(self.command_prefix + r'\w+')
+        command_regex = re.compile('\\' + self.command_prefix + r'\w+')
 
         for f in sorted(files):
             match = re.match('^.*/chanlog-([0-9]+-[0-9]+-[0-9]+)$', f)
