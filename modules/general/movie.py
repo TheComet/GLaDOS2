@@ -7,7 +7,6 @@ This module relies on omdbapi.com
 """
 import glados
 import requests
-import json
 
 
 class Movie(glados.Module):
@@ -17,25 +16,18 @@ class Movie(glados.Module):
         """
         Returns some information about a movie, like Title, Year, Rating, Genre and IMDB Link.
         """
-        if movie == '':
-            await self.provide_help('imdb', message)
-            return
 
         movie = movie.rstrip()
-        uri = "http://www.omdbapi.com/"
-        data = requests.get(uri, params={'t': movie}, timeout=30).json()
-        if data['Response'] == 'False':
-            if 'Error' in data:
-                response = '[MOVIE] %s' % data['Error']
-                response += '\n**I am looking for a movie API, this one has gone private! If you know of one, let TheComet know about it!**'
-            else:
-                glados.log(
-                    'Got an error from the OMDb api, search phrase was {0}; data was {1}'.format(movie, str(data)))
-                response = '[MOVIE] Got an error from OMDbapi'
+        uri = "http://www.theapache64.com/movie_db/search"
+        data = requests.get(uri, params={'keyword': movie}, timeout=10).json()
+        if data['error']:
+            response = data['message']
         else:
-            response = '[MOVIE] Title: ' + data['Title'] + \
-                      ' | Year: ' + data['Year'] + \
-                      ' | Rating: ' + data['imdbRating'] + \
-                      ' | Genre: ' + data['Genre'] + \
-                      ' | IMDB Link: http://imdb.com/title/' + data['imdbID']
+            data = data['data']
+            response = 'Title: ' + data['name'] + '\n' + \
+                      ' | Year: ' + data['year'] + '\n' + \
+                      ' | Rating: ' + data['rating'] + '\n' + \
+                      ' | Genre: ' + data['genre'] + '\n' + \
+                      ' | Plot: ' + data['plot'] + '\n' + \
+                      ' | IMDB Link: http://www.imdb.com/title/' + data['imdb_id']
         await self.client.send_message(message.channel, response)
