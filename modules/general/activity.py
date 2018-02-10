@@ -203,6 +203,9 @@ class Activity(glados.Module):
         self.cache['server'] = server_stats
         save_json(self.cache_file, self.cache)
 
+        # Delete progress message
+        await self.client.delete_message(progress_msg)
+
     @glados.Module.command('ranks', '', 'Top users who post the most shit')
     async def ranks(self, message, users):
         if self.__cache_is_stale():
