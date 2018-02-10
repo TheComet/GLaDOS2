@@ -87,7 +87,7 @@ class Activity(glados.Module):
             return True
         return False
 
-    async def __reprocess_cache(self):
+    async def __reprocess_cache(self, progress_report_channel):
         # Get list of all channel log files
         files = [join(self.log_dir, f) for f in listdir(self.log_dir) if isfile(join(self.log_dir, f))]
         self.cache = dict()
@@ -98,12 +98,18 @@ class Activity(glados.Module):
         # matches words that are bot commands
         command_regex = re.compile('\\' + self.command_prefix + r'\w+')
 
-        for f in sorted(files):
+        # Let people know we're reprocessing
+        progress_year = None
+        progress_msg = await self.client.send_message(progress_report_channel, "Data is being reprocessed, stand by...")
+
+        # We don't want to process the last log file, because it doesn't contain a full day's worth of info
+        #                                  vvvvv
+        for i, f in enumerate(sorted(files)[:-1]):
             match = re.match('^.*/chanlog-([0-9]+-[0-9]+-[0-9]+)$', f)
             if match is None:
                 continue
             print(f)
-            log_stamp = time.mktime(strptime(match.group(1), '%Y-%m-%d'))
+            log_stamp = strptime(match.group(1), '%Y-%m-%d')
             total_days += 1
 
             # Update cycle counters to the current day
@@ -143,10 +149,17 @@ class Activity(glados.Module):
                 a['channels'][m.channel] = a['channels'].get(m.channel, 0) + 1
 
                 # count how many messages the user makes for every day
-                a['messages_per_day'][log_stamp] = a['messages_per_day'].get(log_stamp, 0) + 1
+                key = time.mktime(log_stamp)
+                a['messages_per_day'][key] = a['messages_per_day'].get(key, 0) + 1
 
             # This process does take some time
             await asyncio.sleep(0)
+
+            # Update progress message whenever the year changes
+            if not progress_year == log_stamp.tm_year:
+                await self.client.edit_message(progress_msg, "Data is being reprocessed, stand by ({})...".format(
+                    log_stamp.tm_year))
+                progress_year = log_stamp.tm_year
 
         server_stats = new_author_dict()
 
@@ -190,8 +203,7 @@ class Activity(glados.Module):
     @glados.Module.command('ranks', '', 'Top users who post the most shit')
     async def ranks(self, message, users):
         if self.__cache_is_stale():
-            await self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
-            self.__reprocess_cache()
+            await self.__reprocess_cache(message.channel)
 
         authors = self.cache['authors']
         authors_total = dict()
@@ -213,8 +225,7 @@ class Activity(glados.Module):
             user_name = users.split(' ', 1)[0].strip('@').split('#')[0]
 
         if self.__cache_is_stale():
-            await self.client.send_message(message.channel, 'Data is being reprocessed, stand by...')
-            await self.__reprocess_cache()
+            await self.__reprocess_cache(message.channel)
 
         if user_name == '':
             user = self.cache['server']
