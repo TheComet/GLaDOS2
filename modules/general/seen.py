@@ -88,7 +88,7 @@ class Seen(glados.Module):
         key = author.lower()
         if key not in self.db:
             if key == 'glados':
-                await self.client.send_message(message.channel, '{0} Do you see me? I see you.')
+                await self.client.send_message(message.channel, 'Do you see me, {}? I see you.'.format(message.author.name))
             else:
                 await self.client.send_message(message.channel, '{0} has never been seen.'.format(author))
             return
