@@ -3,8 +3,8 @@ import re
 import time
 import asyncio
 import pylab as plt
-from os import path, listdir, makedirs
-from os.path import isfile, join
+from os import listdir, makedirs
+from os.path import isfile, join, exists
 from datetime import datetime
 from time import strptime
 from matplotlib.dates import date2num
@@ -40,6 +40,17 @@ def new_author_dict():
     return author
 
 
+# matches words that are bot commands
+comment_pattern = re.compile('`(.*?)`')
+def get_commands_from_message(msg):
+    cmd_prefix = '.'
+    if msg.startswith(cmd_prefix):
+        return [(msg[len(cmd_prefix):].split(' ', 1) + [''])[:2]]
+
+    return [(x[len(cmd_prefix):].split(' ', 1) + [''])[:2] for x in comment_pattern.findall(msg) if
+            x.startswith(cmd_prefix)]
+
+
 # Cache structure is as follows:
 # {
 #   "authors": {
@@ -70,15 +81,15 @@ class Activity(glados.Module):
     def __init__(self, server_instance, full_name):
         super(Activity, self).__init__(server_instance, full_name)
 
-        self.log_dir = path.join(self.local_data_dir, 'log')
-        self.cache_dir = path.join(self.local_data_dir, 'activity')
-        self.cache_file = path.join(self.cache_dir, 'activity_cache.json')
+        self.log_dir = join(self.local_data_dir, 'log')
+        self.cache_dir = join(self.local_data_dir, 'activity')
+        self.cache_file = join(self.cache_dir, 'activity_cache.json')
         self.cache = None
 
-        if not path.exists(self.cache_dir):
+        if not exists(self.cache_dir):
             makedirs(self.cache_dir)
 
-        if path.isfile(self.cache_file):
+        if isfile(self.cache_file):
             self.cache = load_json(self.cache_file)
 
     def __cache_is_stale(self):
@@ -94,9 +105,6 @@ class Activity(glados.Module):
         self.cache['date'] = datetime.now().strftime('%Y-%m-%d')
         authors = dict()
         total_days = 0
-
-        # matches words that are bot commands
-        command_regex = re.compile('\\' + self.command_prefix + r'\w+')
 
         # Let people know we're reprocessing
         last_month = None
@@ -137,7 +145,7 @@ class Activity(glados.Module):
                 a['messages_total'] += 1
 
                 # See if message contains any commands
-                command_count = len(command_regex.findall(m.message))
+                command_count = len(get_commands_from_message(m.message))
                 a['commands_total'] += command_count
                 a['commands_acc'][0] += command_count
 
