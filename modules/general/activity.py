@@ -104,7 +104,7 @@ class Activity(glados.Module):
         self.cache = dict()
         self.cache['date'] = datetime.now().strftime('%Y-%m-%d')
         authors = dict()
-        total_days = 0
+        total_days = dict()  # Keep track of how many days a user has existed for, so we can calculate averages
 
         # Let people know we're reprocessing
         last_month = None
@@ -119,7 +119,10 @@ class Activity(glados.Module):
                 continue
             print(f)
             log_stamp = strptime(match.group(1), '%Y-%m-%d')
-            total_days += 1
+
+            # Update the total days counter of all users we've seen so far
+            for author in total_days:
+                total_days[author] += 1
 
             # Update cycle counters to the current day
             for k, v in authors.items():
@@ -138,6 +141,7 @@ class Activity(glados.Module):
                     authors[m.author]['day_cycle_acc_day'] = deque([[0]*24], maxlen=1)
                     authors[m.author]['day_cycle_acc_week'] = deque([[0]*24], maxlen=7)
                     authors[m.author]['commands_acc'] = deque([0], maxlen=7)
+                    total_days[m.author] = 1
 
                 a = authors[m.author]
 
@@ -182,7 +186,7 @@ class Activity(glados.Module):
         for author, a in authors.items():
             # Calculate average day cycle using the accumulated cycle
             for i, v in enumerate(a['day_cycle_acc']):
-                a['day_cycle_avg'][i] = float(v / total_days)
+                a['day_cycle_avg'][i] = float(v / total_days[author])
             # There are 7 lists of day cycles that need to be added up, then divided by 7
             a['day_cycle_avg_week'] = [float(sum(x)/7.0) for x in zip(*a['day_cycle_acc_week'])]
             # Days are easier, just use the first (and only) item
