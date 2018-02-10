@@ -99,7 +99,8 @@ class Activity(glados.Module):
         command_regex = re.compile('\\' + self.command_prefix + r'\w+')
 
         # Let people know we're reprocessing
-        progress_year = None
+        last_month = None
+        last_year = None
         progress_msg = await self.client.send_message(progress_report_channel, "Data is being reprocessed, stand by...")
 
         # We don't want to process the last log file, because it doesn't contain a full day's worth of info
@@ -152,14 +153,16 @@ class Activity(glados.Module):
                 key = time.mktime(log_stamp)
                 a['messages_per_day'][key] = a['messages_per_day'].get(key, 0) + 1
 
-            # This process does take some time
-            await asyncio.sleep(0)
+            # This process does take some time, so yield every month
+            if not last_month == log_stamp.tm_mon:
+                await asyncio.sleep(0)
+                last_month = log_stamp.tm_mon
 
             # Update progress message whenever the year changes
-            if not progress_year == log_stamp.tm_year:
+            if not last_year == log_stamp.tm_year:
                 await self.client.edit_message(progress_msg, "Data is being reprocessed, stand by ({})...".format(
                     log_stamp.tm_year))
-                progress_year = log_stamp.tm_year
+                last_year = log_stamp.tm_year
 
         server_stats = new_author_dict()
 
