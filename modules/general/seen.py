@@ -81,7 +81,10 @@ class Seen(glados.Module):
             await self.client.send_message(message.channel, '{} users have been seen saying at least something. There are {} users joined.'.format(users_saying_something, all_users))
             return
 
-        author = content.strip('@').split('#')[0]
+        members, roles, error = self.parse_members_roles(message, content)
+        if error:
+            return await self.client.send_message(message.channel, error)
+        author = members[0].name
         key = author.lower()
         if key not in self.db:
             if key == 'glados':

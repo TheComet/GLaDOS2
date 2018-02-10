@@ -234,7 +234,7 @@ class Module(object):
             return (), (), 'Error: More than {} role{} were specified!'.format(
                 rolecount, '' if rolecount == 1 else 's')
 
-        return members, roles, ''
+        return list(members), list(roles), ''
 
     @staticmethod
     def pack_into_messages(list_of_strings, delimiter='\n'):
