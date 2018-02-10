@@ -208,7 +208,7 @@ class Quotes(glados.Module):
         if found_count == 0:
             response = '{} has never said "{}"'.format(author, word)
         else:
-            response = '{0} has said "{1}" {2} times ({3:.2f}‰ of all words)'.format(author, word, found_count, found_count * 1000.0 / total_count)
+            response = '{0} has said "{1}" {2} times ({3:.2f}% of all words)'.format(author, word, found_count, found_count * 100.0 / total_count)
         await self.client.send_message(message.channel, response)
 
     @glados.Module.command('zipf', '[user]', 'Plot a word frequency diagram of the user.')
