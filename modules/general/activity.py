@@ -9,6 +9,7 @@ from datetime import datetime
 from time import strptime
 from matplotlib.dates import date2num
 from matplotlib.gridspec import GridSpec
+from matplotlib import ticker
 from numpy import *
 from collections import deque
 from glados.tools.json import load_json, save_json
@@ -263,7 +264,7 @@ class Activity(glados.Module):
         if user_name == 'Server':
             fig = plt.figure(figsize=(8, 8), dpi=150)
             fig.suptitle('{}\'s activity'.format(user_name), fontsize=20)
-            gs = GridSpec(3, 2, height_ratios=[1, 1, 0.5])
+            gs = GridSpec(3, 2, height_ratios=[1, 1, 0.3])
             ax1 = fig.add_subplot(gs[0])
             ax2 = fig.add_subplot(gs[1])
             ax3 = fig.add_subplot(gs[1, :])
@@ -284,15 +285,20 @@ class Activity(glados.Module):
         t = [x for x in range(24)]
         y = [user['day_cycle_avg'][x] for x in t]
         ax1.plot(t, y)
+        ax1_twin = ax1.twinx()
+        ax1_twin.plot(t, cumsum(y), '--')
         y = [user['day_cycle_avg_day'][x] for x in t]
         ax1.plot(t, y)
+        ax1_twin.plot(t, cumsum(y), '--')
         y = [user['day_cycle_avg_week'][x] for x in t]
         ax1.plot(t, y)
+        ax1_twin.plot(t, cumsum(y), '--')
         ax1.set_xlim([0, 24])
         ax1.grid()
         ax1.set_title('Daily Activity')
         ax1.set_xlabel('Hour (UTC)')
         ax1.set_ylabel('Message Count per Hour')
+        ax1_twin.set_ylabel('Message Count over 1 Day')
         ax1.legend(['Average', 'Last Day', 'Last Week'])
 
         # Create pie chart of the most active channels
@@ -319,6 +325,11 @@ class Activity(glados.Module):
             ax3.set_xlim([dates[0], dates[-1]])
             ax3.set_ylabel('Message Count per Day')
             ax3.grid()
+            ax3_twin = ax3.twinx()
+            ax3_twin.plot(dates, cumsum(values), 'g--')
+            ax3_twin.set_ylabel('Message Count over all Time')
+            ticks = ticker.FuncFormatter(lambda x, pos: '{0:g}k'.format(x / 1000))
+            ax3_twin.yaxis.set_major_formatter(ticks)
             spacing = 2
             for label in ax3.xaxis.get_ticklabels()[::spacing]:
                 label.set_visible(False)
@@ -330,7 +341,7 @@ class Activity(glados.Module):
                 top5 = top5[:5]
                 ax4.text(0, 0.1, 'Loudest users this week')
                 for i, a in enumerate(top5):
-                    ax4.text(0.02, i*0.15+0.25, '{}. {} ({} msgs)'.format(i+1, a[0], a[1]['messages_last_week']))
+                    ax4.text(0.02, i*0.2+0.3, '{}. {} ({} msgs)'.format(i+1, a[0], a[1]['messages_last_week']))
 
             # Determine botspam ratios
             top5 = sorted(self.cache['authors'].items(),
@@ -343,7 +354,7 @@ class Activity(glados.Module):
                 for i, a in enumerate(top5):
                     if a[1]['messages_last_week'] == 0:
                         continue
-                    ax5.text(0.02, i*0.15+0.25, '{}. {} ({:.2f}%)'.format(
+                    ax5.text(0.02, i*0.2+0.3, '{}. {} ({:.2f}%)'.format(
                         i+1, a[0], 100.0 * a[1]['commands_last_week'] / a[1]['messages_last_week']))
 
         image_file_name = join(self.cache_dir, user_name + '.png')
