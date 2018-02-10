@@ -24,10 +24,10 @@ class Movie(glados.Module):
             response = data['message']
         else:
             data = data['data']
-            response = 'Title: ' + data['name'] + '\n' + \
-                      ' | Year: ' + data['year'] + '\n' + \
-                      ' | Rating: ' + data['rating'] + '\n' + \
-                      ' | Genre: ' + data['genre'] + '\n' + \
-                      ' | Plot: ' + data['plot'] + '\n' + \
+            response = 'Title: ' + data.get('name', '?') + '\n' + \
+                      ' | Year: ' + data.get('year', '?') + '\n' + \
+                      ' | Rating: ' + data.get('rating', '?') + '\n' + \
+                      ' | Genre: ' + data.get('genre', '?') + '\n' + \
+                      ' | Plot: ' + data.get('plot', '?') + '\n' + \
                       ' | IMDB Link: http://www.imdb.com/title/' + data['imdb_id']
         await self.client.send_message(message.channel, response)
