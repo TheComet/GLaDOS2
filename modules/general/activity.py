@@ -337,9 +337,11 @@ class Activity(glados.Module):
                 top5 = top5[:5]
                 ax5.text(0, 0.1, 'Bot-to-message ratios this week')
                 for i, a in enumerate(top5):
+                    if a[1]['messages_last_week'] == 0:
+                        continue
                     ax5.text(0.02, i*0.15+0.25, '{}. {} ({:.2f}%)'.format(
                         i+1, a[0], 100.0 * a[1]['commands_last_week'] / a[1]['messages_last_week']))
 
-        image_file_name = path.join(self.cache_dir, user_name + '.png')
+        image_file_name = join(self.cache_dir, user_name + '.png')
         fig.savefig(image_file_name)
         return image_file_name
