@@ -227,10 +227,10 @@ class Module(object):
 
         if len(members) == 0 and len(roles) == 0:
             return (), (), 'Error: No member or role found!'
-        if len(members) >= membercount:
+        if len(members) > membercount:
             return (), (), 'Error: More than {} member{} were specified!'.format(
                 membercount, '' if membercount == 1 else 's')
-        if len(roles) >= rolecount:
+        if len(roles) > rolecount:
             return (), (), 'Error: More than {} role{} were specified!'.format(
                 rolecount, '' if rolecount == 1 else 's')
 

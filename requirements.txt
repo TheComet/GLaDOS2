@@ -11,3 +11,4 @@ wolframalpha
 Pillow
 APNGLib
 derpybooru
+imageio
