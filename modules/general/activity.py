@@ -219,21 +219,6 @@ class Activity(glados.Module):
         # Delete progress message
         await self.client.delete_message(progress_msg)
 
-    @glados.Module.command('ranks', '', 'Top users who post the most shit')
-    async def ranks(self, message, users):
-        if self.__cache_is_stale():
-            await self.__reprocess_cache(message.channel)
-
-        authors = self.cache['authors']
-        authors_total = dict()
-        for author_name, author in authors.items():
-            authors_total[author_name] = sum(v for k, v in author['messages_per_day'].items())
-
-        top5 = list(zip(*sorted(authors_total.items(), key=lambda dv: dv[1], reverse=True)[:5]))[0]
-        fmt = '. {}\n'.join(str(x+1) for x in range(5)) + '. {}'
-        msg = fmt.format(*top5)
-        await self.client.send_message(message.channel, msg)
-
     @glados.Module.command('activity', '[user]',
                            'Plots activity statistics for a user, or total server activity if no user was specified.')
     async def plot_activity(self, message, users):
@@ -302,11 +287,11 @@ class Activity(glados.Module):
         ax1.legend(['Average', 'Last Day', 'Last Week'])
 
         # Create pie chart of the most active channels
-        top5 = sorted(user['channels'], key=user['channels'].get, reverse=True)[:5]
-        if len(top5) > 0:
-            labels = top5
-            sizes = [user['channels'][x] for x in top5]
-            explode = [0] * len(top5)
+        top = sorted(user['channels'], key=user['channels'].get, reverse=True)[:5]
+        if len(top) > 0:
+            labels = top
+            sizes = [user['channels'][x] for x in top]
+            explode = [0] * len(top)
             explode[0] = 0.1
             ax2.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%', shadow=True)
 
@@ -351,7 +336,7 @@ class Activity(glados.Module):
             if len(top) > 0:
                 top = top[:10]
                 ax5.text(0, 0.1, 'Bot-to-message ratios this week')
-                for i, a in enumerate(top5):
+                for i, a in enumerate(top):
                     if a[1]['messages_last_week'] == 0:
                         continue
                     ax5.text(0.02, i*0.2+0.3, '{}. {} ({:.2f}%)'.format(
