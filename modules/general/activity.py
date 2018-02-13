@@ -336,20 +336,20 @@ class Activity(glados.Module):
 
         if user_name == 'Server':
             # Determine loudest users, if we are server
-            top5 = sorted(self.cache['authors'].items(), key=lambda kv: kv[1]['messages_last_week'], reverse=True)
-            if len(top5) > 0:
-                top5 = top5[:5]
+            top = sorted(self.cache['authors'].items(), key=lambda kv: kv[1]['messages_last_week'], reverse=True)
+            if len(top) > 0:
+                top = top[:10]
                 ax4.text(0, 0.1, 'Loudest users this week')
-                for i, a in enumerate(top5):
+                for i, a in enumerate(top):
                     ax4.text(0.02, i*0.2+0.3, '{}. {} ({} msgs)'.format(i+1, a[0], a[1]['messages_last_week']))
 
             # Determine botspam ratios
-            top5 = sorted(self.cache['authors'].items(),
-                          key=lambda kv: 0 if kv[1]['messages_last_week'] < 5  # There are people who come on and spam some bot commands, then never return
-                                         else float(kv[1]['commands_last_week'])/kv[1]['messages_last_week'],
+            top = sorted(self.cache['authors'].items(),
+                         key=lambda kv: 0 if kv[1]['messages_last_week'] < 5  # There are people who come on and spam some bot commands, then never return
+                                          else float(kv[1]['commands_last_week'])/kv[1]['messages_last_week'],
                           reverse=True)
-            if len(top5) > 0:
-                top5 = top5[:5]
+            if len(top) > 0:
+                top = top[:10]
                 ax5.text(0, 0.1, 'Bot-to-message ratios this week')
                 for i, a in enumerate(top5):
                     if a[1]['messages_last_week'] == 0:
