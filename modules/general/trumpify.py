@@ -26,6 +26,8 @@ class Trumpify(Module):
             text = content
         else:
             text = self.get_member_text(members[0])
+            if not text:
+                text = content
 
         file_name = join(self.local_data_dir, 'trumpify', message.author.id + '.png')
         self.generate_tweet(text, file_name)
@@ -35,6 +37,7 @@ class Trumpify(Module):
         for msg in reversed(self.client.messages):
             if msg.author == member:
                 return msg.content
+        return None
 
     def generate_tweet(self, text, output_file_name):
         this_path = dirname(realpath(__file__))
