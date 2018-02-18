@@ -204,7 +204,8 @@ class Module(object):
 
         # fall back to text based names, in which case we need to look up the member object
         if len(roles) == 0 and len(members) == 0:
-            for name in content.split():
+            words = content.split()
+            for name in words:
                 name = name.strip('@').split('#')[0]
                 submembers = set()
                 subroles = set()
@@ -224,6 +225,9 @@ class Module(object):
                                 'Try again by mentioning the user.'.format(name)
                 members = members.union(submembers)
                 roles = roles.union(subroles)
+            # Make sure every word in the content was matched with a role or member. If not, abort.
+            if not len(words) == len(members) + len(roles):
+                return (), (), 'Error: Wasn\'t able to assign everything to members/roles'
 
         if len(members) == 0 and len(roles) == 0:
             return (), (), 'Error: No member or role found!'
