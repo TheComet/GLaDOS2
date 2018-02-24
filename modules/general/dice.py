@@ -9,7 +9,12 @@ class Dice(Module):
         if not args:
             args = 'd6'
         try:
-            await self.client.send_message(message.channel, ', '.join(str(x) for x in dice.roll(args)))
-        except:
+            if args.endswith('+'):
+                msg = str(sum(x for x in dice.roll(args.strip('+'))))
+            else:
+                msg = ', '.join(str(x) for x in dice.roll(args))
+            await self.client.send_message(message.channel, msg)
+        except Exception as e:
+            print(e)
             await self.client.send_message(message.channel, 'Rolled way too hard')
 

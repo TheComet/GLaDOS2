@@ -19,9 +19,9 @@ LATEX_FRAMEWORK = r"""
 \usepackage{trfsigns}
 \usepackage{mathrsfs}
 \usepackage{mathtools}
-\usepackage{skull}
+%\usepackage{skull}
 \usepackage{siunitx}
-\usepackage[american,europeanvoltages]{circuitikz}
+%\usepackage[american,europeanvoltages]{circuitikz}
 
 % Required for tikz plots
 \usepackage{pgfplots}
