@@ -34,6 +34,16 @@ class Man(Module):
         if match:
             section = int(match.group(1))
             args = args.split("(")[0]
+        else:
+            newargs = list()
+            for a in args.split():
+                try:
+                    section = int(a)
+                except ValueError:
+                    newargs.append(a)
+            args = " ".join(newargs)
+            print(args)
+            print(section)
 
         # Do query
         params = {"query": args, "sektion": section}
