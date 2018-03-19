@@ -64,14 +64,14 @@ class Quotes(Module):
         return os.path.join(self.quotes_dir, author.id + '.txt.xz')
 
     def __escape_message(self, message):
-        return message.replace("\n", "\\n") + "\n"
+        return message.replace("\n", "\\n")
 
     def __unescape_message(self, message):
-        return message[:-1].replace("\\n", "\n")
+        return message.replace("\\n", "\n")
 
     def __append_message(self, author, message):
         with LZMAFile(self.__quotes_file_name(author), "a") as f:
-            message = self.__escape_message(message)
+            message = self.__escape_message(message) + "\n"
             f.write(message.encode('utf-8'))
 
     def __get_random_message(self, author):
