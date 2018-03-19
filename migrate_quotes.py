@@ -1,6 +1,9 @@
 import sys
 import os
+import codecs
 from glados.tools.json import load_json_compressed
+from shutil import copyfile
+from lzma import LZMAFile
 
 
 if len(sys.argv) < 2:
@@ -31,13 +34,18 @@ for server_id in os.listdir("data"):
     if not os.path.isdir(quote_dir):
         print("Server \"{}\" has no quotes! Skipping...".format(info[server_id]["name"]))
         continue
+    new_quote_dir = os.path.join("data", server_id, "quotes2")
+    if not os.path.exists(new_quote_dir):
+        os.mkdir(new_quote_dir)
 
     for quote_file in os.listdir(quote_dir):
         for id, member in info[server_id]["members"].items():
             if quotes_file_name(member["name"].lower()) == quote_file:
                 old_file_name = os.path.join(quote_dir, quote_file)
-                new_file_name = os.path.join(quote_dir, id + '.txt')
-                os.rename(old_file_name, new_file_name)
+                new_file_name = os.path.join(new_quote_dir, id + '.txt.xz')
+                with LZMAFile(new_file_name, 'w') as f_new:
+                    with codecs.open(old_file_name, encoding='utf-8') as f_old:
+                        f_new.write(f_old.read().encode('utf-8'))
                 matched.append(old_file_name + "  ->  " + new_file_name)
                 break
         else:
