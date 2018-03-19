@@ -129,7 +129,7 @@ class Quotes(glados.Module):
 
         author = content.strip('@').split('#')[0]
         error = self.check_nickname_valid(author.lower())
-        if not error is None:
+        if error is not None:
             await self.client.send_message(message.channel, error)
             return tuple()
 

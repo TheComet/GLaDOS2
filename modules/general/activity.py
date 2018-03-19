@@ -84,7 +84,7 @@ class Activity(glados.Module):
 
         self.log_dir = join(self.local_data_dir, 'log')
         self.cache_dir = join(self.local_data_dir, 'activity')
-        self.cache_file = join(self.cache_dir, 'activity_cache.json')
+        self.cache_file = join(self.cache_dir, 'activity_cache')
         self.cache = None
 
         if not exists(self.cache_dir):
