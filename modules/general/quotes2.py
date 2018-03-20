@@ -50,6 +50,21 @@ class Quotes(Module):
         quote = self.__get_random_message_matching(target, search_query)
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(target.name, quote))
 
+    @Module.command('quotestats', '[user]',
+                           'Provide statistics on how many quotes a user (or yourself) has and '
+                           'how intelligent he is')
+    async def quotestats(self, message, content):
+        await self.client.send_message(message.channel, "Command not yet implemented! (Quotes is undergoing a rewrite)")
+
+    @Module.command('grep', '<word> [User]',
+                           'Find how many times a user has said a particular word. Case-insensitive')
+    async def grep(self, message, content):
+        await self.client.send_message(message.channel, "Command not yet implemented! (Quotes is undergoing a rewrite)")
+
+    @Module.command('zipf', '[user]', 'Plot a word frequency diagram of the user.')
+    async def zipf(self, message, users):
+        await self.client.send_message(message.channel, "Command not yet implemented! (Quotes is undergoing a rewrite)")
+
     def __remove_mentions(self, message):
         '''Remove any mentions from the quote and replace them with actual member names'''
         mentioned_ids = [x.strip('<@!>') for x in re.findall('<@!?[0-9]+>', message)]
