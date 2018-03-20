@@ -19,7 +19,10 @@ class Movie(glados.Module):
 
         movie = movie.rstrip()
         uri = "http://www.theapache64.com/movie_db/search"
-        data = requests.get(uri, params={'keyword': movie}, timeout=10).json()
+        data = requests.get(uri, params={'keyword': movie}, timeout=10)
+        if not data.ok:
+            return await self.client.send_message(message.channel, "Error: {} returned {}".format(uri, data.status_code))
+        data = data.json()
         if data['error']:
             response = data['message']
         else:
