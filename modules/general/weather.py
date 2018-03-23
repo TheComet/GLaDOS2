@@ -8,6 +8,7 @@ import json
 import urllib.request
 import urllib.parse
 import xmltodict
+import random
 
 
 def woeid_search(query):
@@ -117,6 +118,7 @@ def get_wind(parsed):
 
 
 class Weather(glados.Module):
+    counter = 0
     def __init__(self, server_instance, full_name):
         super(Weather, self).__init__(server_instance, full_name)
 
@@ -137,6 +139,23 @@ class Weather(glados.Module):
                            'location (from .setlocation) is used')
     async def weather(self, message, location):
         """.weather location - Show the weather at the given location."""
+
+        # Troll Oberon
+        if message.author.id == '212714897606180864':
+            msgs = [
+                "IT'S FUCKING COLD OK",
+                "Unknown command - did you spell it right?",
+                "https://i.imgur.com/bQOiAJj.jpg",
+                "Tonight's Forecast: Dark",
+                "https://vignette.wikia.nocookie.net/uncyclopedia/images/9/9d/Weather-silly-eyes2.gif",
+                "https://i.imgur.com/EFlH21H.png",
+                "There are Canadians",
+                "https://i.imgur.com/SzGtXjN.jpg"
+            ]
+            self.counter += 1
+            if self.counter >= len(msgs):
+                self.counter = 0
+            return await self.client.send_message(message.channel, msgs[self.counter])
 
         woeid = ''
         author = message.author.name
