@@ -23,9 +23,10 @@ class Message(object):
         self.stamp = strptime(self.stamp_str, '%Y-%m-%d %H:%M:%S')
         self.server = items[0].strip()
         self.channel = items[1].strip('#').strip()
-        self.author = items[2].strip()
+        match = re.match('^(.*)\((\d+)\)$', items[2].strip())  # need to further split author and ID
+        self.author = match.group(1)
+        self.author_id = match.group(2)
         self.message = items[3].strip()
-
 
 def new_author_dict():
     author = dict()
@@ -136,15 +137,16 @@ class Activity(glados.Module):
                 m = Message(line.decode('utf-8'))
 
                 # create an entry in the top-level "authors" dict in the cache structure, if not already there
-                if m.author not in authors:
-                    authors[m.author] = new_author_dict()
-                    authors[m.author]['day_cycle_acc'] = [0]*24
-                    authors[m.author]['day_cycle_acc_day'] = deque([[0]*24], maxlen=1)
-                    authors[m.author]['day_cycle_acc_week'] = deque([[0]*24], maxlen=7)
-                    authors[m.author]['commands_acc'] = deque([0], maxlen=7)
-                    total_days[m.author] = 1
+                if m.author_id not in authors:
+                    authors[m.author_id] = new_author_dict()
+                    authors[m.author_id]['name'] = m.author
+                    authors[m.author_id]['day_cycle_acc'] = [0]*24
+                    authors[m.author_id]['day_cycle_acc_day'] = deque([[0]*24], maxlen=1)
+                    authors[m.author_id]['day_cycle_acc_week'] = deque([[0]*24], maxlen=7)
+                    authors[m.author_id]['commands_acc'] = deque([0], maxlen=7)
+                    total_days[m.author_id] = 1
 
-                a = authors[m.author]
+                a = authors[m.author_id]
 
                 # keep track of the total message count
                 a['messages_total'] += 1
@@ -225,6 +227,7 @@ class Activity(glados.Module):
         # Mentions have precedence
         if len(message.mentions) > 0:
             user_name = message.mentions[0].name
+            print(user_name)
         else:
             user_name = users.split(' ', 1)[0].strip('@').split('#')[0]
 
@@ -236,7 +239,12 @@ class Activity(glados.Module):
             user_name = 'Server'
         else:
             authors = self.cache['authors']
-            if user_name not in authors:
+            for k, v in authors.items():
+                if user_name == v['author']:
+                    user = authors[k]
+                    print(user)
+                    break
+            if not user_name:
                 await self.client.send_message(message.channel, 'Unknown user "{}". Try mentioning him?'.format(user_name))
                 return
             user = authors[user_name]

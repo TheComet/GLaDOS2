@@ -26,10 +26,11 @@ class Log(glados.Module):
     async def on_message(self, message, match):
         server_name = message.server.name if message.server else ''
         self.__open_new_log_if_necessary()
-        info = u'[{0}] {1}: #{2}: {3}: {4}\n'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        info = u'[{0}] {1}: #{2}: {3}({4}): {5}\n'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                      server_name,
                                                      message.channel.name,
                                                      message.author.name,
+                                                     message.author.id,
                                                      message.clean_content)
 
         self.log_file.write(info.encode('utf-8'))

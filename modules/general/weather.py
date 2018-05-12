@@ -118,7 +118,6 @@ def get_wind(parsed):
 
 
 class Weather(glados.Module):
-    counter = 0
     def __init__(self, server_instance, full_name):
         super(Weather, self).__init__(server_instance, full_name)
 
@@ -140,8 +139,8 @@ class Weather(glados.Module):
     async def weather(self, message, location):
         """.weather location - Show the weather at the given location."""
 
-        # Troll Oberon
-        if message.author.id == '212714897606180864':
+        # Troll weather
+        if False and message.author.id == "212714897606180864" and random.random() > 0.40:
             msgs = [
                 "IT'S FUCKING COLD OK",
                 "Unknown command - did you spell it right?",
@@ -152,10 +151,7 @@ class Weather(glados.Module):
                 "There are Canadians",
                 "https://i.imgur.com/SzGtXjN.jpg"
             ]
-            self.counter += 1
-            if self.counter >= len(msgs):
-                self.counter = 0
-            return await self.client.send_message(message.channel, msgs[self.counter])
+            return await self.client.send_message(message.channel, random.choice(msgs))
 
         woeid = ''
         author = message.author.name
