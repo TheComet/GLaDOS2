@@ -13,6 +13,7 @@ from matplotlib import ticker
 from numpy import *
 from collections import deque
 from glados.tools.json import load_json, save_json
+from lzma import LZMAFile
 
 
 class Message(object):
@@ -27,6 +28,7 @@ class Message(object):
         self.author = match.group(1)
         self.author_id = match.group(2)
         self.message = items[3].strip()
+
 
 def new_author_dict():
     author = dict()
@@ -98,7 +100,7 @@ class Activity(glados.Module):
         date = datetime.now().strftime('%Y-%m-%d')
         if self.cache is None or not self.cache['date'] == date:
             return True
-        return True
+        return False
 
     async def __reprocess_cache(self, progress_report_channel):
         # Get list of all channel log files
@@ -116,7 +118,7 @@ class Activity(glados.Module):
         # We don't want to process the last log file, because it doesn't contain a full day's worth of info
         #                                  vvvvv
         for i, f in enumerate(sorted(files)[:-1]):
-            match = re.match('^.*/chanlog-([0-9]+-[0-9]+-[0-9]+)$', f)
+            match = re.match('^.*/chanlog-([0-9]+-[0-9]+-[0-9]+).txt.xz$', f)
             if match is None:
                 continue
             print(f)
@@ -132,9 +134,11 @@ class Activity(glados.Module):
                 v['day_cycle_acc_week'].appendleft([0]*24)
                 v['commands_acc'].appendleft(0)
 
-            for line in open(f, 'rb'):
+            for line in LZMAFile(f, 'r').read().decode('utf-8').split('\n'):
+                if not line:
+                    continue
                 # parse the message into its components (author, timestamps, channel, etc.)
-                m = Message(line.decode('utf-8'))
+                m = Message(line)
 
                 # create an entry in the top-level "authors" dict in the cache structure, if not already there
                 if m.author_id not in authors:
