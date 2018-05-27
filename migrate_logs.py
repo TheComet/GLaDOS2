@@ -67,12 +67,13 @@ for server_id in os.listdir("data"):
                 continue
             m = Message(line)
 
-            for id, member in info[server_id]["members"].items():
-                if m.author == member["name"]:
-                    m.author_id = id
-                    break
-            else:
-                failed_members.add(m.author)
+            if m.author_id == "000000000000000000":
+                for id, member in info[server_id]["members"].items():
+                    if m.author == member["name"]:
+                        m.author_id = id
+                        break
+                else:
+                    failed_members.add(m.author)
 
             log_msg = u'[{0}] {1}({2}): {3}: {4}({5}): {6}\n'.format(
                 m.stamp_str,
