@@ -42,18 +42,15 @@ for server_id in os.listdir("data"):
     if server_id not in info:
         print("Server with ID {} was not found in dumpservers.json.xz file! Skipping...".format(server_id))
         continue
-    log_dir = os.path.join("data", server_id, "log")
+    log_dir = os.path.join("data", server_id, "log2")
     if not os.path.isdir(log_dir):
         print("Server \"{}\" has no logs! Skipping...".format(info[server_id]["name"]))
         continue
-    new_log_dir = os.path.join("data", server_id, "log2")
-    if not os.path.exists(new_log_dir):
-        os.mkdir(new_log_dir)
 
     for log_file_name in sorted(os.listdir(log_dir)):
         print("Processing file {} on server {}".format(log_file_name, info[server_id]["name"]))
-        log_data = open(os.path.join(log_dir, log_file_name), 'rb').read().decode('utf-8')
-        new_log_file = LZMAFile(os.path.join(new_log_dir, log_file_name + ".txt.xz"), 'w')
+        log_data = LZMAFile(os.path.join(log_dir, log_file_name), 'r').read().decode('utf-8')
+        new_log_file = LZMAFile(os.path.join(log_dir, log_file_name), 'w')
         for line in log_data.split('\n'):
             if not line:
                 continue
