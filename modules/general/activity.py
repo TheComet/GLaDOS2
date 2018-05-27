@@ -98,7 +98,7 @@ class Activity(glados.Module):
         date = datetime.now().strftime('%Y-%m-%d')
         if self.cache is None or not self.cache['date'] == date:
             return True
-        return False
+        return True
 
     async def __reprocess_cache(self, progress_report_channel):
         # Get list of all channel log files

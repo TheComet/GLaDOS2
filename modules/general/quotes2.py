@@ -54,7 +54,44 @@ class Quotes(Module):
                            'Provide statistics on how many quotes a user (or yourself) has and '
                            'how intelligent he is')
     async def quotestats(self, message, content):
-        await self.client.send_message(message.channel, "Command not yet implemented! (Quotes is undergoing a rewrite)")
+        if content == '':
+            target = message.author
+        else:
+            members, roles, error = self.parse_members_roles(message, content)
+            if error:
+                target = message.author
+            else:
+                target = members[0]
+
+        quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
+        lines = quotes_file.readlines()
+        quotes_file.close()
+
+        number_of_quotes = len(lines)
+        average_quote_length = float(sum([len(quote) for quote in lines])) / float(number_of_quotes)
+
+        words = [x.strip().strip('?.",;:()[]{}') for x in ' '.join(lines).split(' ')]
+        words = [x for x in words if not x == '']
+        number_of_words = len(words)
+        average_word_length = float(sum([len(quote) for quote in words])) / float(number_of_words)
+
+        frequencies = collections.Counter(words)
+        common = "the be to of and a in that have I it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me when make can like time no just him know take people into year your good some could them see other than then now look only come its over think also back after use two how our work first well way even new want because any these give day most us".split()
+        vocab = len(self.filter_to_english_words(set(words)))
+        most_common = ', '.join(['"{}" ({})'.format(w.replace('```', ''), i) for w, i in frequencies.most_common() if w not in common][:5])
+        least_common = ', '.join(['"{}"'.format(w.replace('```', '')) for w, i in frequencies.most_common() if w.find('http') == -1][-5:])
+
+        response = ('```\n{0} spoke {1} quotes\n'
+                    'avg length       : {2:.2f}\n'
+                    'words            : {3}\n'
+                    'avg word length  : {4:.2f}\n'
+                    'vocab            : {5}\n'
+                    'Most common      : {6}\n'
+                    'Least common     : {7}\n```').format(
+            author, number_of_quotes, average_quote_length, number_of_words, average_word_length, vocab,
+            most_common, least_common)
+
+        await self.client.send_message(message.channel, response)
 
     @Module.command('grep', '<word> [User]',
                            'Find how many times a user has said a particular word. Case-insensitive')

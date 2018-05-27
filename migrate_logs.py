@@ -1,7 +1,9 @@
 import sys
 import os
 import codecs
+import re
 from glados.tools.json import load_json_compressed
+from time import strptime
 from shutil import copyfile
 from lzma import LZMAFile
 
@@ -14,6 +16,24 @@ if len(sys.argv) < 2:
 info = load_json_compressed(sys.argv[1])
 
 
+class Message(object):
+    def __init__(self, raw):
+        match = re.match('^\[(.*?)\](.*)$', raw)
+        items = match.group(2).split(':')
+        self.stamp_str = match.group(1)
+        self.stamp = strptime(self.stamp_str, '%Y-%m-%d %H:%M:%S')
+        self.server = items[0].strip()
+        self.channel = items[1].strip('#').strip()
+        match = re.match('^(.*)\((\d+)\)$', items[2].strip())  # need to further split author and ID
+        if match:
+            self.author = match.group(1)
+            self.author_id = match.group(2)
+        else:
+            self.author = items[2].strip()
+            self.author_id = "000000000000000000"
+        self.message = items[3].strip()
+
+
 def sanitize_file_name(name):
     return name.replace('/', ':').replace('\\', ':')
 
@@ -22,7 +42,7 @@ def logs_file_name(author):
     return sanitize_file_name(author) + '.txt'
 
 
-matched = list()
+failed_members = set()
 for server_id in os.listdir("data"):
     if not os.path.isdir(os.path.join("data", server_id)):
         print("skipping file " + os.path.join("data", server_id))
@@ -30,7 +50,7 @@ for server_id in os.listdir("data"):
     if server_id not in info:
         print("Server with ID {} was not found in dumpservers.json.xz file! Skipping...".format(server_id))
         continue
-    log_dir = os.path.join("data", server_id, "logs")
+    log_dir = os.path.join("data", server_id, "log")
     if not os.path.isdir(log_dir):
         print("Server \"{}\" has no logs! Skipping...".format(info[server_id]["name"]))
         continue
@@ -38,17 +58,32 @@ for server_id in os.listdir("data"):
     if not os.path.exists(new_log_dir):
         os.mkdir(new_log_dir)
 
-    for log_file in os.listdir(log_dir):
-        for id, member in info[server_id]["members"].items():
-            if logs_file_name(member["name"].lower()) == log_file:
-                old_file_name = os.path.join(log_dir, log_file)
-                new_file_name = os.path.join(new_log_dir, id + '.txt.xz')
-                with LZMAFile(new_file_name, 'w') as f_new:
-                    with codecs.open(old_file_name, encoding='utf-8') as f_old:
-                        f_new.write(f_old.read().encode('utf-8'))
-                matched.append(old_file_name + "  ->  " + new_file_name)
-                break
-        else:
-            print("Failed to match file {} on server {}".format(os.path.join(log_dir, log_file), info[server_id]["name"]))
+    for log_file_name in sorted(os.listdir(log_dir)):
+        print("Processing file {} on server {}".format(log_file_name, info[server_id]["name"]))
+        log_data = open(os.path.join(log_dir, log_file_name), 'rb').read().decode('utf-8')
+        new_log_file = LZMAFile(os.path.join(new_log_dir, log_file_name + ".txt.xz"), 'w')
+        for line in log_data.split('\n'):
+            if not line:
+                continue
+            m = Message(line)
 
-print("Matched {} files".format(len(matched)))
+            for id, member in info[server_id]["members"].items():
+                if m.author == member["name"]:
+                    m.author_id = id
+                    break
+            else:
+                failed_members.add(m.author)
+
+            log_msg = u'[{0}] {1}({2}): {3}: {4}({5}): {6}\n'.format(
+                m.stamp_str,
+                info[server_id]["name"],
+                server_id,
+                m.channel,
+                m.author,
+                m.author_id,
+                m.message)
+            new_log_file.write(log_msg.encode('utf-8'))
+
+print("The following members failed to match any IDs in the dumpservers.json.xz file. This means they were no longer part of the server when the server data was dumped.")
+for name in failed_members:
+    print(name)
