@@ -56,7 +56,7 @@ for server_id in os.listdir("data"):
                 continue
             m = Message(line)
 
-            if m.author_id == "000000000000000000":
+            if int(m.author_id) == 0:
                 for id, member in info[server_id]["members"].items():
                     if m.author == member["name"]:
                         m.author_id = id
@@ -78,3 +78,4 @@ for server_id in os.listdir("data"):
 print("The following members failed to match any IDs in the dumpservers.json.xz file. This means they were no longer part of the server when the server data was dumped.")
 for name in failed_members:
     print(name)
+
