@@ -12,7 +12,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib import ticker
 from numpy import *
 from collections import deque
-from glados.tools.json import load_json, save_json
+from glados.tools.json import load_json_compressed, save_json_compressed
 from lzma import LZMAFile
 
 
@@ -88,14 +88,14 @@ class Activity(glados.Module):
 
         self.log_dir = join(self.local_data_dir, 'log')
         self.cache_dir = join(self.local_data_dir, 'activity')
-        self.cache_file = join(self.cache_dir, 'activity_cache')
+        self.cache_file = join(self.cache_dir, 'activity_cache.json.xz')
         self.cache = None
 
         if not exists(self.cache_dir):
             makedirs(self.cache_dir)
 
         if isfile(self.cache_file):
-            self.cache = load_json(self.cache_file)
+            self.cache = load_json_compressed(self.cache_file)
 
     def __cache_is_stale(self):
         date = datetime.now().strftime('%Y-%m-%d')
@@ -220,7 +220,7 @@ class Activity(glados.Module):
         # Finally, save cache
         self.cache['server'] = server_stats
         self.cache['authors'] = authors
-        save_json(self.cache_file, self.cache)
+        save_json_compressed(self.cache_file, self.cache)
 
         # Delete progress message
         await self.client.delete_message(progress_msg)
