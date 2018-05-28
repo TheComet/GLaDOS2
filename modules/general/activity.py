@@ -30,8 +30,9 @@ class Message(object):
         self.message = items[3].strip()
 
 
-def new_author_dict():
+def new_author_dict(author_name):
     author = dict()
+    author['name'] = author_name
     author['messages_total'] = 0
     author['messages_last_week'] = 0
     author['day_cycle_avg'] = [0] * 24
@@ -142,8 +143,7 @@ class Activity(glados.Module):
 
                 # create an entry in the top-level "authors" dict in the cache structure, if not already there
                 if m.author_id not in authors:
-                    authors[m.author_id] = new_author_dict()
-                    authors[m.author_id]['name'] = m.author
+                    authors[m.author_id] = new_author_dict(m.author)
                     authors[m.author_id]['day_cycle_acc'] = [0]*24
                     authors[m.author_id]['day_cycle_acc_day'] = deque([[0]*24], maxlen=1)
                     authors[m.author_id]['day_cycle_acc_week'] = deque([[0]*24], maxlen=7)
@@ -183,7 +183,7 @@ class Activity(glados.Module):
                     log_stamp.tm_year))
                 last_year = log_stamp.tm_year
 
-        server_stats = new_author_dict()
+        server_stats = new_author_dict('Server')
 
         def sum_lists(a, b):
             return [float(sum(x)) for x in zip(*[a, b])]
@@ -218,8 +218,8 @@ class Activity(glados.Module):
             del a['commands_acc']
 
         # Finally, save cache
-        self.cache['authors'] = authors
         self.cache['server'] = server_stats
+        self.cache['authors'] = authors
         save_json(self.cache_file, self.cache)
 
         # Delete progress message
@@ -227,40 +227,27 @@ class Activity(glados.Module):
 
     @glados.Module.command('activity', '[user]',
                            'Plots activity statistics for a user, or total server activity if no user was specified.')
-    async def plot_activity(self, message, users):
-        # Mentions have precedence
-        if len(message.mentions) > 0:
-            user_name = message.mentions[0].name
-            print(user_name)
+    async def plot_activity(self, message, args):
+        if args:
+            members, roles, error = self.parse_members_roles(message, args)
+            if error or len(members) == 0:
+                return await self.client.send_message(message.channel, "Error, unknown user(s)")
+            member_ids = [x.id for x in members]
         else:
-            user_name = users.split(' ', 1)[0].strip('@').split('#')[0]
+            member_ids = ['server']
 
         if self.__cache_is_stale():
             await self.__reprocess_cache(message.channel)
 
-        if user_name == '':
-            user = self.cache['server']
-            user_name = 'Server'
-        else:
-            authors = self.cache['authors']
-            for k, v in authors.items():
-                if user_name == v['author']:
-                    user = authors[k]
-                    print(user)
-                    break
-            if not user_name:
-                await self.client.send_message(message.channel, 'Unknown user "{}". Try mentioning him?'.format(user_name))
-                return
-            user = authors[user_name]
+        for member_id in member_ids:
+            image_file_name = self.__generate_figure(member_id)
+            await self.client.send_file(message.channel, image_file_name)
 
-        image_file_name = self.__generate_figure(user, user_name)
-        await self.client.send_file(message.channel, image_file_name)
-
-    def __generate_figure(self, user, user_name):
+    def __generate_figure(self, member_id):
         # Set up figure
-        if user_name == 'Server':
+        if member_id == 'server':
+            member = self.cache['server']
             fig = plt.figure(figsize=(8, 8), dpi=150)
-            fig.suptitle('{}\'s activity'.format(user_name), fontsize=20)
             gs = GridSpec(3, 2, height_ratios=[1, 1, 0.3])
             ax1 = fig.add_subplot(gs[0])
             ax2 = fig.add_subplot(gs[1])
@@ -272,22 +259,23 @@ class Activity(glados.Module):
             ax5.axis('off')
             ax5.set_ylim([1, 0])
         else:
+            member = self.cache['authors'][member_id]
             fig = plt.figure(figsize=(8, 6), dpi=150)
-            fig.suptitle('{}\'s activity'.format(user_name), fontsize=20)
             ax1 = fig.add_subplot(221)
             ax2 = fig.add_subplot(222)
             ax3 = fig.add_subplot(212)
+        fig.suptitle('{}\'s activity'.format(member['name']), fontsize=20)
 
         # Plot 24 hour participation data, accumulated over all time
         t = [x for x in range(24)]
-        y = [user['day_cycle_avg'][x] for x in t]
+        y = [member['day_cycle_avg'][x] for x in t]
         ax1.plot(t, y)
         ax1_twin = ax1.twinx()
         ax1_twin.plot(t, cumsum(y), '--')
-        y = [user['day_cycle_avg_day'][x] for x in t]
+        y = [member['day_cycle_avg_day'][x] for x in t]
         ax1.plot(t, y)
         ax1_twin.plot(t, cumsum(y), '--')
-        y = [user['day_cycle_avg_week'][x] for x in t]
+        y = [member['day_cycle_avg_week'][x] for x in t]
         ax1.plot(t, y)
         ax1_twin.plot(t, cumsum(y), '--')
         ax1.set_xlim([0, 24])
@@ -299,16 +287,16 @@ class Activity(glados.Module):
         ax1.legend(['Average', 'Last Day', 'Last Week'])
 
         # Create pie chart of the most active channels
-        top = sorted(user['channels'], key=user['channels'].get, reverse=True)[:5]
+        top = sorted(member['channels'], key=member['channels'].get, reverse=True)[:5]
         if len(top) > 0:
             labels = top
-            sizes = [user['channels'][x] for x in top]
+            sizes = [member['channels'][x] for x in top]
             explode = [0] * len(top)
             explode[0] = 0.1
             ax2.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%', shadow=True)
 
         # Create overall activity
-        dates_and_messages = list(zip(*sorted(user['messages_per_day'].items(), key=lambda dv: dv[0])))
+        dates_and_messages = list(zip(*sorted(member['messages_per_day'].items(), key=lambda dv: dv[0])))
         if len(dates_and_messages) > 0:
             dates, values = dates_and_messages
             dates = [datetime.fromtimestamp(float(x)) for x in dates]
@@ -331,14 +319,14 @@ class Activity(glados.Module):
             for label in ax3.xaxis.get_ticklabels()[::spacing]:
                 label.set_visible(False)
 
-        if user_name == 'Server':
+        if member_id == 'server':
             # Determine loudest users, if we are server
             top = sorted(self.cache['authors'].items(), key=lambda kv: kv[1]['messages_last_week'], reverse=True)
             if len(top) > 0:
                 top = top[:10]
                 ax4.text(0, 0.1, 'Loudest users this week')
                 for i, a in enumerate(top):
-                    ax4.text(0.02, i*0.2+0.3, '{}. {} ({} msgs)'.format(i+1, a[0], a[1]['messages_last_week']))
+                    ax4.text(0.02, i*0.2+0.3, '{}. {} ({} msgs)'.format(i+1, a[1]['name'], a[1]['messages_last_week']))
 
             # Determine botspam ratios
             top = sorted(self.cache['authors'].items(),
@@ -352,8 +340,8 @@ class Activity(glados.Module):
                     if a[1]['messages_last_week'] == 0:
                         continue
                     ax5.text(0.02, i*0.2+0.3, '{}. {} ({:.2f}%)'.format(
-                        i+1, a[0], 100.0 * a[1]['commands_last_week'] / a[1]['messages_last_week']))
+                        i+1, a[1]['name'], 100.0 * a[1]['commands_last_week'] / a[1]['messages_last_week']))
 
-        image_file_name = join(self.cache_dir, user_name + '.png')
+        image_file_name = join(self.cache_dir, member['name'] + '.png')
         fig.savefig(image_file_name)
         return image_file_name
