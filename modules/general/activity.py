@@ -135,11 +135,9 @@ class Activity(glados.Module):
                 v['day_cycle_acc_week'].appendleft([0]*24)
                 v['commands_acc'].appendleft(0)
 
-            for line in LZMAFile(f, 'r').read().decode('utf-8').split('\n'):
-                if not line:
-                    continue
+            for line in LZMAFile(f, 'r'):
                 # parse the message into its components (author, timestamps, channel, etc.)
-                m = Message(line)
+                m = Message(line.decode('utf-8'))
 
                 # create an entry in the top-level "authors" dict in the cache structure, if not already there
                 if m.author_id not in authors:
