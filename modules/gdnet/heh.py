@@ -119,7 +119,7 @@ class Heh(Module):
 
     def __get_top5(self):
         top5 = list(sorted(
-            [x for x in self.db['users'].values() if x['num msgs'] > 100],  # filter users who have less than 100 messages
+            [x for x in self.db['users'].values() if x['num msgs'] > 200],  # filter users who have less than 100 messages
             key=lambda x: float(x['hehs']) / x['num msgs'], reverse=True))[:5]
         return [(x['name'], x['hehs'], x['num msgs']) for x in top5]
 
