@@ -1,9 +1,11 @@
 import re
+import asyncio
 from time import strptime
 from os.path import join, isfile
 from os import listdir
 from glados import Module, Permissions
 from glados.tools.json import load_json, save_json
+from lzma import LZMAFile
 
 
 class Message(object):
@@ -30,41 +32,60 @@ class Heh(Module):
     @Permissions.spamalot
     @Module.rule('^(.*)$')
     async def record(self, message, args):
-        self.__update_db(message.content)
+        self.__update_db(message.author.name, message.author.id, message.content)
         self.__save_db()
         return ()
 
-    @Module.command('heh', '[user]', 'How many times someone has said the word "heh" (handy for detecting IRC people or edgelords)')
+    @Module.command('heh', '<user>', 'How many times someone has said the word "heh" (handy for detecting IRC people or edgelords)')
     async def heh(self, message, args):
         users, roles, error = self.parse_members_roles(message, args)
-        if not error:
-            try:
-                count = self.db['users'][users[0].id]['num msgs']
-                hehs = self.db['users'][users[0].id]['hehs']
-            except KeyError:
-                return await self.client.send_message(message.channel, 'User {} has never said "heh"'.format(users[0]))
-            await self.client.send_message(message.channel, '{} has said "heh" {:.3}% of the time'.format(users[0], 100.0 * hehs / count))
+        if error:
+            return await self.client.send_message(message.channel, 'Unknown user')
+        user = users[0]
+
+        hehs, total = self.__get_stats_of(user.id)
+        if hehs == 0:
+            return await self.client.send_message(message.channel, 'User {} has never said "heh"'.format(user.name))
         else:
-            pass # TODO
-        return ()
+            return await self.client.send_message(message.channel, '{} has said "heh" {} times ({:.3f}%)'.format(
+                user.name, hehs, hehs*100.0/total))
+
+    @Module.command('hehstats', '', 'Shows the top users who say "heh" the most (handy for detecting IRC people or edgelords)')
+    async def hehstats(self, message, args):
+        lines = ['  {: <16} - {} times ({:.3f}%)'.format(author_name, hehs, hehs*100.0/total).ljust(10)
+                 for author_name, hehs, total in self.__get_top5()]
+        msg = '```Top 5 edgelords\n'
+        msg += '\n'.join(lines)
+        msg += '```'
+        await self.client.send_message(message.channel, msg)
 
     @Permissions.admin
-    @Module.command('refreshheh', '', 'Parses all log files in search for "heh"')
-    async def refresh_heh(self, message, args):
+    @Module.command('hehreload', '', 'Parses all log files in search for "heh"')
+    async def heh_reload(self, message, args):
         log_dir = join(self.local_data_dir, 'log')
         files = [join(log_dir, f) for f in listdir(log_dir) if isfile(join(log_dir, f))]
         self.db = {'users': dict()}
 
+        files_processed = 0
         for i, f in enumerate(sorted(files)):
-            match = re.match('^.*/chanlog-([0-9]+-[0-9]+-[0-9]+)$', f)
+            match = re.match('^.*/chanlog-([0-9]+-[0-9]+-[0-9]+).txt.xz$', f)
             if match is None:
                 continue
             print(f)
 
-            for line in open(f, 'rb'):
-                # parse the message into its components (author, timestamps, channel, etc.)
-                m = Message(line.decode('utf-8'))
-                self.__update_db(m.message)
+            try:
+                for line in LZMAFile(f, 'r'):
+                    # parse the message into its components (author, timestamps, channel, etc.)
+                    m = Message(line.decode('utf-8'))
+                    self.__update_db(m.author, m.author_id, m.message)
+            except EOFError:  # The latest log file may be open
+                pass
+
+            # may take a while, yield every so often
+            files_processed += 1
+            if files_processed % 10 == 0:
+                await asyncio.sleep(0)
+
         self.__save_db()
         await self.client.send_message(message.channel, 'Done!')
 
@@ -77,15 +98,26 @@ class Heh(Module):
     def __save_db(self):
         save_json(self.db_file, self.db)
 
-    def __update_db(self, user_id):
-        try:
-            self.db['users'][user_id]['num msgs'] += 1
-        except KeyError:
-            self.db['users'][user_id]['num msgs'] = 1
+    def __update_db(self, user_name, user_id, message_content):
+        if user_id not in self.db['users']:
+            self.db['users'][user_id] = {
+                'name': user_name,
+                'num msgs': 0,
+                'hehs': 0
+            }
 
-        if re.search("\bheh", message.content, re.IGNORECASE):
-            try:
-                self.db['users'][user_id]['hehs'] += 1
-            except KeyError:
-                self.db['users'][user_id]['hehs'] = 1
+        self.db['users'][user_id]['num msgs'] += 1
+        if re.search(" ?heh", message_content, re.IGNORECASE):
+            self.db['users'][user_id]['hehs'] += 1
+
+    def __get_stats_of(self, user_id):
+        try:
+            user = self.db['users'][user_id]
+            return user['hehs'], user['num msgs']
+        except KeyError:
+            return 0, 0
+
+    def __get_top5(self):
+        top5 = list(sorted(self.db['users'].values(), key=lambda x: float(x['hehs']) / x['num msgs'], reverse=True))[:5]
+        return [(x['name'], x['hehs'], x['num msgs']) for x in top5]
 
