@@ -1,6 +1,8 @@
 import os
 import random
 import re
+import collections
+import enchant
 from lzma import LZMAFile
 from glados import Module, Permissions
 
@@ -12,6 +14,11 @@ class Quotes(Module):
         self.quotes_dir = os.path.join(self.local_data_dir, "quotes2")
         if not os.path.exists(self.quotes_dir):
             os.mkdir(self.quotes_dir)
+
+        self.dictionaries = [
+            enchant.Dict('en_US'),
+            enchant.Dict('en_GB')
+        ]
 
     # Intentionally don't match messages that contain newlines.
     @Permissions.spamalot
@@ -29,7 +36,7 @@ class Quotes(Module):
                 return await self.client.send_message(message.channel, error)
             target = members[0]
 
-        quote = self.__get_random_message(target)
+        quote = self.__get_random_message(target) or "{} hasn\'t delivered any quotes worth mentioning yet".format(target)
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(target.name, quote))
 
     @Module.command('findquote', '<text> [user]', 'Dig up a quote the user once said containing the specified text.')
@@ -47,7 +54,7 @@ class Quotes(Module):
                 search_query = ' '.join(args_parts[:-1]).strip()
                 target = members.pop()
 
-        quote = self.__get_random_message_matching(target, search_query)
+        quote = self.__get_random_message_matching(target, search_query) or "No quotes found matching \"{}\"".format(search_query)
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(target.name, quote))
 
     @Module.command('quotestats', '[user]',
@@ -55,17 +62,15 @@ class Quotes(Module):
                            'how intelligent he is')
     async def quotestats(self, message, content):
         if content == '':
-            target = message.author
+            author = message.author
         else:
             members, roles, error = self.parse_members_roles(message, content)
             if error:
-                target = message.author
+                return await self.client.send_message(message.channel, 'Unknown user.')
             else:
-                target = members[0]
+                author = members[0]
 
-        quotes_file = codecs.open(self.quotes_file_name(author.lower()), 'r', encoding='utf-8')
-        lines = quotes_file.readlines()
-        quotes_file.close()
+        lines = self.__load_all_messages(author)
 
         number_of_quotes = len(lines)
         average_quote_length = float(sum([len(quote) for quote in lines])) / float(number_of_quotes)
@@ -88,22 +93,59 @@ class Quotes(Module):
                     'vocab            : {5}\n'
                     'Most common      : {6}\n'
                     'Least common     : {7}\n```').format(
-            author, number_of_quotes, average_quote_length, number_of_words, average_word_length, vocab,
+            author.name, number_of_quotes, average_quote_length, number_of_words, average_word_length, vocab,
             most_common, least_common)
 
         await self.client.send_message(message.channel, response)
 
-    @Module.command('grep', '<word> [User]',
-                           'Find how many times a user has said a particular word. Case-insensitive')
+    @Module.command('grep', '<phrase> [User]', 'Find how many times a user has said a particular word. Case-insensitive')
     async def grep(self, message, content):
-        await self.client.send_message(message.channel, "Command not yet implemented! (Quotes is undergoing a rewrite)")
+        content = content.split()
+        if len(message.mentions):
+            author = message.mentions[0]
+            content.remove('@' + author.name)
+        else:
+            author = message.author
+
+
+        lines = self.__load_all_messages(author)
+        all_words = ' '.join(lines).lower()
+
+        # have to use finditer if it's a phrase
+        phrase = ' '.join(content).strip().lower()
+        if len(content) > 1:
+            found_count = len([m.start() for m in re.finditer(phrase, all_words)])
+            total_count = len(all_words.split())
+        else:
+            found_count = 0
+            total_count = 0
+            for w in all_words.split():
+                total_count += 1
+                if re.sub(r'\W+', '', w.strip()) == re.sub(r'\W+', '', phrase):
+                    found_count += 1
+
+        if found_count == 0:
+            response = '{} has never said "{}"'.format(author.name, phrase)
+        else:
+            response = '{0} has said "{1}" {2} times ({3:.2f}% of all words)'.format(author.name, phrase, found_count, found_count * 100.0 / total_count)
+        await self.client.send_message(message.channel, response)
 
     @Module.command('zipf', '[user]', 'Plot a word frequency diagram of the user.')
     async def zipf(self, message, users):
         await self.client.send_message(message.channel, "Command not yet implemented! (Quotes is undergoing a rewrite)")
 
+    def filter_to_english_words(self, words_list):
+        return [word for word in words_list
+                    if any(d.check(word) for d in self.dictionaries)
+                    and (len(word) > 1 or len(word) == 1 and word in 'aAI')]
+
+    def __quotes_file_name(self, author):
+        return os.path.join(self.quotes_dir, author.id + '.txt.xz')
+
     def __remove_mentions(self, message):
-        '''Remove any mentions from the quote and replace them with actual member names'''
+        """
+        Remove any mentions from the quote and replace them with actual member names
+        """
         mentioned_ids = [x.strip('<@!>') for x in re.findall('<@!?[0-9]+>', message)]
         for mentioned_id in mentioned_ids:
             for member in self.server.members:
@@ -112,37 +154,37 @@ class Quotes(Module):
                     break
         return message.strip('<@!>')
 
-    def __quotes_file_name(self, author):
-        return os.path.join(self.quotes_dir, author.id + '.txt.xz')
-
-    def __escape_message(self, message):
+    @staticmethod
+    def __escape_message(message):
         return message.replace("\n", "\\n")
 
-    def __unescape_message(self, message):
+    @staticmethod
+    def __unescape_message(message):
         return message.replace("\\n", "\n")
 
     def __append_message(self, author, message):
-        with LZMAFile(self.__quotes_file_name(author), "a") as f:
-            message = self.__escape_message(message) + "\n"
+        with LZMAFile(self.__quotes_file_name(author), 'a') as f:
+            message = self.__escape_message(message) + '\n'
             f.write(message.encode('utf-8'))
+
+    def __load_all_messages(self, author):
+        """
+        Note: If the quotes file doesn't exist (can happen) this will throw.
+        """
+        with LZMAFile(self.__quotes_file_name(author), 'r') as f:
+            lines = f.read().decode('utf-8').split('\n')
+            return [self.__remove_mentions(self.__unescape_message(line)) for line in lines]
 
     def __get_random_message(self, author):
         try:
-            with LZMAFile(self.__quotes_file_name(author), "r") as f:
-                lines = f.read().decode('utf-8').split("\n")
-                return self.__remove_mentions(
-                    self.__unescape_message(
-                        random.choice(lines)))
+            return random.choice(self.__load_all_messages(author))
         except:
-            return "{} hasn\'t delivered any quotes worth mentioning yet".format(author)
+            return None
 
     def __get_random_message_matching(self, author, search_query):
         try:
-            with LZMAFile(self.__quotes_file_name(author), "r") as f:
-                lines = f.read().decode('utf-8').split("\n")
-                lines = [x for x in lines if re.search(r'\b' + search_query + r'\b', x, re.IGNORECASE)]
-                return self.__remove_mentions(
-                    self.__unescape_message(
-                        random.choice(lines))).replace(search_query, '**{}**'.format(search_query))
+            lines = self.__load_all_messages(author)
+            lines = [x for x in lines if re.search(r'\b' + search_query + r'\b', x, re.IGNORECASE)]
+            return random.choice(lines).replace(search_query, '**{}**'.format(search_query))
         except:
-            return "No quotes found matching \"{}\"".format(search_query)
+            return None
