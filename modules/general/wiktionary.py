@@ -77,6 +77,11 @@ def format(result, definitions, number=2):
 class Wiktionary(glados.Module):
     @glados.Module.command('define', '<word>', 'Look up a word on wiktionary')
     async def wiktionary(self, message, word):
+        words = word.split()
+        if len(words) > 1:
+            return await self.client.send_message(message.channel, 'Only one word you idiot')
+        word = words[0]
+
         """Look up a word on Wiktionary."""
         _etymology, definitions = wikt(word)
         if not definitions:
