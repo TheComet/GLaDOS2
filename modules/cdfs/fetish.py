@@ -3,32 +3,16 @@ import glados
 
 class Fetish(glados.Module):
 
-    @glados.Permissions.moderator
-    @glados.Permissions.command('fetish', '<user>', 'Grant the user access to the fetish channel')
+    @glados.Permissions.command('fetish', '', 'Grant yourself access to the fetish channels')
     async def fetish(self, message, content):
-        members, roles, error = self.parse_members_roles(message, content)
-        if len(members) == 0:
-            error = error if error else 'Couldn\'t find any users'
-            await self.client.send_message(message.channel, error)
-            return
-
         roles = [role for role in self.server.roles if role.name == 'Dirty Pony']
-        for member in members:
-            await self.client.add_roles(member, *roles)
+        await self.client.add_roles(message.author, *roles)
         await self.client.send_message(message.channel,
-            'Assigned "{}" to user(s) {}'.format(roles[0].name, ' '.join(x.name for x in members)))
+            'Assigned "{}" to user {}'.format(roles[0].name, message.author.name))
 
-    @glados.Permissions.moderator
-    @glados.Permissions.command('unfetish', '<user>', 'Remove a user\'s access to the fetish channel')
+    @glados.Permissions.command('unfetish', '', 'Remove your access to the fetish channels')
     async def unfetish(self, message, content):
-        members, roles, error = self.parse_members_roles(message, content)
-        if len(members) == 0:
-            error = error if error else 'Couldn\'t find any users'
-            await self.client.send_message(message.channel, error)
-            return
-
         roles = [role for role in self.server.roles if role.name == 'Dirty Pony']
-        for member in members:
-            await self.client.remove_roles(member, *roles)
+        await self.client.remove_roles(message.author, *roles)
         await self.client.send_message(message.channel,
-            'Removed "{}" from user(s) {}'.format(roles[0].name, ' '.join(x.name for x in members)))
+            'Removed "{}" from user {}'.format(roles[0].name, message.author.name))
