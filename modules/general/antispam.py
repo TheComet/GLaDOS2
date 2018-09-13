@@ -28,6 +28,7 @@ class AntiSpam(glados.Module):
             return ()
 
         await self.__unmute_expired_users()
+        await self.__mute_evaded_users(message)
 
         # moderators and above cannot be muted
         if self.require_moderator(message.author):
@@ -223,6 +224,17 @@ class AntiSpam(glados.Module):
 
         for user_id in users_to_unmute:
             await self.__unmute_user(self.server.get_member(user_id))
+
+    async def __mute_evaded_users(self, message):
+        # Flagged as muted, but doesn't have the mute role?
+        if message.author.id in self.db['users']:
+            mute_role_id = self.db['role']
+            if not any(role.id == mute_role_id for role in message.author.roles):
+                length = self.db['length'] * 2
+                await self.__mute_user(message.author, length)
+                await self.client.send_message(message.channel,
+                    "{} You were muted for {} hour(s) for trying to evade punishment".format(message.author.mention, length))
+            return ()
 
     def __load_db(self):
         if isfile(self.db_file):
