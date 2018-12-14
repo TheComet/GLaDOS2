@@ -118,7 +118,7 @@ class Activity(glados.Module):
 
         # We don't want to process the last log file, because it doesn't contain a full day's worth of info
         #                                  vvvvv
-        for i, f in enumerate(sorted(files)[:-1]):
+        for i, f in enumerate(sorted(files)):
             match = re.match('^.*/chanlog-([0-9]+-[0-9]+-[0-9]+).txt.xz$', f)
             if match is None:
                 continue
@@ -135,40 +135,43 @@ class Activity(glados.Module):
                 v['day_cycle_acc_week'].appendleft([0]*24)
                 v['commands_acc'].appendleft(0)
 
-            for line in LZMAFile(f, 'r'):
-                # parse the message into its components (author, timestamps, channel, etc.)
-                m = Message(line.decode('utf-8'))
+            try:
+                for line in LZMAFile(f, 'r'):
+                    # parse the message into its components (author, timestamps, channel, etc.)
+                    m = Message(line.decode('utf-8'))
 
-                # create an entry in the top-level "authors" dict in the cache structure, if not already there
-                if m.author_id not in authors:
-                    authors[m.author_id] = new_author_dict(m.author)
-                    authors[m.author_id]['day_cycle_acc'] = [0]*24
-                    authors[m.author_id]['day_cycle_acc_day'] = deque([[0]*24], maxlen=1)
-                    authors[m.author_id]['day_cycle_acc_week'] = deque([[0]*24], maxlen=7)
-                    authors[m.author_id]['commands_acc'] = deque([0], maxlen=7)
-                    total_days[m.author_id] = 1
+                    # create an entry in the top-level "authors" dict in the cache structure, if not already there
+                    if m.author_id not in authors:
+                        authors[m.author_id] = new_author_dict(m.author)
+                        authors[m.author_id]['day_cycle_acc'] = [0]*24
+                        authors[m.author_id]['day_cycle_acc_day'] = deque([[0]*24], maxlen=1)
+                        authors[m.author_id]['day_cycle_acc_week'] = deque([[0]*24], maxlen=7)
+                        authors[m.author_id]['commands_acc'] = deque([0], maxlen=7)
+                        total_days[m.author_id] = 1
 
-                a = authors[m.author_id]
+                    a = authors[m.author_id]
 
-                # keep track of the total message count
-                a['messages_total'] += 1
+                    # keep track of the total message count
+                    a['messages_total'] += 1
 
-                # See if message contains any commands
-                command_count = len(get_commands_from_message(m.message))
-                a['commands_total'] += command_count
-                a['commands_acc'][0] += command_count
+                    # See if message contains any commands
+                    command_count = len(get_commands_from_message(m.message))
+                    a['commands_total'] += command_count
+                    a['commands_acc'][0] += command_count
 
-                # Accumulate message count cycles for later averaging
-                a['day_cycle_acc'][int(m.stamp.tm_hour)] += 1
-                a['day_cycle_acc_day'][0][int(m.stamp.tm_hour)] += 1
-                a['day_cycle_acc_week'][0][int(m.stamp.tm_hour)] += 1
+                    # Accumulate message count cycles for later averaging
+                    a['day_cycle_acc'][int(m.stamp.tm_hour)] += 1
+                    a['day_cycle_acc_day'][0][int(m.stamp.tm_hour)] += 1
+                    a['day_cycle_acc_week'][0][int(m.stamp.tm_hour)] += 1
 
-                # count messages per channel
-                a['channels'][m.channel] = a['channels'].get(m.channel, 0) + 1
+                    # count messages per channel
+                    a['channels'][m.channel] = a['channels'].get(m.channel, 0) + 1
 
-                # count how many messages the user makes for every day
-                key = time.mktime(log_stamp)
-                a['messages_per_day'][key] = a['messages_per_day'].get(key, 0) + 1
+                    # count how many messages the user makes for every day
+                    key = time.mktime(log_stamp)
+                    a['messages_per_day'][key] = a['messages_per_day'].get(key, 0) + 1
+            except:
+                continue
 
             # This process does take some time, so yield every month
             if not last_month == log_stamp.tm_mon:
