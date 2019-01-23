@@ -118,7 +118,7 @@ class Activity(glados.Module):
 
         # We don't want to process the last log file, because it doesn't contain a full day's worth of info
         #                                  vvvvv
-        for i, f in enumerate(sorted(files)):
+        for i, f in enumerate(sorted(files)[:-1]):
             match = re.match('^.*/chanlog-([0-9]+-[0-9]+-[0-9]+).txt.xz$', f)
             if match is None:
                 continue
