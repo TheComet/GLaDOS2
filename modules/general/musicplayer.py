@@ -61,6 +61,7 @@ class MusicPlayer(Module):
             return await self.client.send_message(message.channel, "Only moderators can skip")
         if self.player:
             self.player.stop()
+        self.player = None
         return ()
 
     async def action_cockblock(self, message):
@@ -214,7 +215,7 @@ class MusicPlayer(Module):
             if self.voice_channel is None:
                 try:
                     await self.try_joining_voice_channel()
-                except:
+                except Exception as e:
                     pass
                 continue
             if len(self.config["queue"]) == 0:
