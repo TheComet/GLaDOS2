@@ -122,22 +122,25 @@ class MusicPlayer(Module):
         if not self.require_admin(message.author):
             return await self.client.send_message(message.channel, "Only admins can configure the music bot")
 
+        async def disconnect_vc():
+            if self.voice_channel:
+                await self.voice_channel.disconnect()
+                self.voice_channel = None
+
         try:
             voice_channel_id = message.content.split(" ")[2]
             vc = self.client.get_channel(voice_channel_id)
             if vc is None:
-                raise RuntimeError()
+                await disconnect_vc()
+                self.config["voice channel"] = None
+                self.config["text channel"] = None
+                await self.client.send_message(message.channel, "Removed bot from music channel")
         except:
             return await self.client.send_message(message.channel, f"Voice channel ID not found.")
 
         self.config["voice channel"] = str(voice_channel_id)
         self.config["text channel"] = str(message.channel.id)
         self.save_config()
-
-        async def disconnect_vc():
-            if self.voice_channel:
-                await self.voice_channel.disconnect()
-                self.voice_channel = None
 
         if self.player:
             self.player.stop()
