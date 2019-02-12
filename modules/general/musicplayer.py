@@ -61,7 +61,6 @@ class MusicPlayer(Module):
             return await self.client.send_message(message.channel, "Only moderators can skip")
         if self.player:
             self.player.stop()
-        self.player = None
         return ()
 
     async def action_cockblock(self, message):
@@ -132,9 +131,9 @@ class MusicPlayer(Module):
                 await disconnect_vc()
                 self.config["voice channel"] = None
                 self.config["text channel"] = None
+                self.save_config()
                 return await self.client.send_message(message.channel, "Removed bot from music channel")
             voice_channel_id = message.content.split(" ")[2]
-            vc = self.client.get_channel(voice_channel_id)
         except:
             return await self.client.send_message(message.channel, f"Voice channel ID not found.")
 
