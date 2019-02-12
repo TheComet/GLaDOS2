@@ -7,15 +7,12 @@ class LugaruSrc(Module):
     @Module.command('lugaru', '', 'Gets a random line of source code from lugaru')
     async def lugarusrc(self, message, args):
         filename = join(dirname(realpath(__file__)), 'lugarusrc.cpp')
-        print(filename)
         lines = open(filename).readlines()
         while True:
             line = random.choice(lines)
-            if len(line) > 10:
+            if len(line.strip()) > 80:
                 break
-        print(line)
         line = line.strip()
-        print(line)
         line = line[:980]  # You never know
         await self.client.send_message(message.channel, '```cpp\n' + line + '```')
 

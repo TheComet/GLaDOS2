@@ -10,7 +10,7 @@ matplotlib
 wolframalpha
 Pillow
 APNGLib
-derpybooru
+DerPyBooru
 imageio
 dice
 PyNaCl

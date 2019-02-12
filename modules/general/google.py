@@ -3,6 +3,7 @@ import urllib.parse
 
 
 class Google(glados.Module):
+    @glados.Module.command('bagel', '<term>', 'Show that you don\'t know how to use google')
     @glados.Module.command('google', '<term>', 'Generate a google link')
     async def google(self, message, term):
         if term == '':

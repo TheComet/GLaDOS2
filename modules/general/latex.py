@@ -76,7 +76,7 @@ LATEX_FRAMEWORK = r"""
 }
 
 \begin{document}
-{\color{Black}
+{\color{White}
 __DATA__}
 \end{document}
 """

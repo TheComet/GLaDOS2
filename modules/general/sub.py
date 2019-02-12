@@ -200,7 +200,9 @@ class Sub(glados.Module):
                         pattern = pattern[:30] + '...'
                     # Thanks GTE (blocked the bot, which causes this to throw an exception)
                     try:
-                        await self.client.send_message(subscribed_author, '[sub][{}][{}] (``{}``) ```{}: {}```'.format(message.server.name, message.channel.name, pattern, message.author.name, message.content))
+                        await self.client.send_message(subscribed_author, '[sub][{}][{}] (``{}``) ```{}: {}``` {}'.format(
+                                message.server.name, message.channel.name, pattern, message.author.name, message.content,
+                                'https://discordapp.com/channels/{}/{}/{}'.format(message.server.id, message.channel.id, message.id)))
                         self.items[subscribed_author.id] = datetime.now()
                     except discord.Forbidden as e:
                         await self.client.send_message(message.channel, '{} I am removing all of your subscriptions, because you blocked me :('.format(subscribed_author.mention))

@@ -53,7 +53,7 @@ class Verify(glados.Module):
             glados.log('ERROR: Failed to retrieve off-topic channel')
             return tuple()
 
-        await self.client.send_message(off_topic_channel, '{} joined the server! If you are especially kinky, type `.fetish` to gain access to the fetish related channels. Type `.unfetish` if you made a mistake. Type ``.help`` for a list of bot commands. Hope you enjoy your stay!'.format(message.author.mention))
+        await self.client.send_message(off_topic_channel, '{} joined the server! Type ``.help`` for a list of bot commands. Hope you enjoy your stay!'.format(message.author.mention))
 
     async def clean_up_shit_messages(self):
         welcome_channel = self.client.get_channel(welcome_channel_id)
