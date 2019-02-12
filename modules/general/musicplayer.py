@@ -57,11 +57,17 @@ class MusicPlayer(Module):
         open(path.join(self.config_dir, "config.json"), "wb").write(json.dumps(self.config).encode("utf-8"))
 
     async def action_skip(self, message):
+        if not self.require_moderator(message.author):
+            return await self.client.send_message(message.channel, "Only moderators can skip")
         if self.player:
             self.player.stop()
+        return ()
 
     async def action_cockblock(self, message):
-        if len(self.configu["queue"]) > 1:
+        if not self.require_moderator(message.author):
+            return await self.client.send_message(message.channel, "Only moderators can block cocks")
+
+        if len(self.config["queue"]) > 1:
             self.config["queue"].insert(1, self.config["queue"][-1])
             self.config["queue"].pop(-1)
             self.save_config()
@@ -71,16 +77,22 @@ class MusicPlayer(Module):
         return ()
 
     async def action_pause(self, message):
+        if not self.require_moderator(message.author):
+            return await self.client.send_message(message.channel, "Only moderators can pause")
         if self.player:
             self.player.pause()
         return ()
 
     async def action_resume(self, message):
+        if not self.require_moderator(message.author):
+            return await self.client.send_message(message.channel, "Only moderators can resume")
         if self.player:
             self.player.resume()
         return ()
 
     async def action_jump(self, message):
+        if not self.require_moderator(message.author):
+            return await self.client.send_message(message.channel, "Only moderators can jump")
         if len(self.config["queue"]) > 0 and self.player:
             self.ffmpeg_ss = float(message.content.split(" ")[1])*60
             await self.client.send_message(message.channel, "jumping to minute {}".format(self.ffmpeg_ss/60))
