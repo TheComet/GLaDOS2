@@ -13,3 +13,5 @@ APNGLib
 derpybooru
 imageio
 dice
+PyNaCl
+youtube_dl
