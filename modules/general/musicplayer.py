@@ -210,13 +210,13 @@ class MusicPlayer(Module):
             await self.client.send_message(message.channel, "Added to queue (position {})".format(len(self.config["queue"])-1))
 
     async def player_task(self):
+        try:
+            await self.try_joining_voice_channel()
+        except Exception as e:
+            pass
         while True:
             await asyncio.sleep(1)
             if self.voice_channel is None:
-                try:
-                    await self.try_joining_voice_channel()
-                except Exception as e:
-                    pass
                 continue
             if len(self.config["queue"]) == 0:
                 continue
