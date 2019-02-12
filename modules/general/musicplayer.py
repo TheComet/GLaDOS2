@@ -128,13 +128,13 @@ class MusicPlayer(Module):
                 self.voice_channel = None
 
         try:
-            voice_channel_id = message.content.split(" ")[2]
-            vc = self.client.get_channel(voice_channel_id)
-            if vc is None:
+            if len(message.content.split(" ")) < 3:
                 await disconnect_vc()
                 self.config["voice channel"] = None
                 self.config["text channel"] = None
-                await self.client.send_message(message.channel, "Removed bot from music channel")
+                return await self.client.send_message(message.channel, "Removed bot from music channel")
+            voice_channel_id = message.content.split(" ")[2]
+            vc = self.client.get_channel(voice_channel_id)
         except:
             return await self.client.send_message(message.channel, f"Voice channel ID not found.")
 
