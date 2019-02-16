@@ -10,6 +10,7 @@ class Del(glados.Module):
         super(Del, self).__init__(server_instance, full_name)
         asyncio.ensure_future(self.reaction_listener_task())
 
+    @glados.Permissions.spamalot
     @glados.Module.bot_rule("^.*$")
     async def on_message(self, message, match):
         if not message.author == self.client.user:
