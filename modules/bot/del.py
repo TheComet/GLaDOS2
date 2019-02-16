@@ -14,7 +14,10 @@ class Del(glados.Module):
     async def on_message(self, message, match):
         if not message.author == self.client.user:
             return ()
-        await self.client.add_reaction(message, DELETE_EMOJI)
+        try:
+            await self.client.add_reaction(message, DELETE_EMOJI)
+        except:
+            pass
 
     async def reaction_listener_task(self):
         reaction_list = (DELETE_EMOJI,)
@@ -33,3 +36,14 @@ class Del(glados.Module):
                     await self.client.delete_message(result.reaction.message)
             except:
                 pass
+
+    @glados.Module.command('del', '', 'Deletes the most recent bot message')
+    async def del_most_recent(self, message, content):
+        try:
+            for msg in reversed(self.client.messages):
+                if msg.author.id == self.client.user.id:
+                    await self.client.delete_message(msg)
+                    break
+            await self.client.delete_message(message)
+        except:
+            pass
