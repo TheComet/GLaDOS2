@@ -205,6 +205,7 @@ class MusicPlayer(Module):
             await self.try_joining_voice_channel()
         except Exception as e:
             pass
+
         while True:
             await asyncio.sleep(1)
             if self.voice_channel is None:
