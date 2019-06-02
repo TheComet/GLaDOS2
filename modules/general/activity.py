@@ -227,7 +227,7 @@ class Activity(glados.Module):
         await self.client.delete_message(progress_msg)
 
     @glados.Module.command('activity', '[user]',
-                           'Plots activity statistics for a user, or total server activity if no user was specified.')
+                           'Plots activity statistics for a user')
     async def plot_activity(self, message, args):
         if args:
             members, roles, error = self.parse_members_roles(message, args)
@@ -235,14 +235,21 @@ class Activity(glados.Module):
                 return await self.client.send_message(message.channel, "Error, unknown user(s)")
             member_ids = [x.id for x in members]
         else:
-            member_ids = ['server']
+            member_ids = [message.author.id]
+        await self.plot_activity_for_ids(message.channel, member_ids)
 
+    @glados.Module.command('activityserver', '', 'Plots activity statistics for the entire server')
+    @glados.Module.command('serveractivity', '', 'Plots activity statistics for the entire server')
+    async def plot_server_activity(self, message, args):
+        await self.plot_activity_for_ids(message.channel, ['server'])
+
+    async def plot_activity_for_ids(self, channel, member_ids):
         if self.__cache_is_stale():
-            await self.__reprocess_cache(message.channel)
+            await self.__reprocess_cache(channel)
 
         for member_id in member_ids:
             image_file_name = self.__generate_figure(member_id)
-            await self.client.send_file(message.channel, image_file_name)
+            await self.client.send_file(channel, image_file_name)
 
     def __generate_figure(self, member_id):
         # Set up figure
@@ -273,9 +280,9 @@ class Activity(glados.Module):
         ax1.plot(t, y)
         ax1_twin = ax1.twinx()
         ax1_twin.plot(t, cumsum(y), '--')
-        y = [member['day_cycle_avg_day'][x] for x in t]
-        ax1.plot(t, y)
-        ax1_twin.plot(t, cumsum(y), '--')
+        #y = [member['day_cycle_avg_day'][x] for x in t]
+        #ax1.plot(t, y)
+        #ax1_twin.plot(t, cumsum(y), '--')
         y = [member['day_cycle_avg_week'][x] for x in t]
         ax1.plot(t, y)
         ax1_twin.plot(t, cumsum(y), '--')
@@ -285,7 +292,8 @@ class Activity(glados.Module):
         ax1.set_xlabel('Hour (UTC)')
         ax1.set_ylabel('Message Count per Hour')
         ax1_twin.set_ylabel('Message Count over 1 Day')
-        ax1.legend(['Average', 'Last Day', 'Last Week'])
+        #ax1.legend(['Average', 'Last Day', 'Last Week'])
+        ax1.legend(['Average', 'Last Week'])
 
         # Create pie chart of the most active channels
         top = sorted(member['channels'], key=member['channels'].get, reverse=True)[:5]
