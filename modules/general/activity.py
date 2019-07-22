@@ -256,8 +256,9 @@ class Activity(glados.Module):
 
         resp = requests.post("http://discordgrapher.net/api/consumeusage", headers={"Content-type":"application/json"}, json=self.cache['server'])
         if resp.status_code == 200:
-            await self.client.send_message(message.channel, f"View realtime graph @ http://discordgrapher.net/graphs/{self.cache['server']['userId']}")
-            
+            json_response = json.loads(resp.content)
+            await self.client.send_message(message.channel, f"View realtime graph @ {json_response['url']}")
+
 
     def __generate_figure(self, member_id):
         # Set up figure
