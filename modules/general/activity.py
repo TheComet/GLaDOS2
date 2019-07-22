@@ -14,6 +14,7 @@ from numpy import *
 from collections import deque
 from glados.tools.json import load_json_compressed, save_json_compressed
 from lzma import LZMAFile
+from requests import requests
 
 
 class Message(object):
@@ -240,6 +241,23 @@ class Activity(glados.Module):
         for member_id in member_ids:
             image_file_name = self.__generate_figure(member_id)
             await self.client.send_file(message.channel, image_file_name)
+
+    @glados.Module.command('activityd', '[user]',
+                           'Plots activity statistics for a user, or total server activity if no user was specified.')
+    async def plot_activity(self, message, args):
+        
+        member_ids = ['server']
+        if self.__cache_is_stale():
+            await self.__reprocess_cache(message.channel)
+
+        for member_id in member_ids:
+            image_file_name = self.__generate_figure(member_id)
+            await self.client.send_file(message.channel, image_file_name)
+
+        resp = requests.post("http://discordgrapher.net/api/consumeusage", headers={"Content-type":"application/json"}, json=self.cache['server'])
+        if resp.status_code == 200:
+            await self.client.send_message(message.channel, f"View realtime graph @ http://discordgrapher.net/graphs/{self.cache['server']['userId']}")
+            
 
     def __generate_figure(self, member_id):
         # Set up figure
