@@ -14,7 +14,7 @@ from numpy import *
 from collections import deque
 from glados.tools.json import load_json_compressed, save_json_compressed
 from lzma import LZMAFile
-from requests import requests
+import requests, json
 
 
 class Message(object):
