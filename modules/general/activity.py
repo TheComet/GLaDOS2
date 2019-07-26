@@ -245,8 +245,12 @@ class Activity(glados.Module):
     @glados.Module.command('activityd', '[user]',
                            'Plots activity statistics for a user, or total server activity if no user was specified.')
     async def plot_activity(self, message, args):
-        
-        member_ids = ['server']
+        if args:
+            members, roles, error = self.parse_members_roles(message, args)
+            if error or len(members) == 0:
+                return await self.client.send_message(message.channel, "Error, unknown user(s)")
+            member_ids = [x.id for x in members]
+       
         if self.__cache_is_stale():
             await self.__reprocess_cache(message.channel)
 
@@ -254,10 +258,13 @@ class Activity(glados.Module):
             image_file_name = self.__generate_figure(member_id)
             await self.client.send_file(message.channel, image_file_name)
 
-        resp = requests.post("http://discordgrapher.net/api/consumeusage", headers={"Content-type":"application/json"}, json=self.cache['server'])
+        resp = requests.post("http://discordgrapher.net/api/consumeusage", headers={"Content-type":"application/json"}, json=self.cache[member_ids[0]])
         if resp.status_code == 200:
             json_response = json.loads(resp.content)
             await self.client.send_message(message.channel, f"View realtime graph @ {json_response['url']}")
+        else:
+            await self.client.send_message(message.channel, 
+                                           f"Error occured in request to discordgrapher @ {response.status_code} : {response.content}")
 
 
     def __generate_figure(self, member_id):
