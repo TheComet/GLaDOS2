@@ -244,31 +244,19 @@ class Activity(glados.Module):
     async def plot_server_activity(self, message, args):
         await self.plot_activity_for_ids(message.channel, ['server'])
 
-    async def plot_activity_for_ids(self, channel, member_ids):
-        if self.__cache_is_stale():
-            await self.__reprocess_cache(channel)
-
-        for member_id in member_ids:
-            image_file_name = self.__generate_figure(member_id)
-            await self.client.send_file(channel, image_file_name)
-
     @glados.Module.command('activityd', '[user]',
                            'Plots activity statistics for a user, or total server activity if no user was specified.')
-    async def plot_activity(self, message, args):
+    async def plot_activityd(self, message, args):
         if args:
             members, roles, error = self.parse_members_roles(message, args)
             if error or len(members) == 0:
                 return await self.client.send_message(message.channel, "Error, unknown user(s)")
             member_ids = [x.id for x in members]
-       
-        if self.__cache_is_stale():
-            await self.__reprocess_cache(message.channel)
+        else:
+            member_ids = [message.author.id]
+        await self.plot_activity_for_ids(message.channel, member_ids)
 
-        for member_id in member_ids:
-            image_file_name = self.__generate_figure(member_id)
-            await self.client.send_file(message.channel, image_file_name)
-
-        resp = requests.post("http://discordgrapher.net/api/consumeusage", headers={"Content-type":"application/json"}, json=self.cache[member_ids[0]])
+        resp = requests.post("http://discordgrapher.net/api/consumeusage", headers={"Content-type":"application/json"}, json=self.cache["authors"][member_ids[0]])
         if resp.status_code == 200:
             json_response = json.loads(resp.content)
             await self.client.send_message(message.channel, f"View realtime graph @ {json_response['url']}")
@@ -276,6 +264,13 @@ class Activity(glados.Module):
             await self.client.send_message(message.channel, 
                                            f"Error occured in request to discordgrapher @ {resp.status_code} : {resp.content}")
 
+    async def plot_activity_for_ids(self, channel, member_ids):
+        if self.__cache_is_stale():
+            await self.__reprocess_cache(channel)
+
+        for member_id in member_ids:
+            image_file_name = self.__generate_figure(member_id)
+            await self.client.send_file(channel, image_file_name)
 
     def __generate_figure(self, member_id):
         # Set up figure
