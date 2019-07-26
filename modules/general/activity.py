@@ -264,7 +264,7 @@ class Activity(glados.Module):
             await self.client.send_message(message.channel, f"View realtime graph @ {json_response['url']}")
         else:
             await self.client.send_message(message.channel, 
-                                           f"Error occured in request to discordgrapher @ {response.status_code} : {response.content}")
+                                           f"Error occured in request to discordgrapher @ {resp.status_code} : {resp.content}")
 
 
     def __generate_figure(self, member_id):
