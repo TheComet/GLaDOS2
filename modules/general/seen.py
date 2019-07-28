@@ -82,9 +82,7 @@ class Seen(glados.Module):
             return
 
         members, roles, error = self.parse_members_roles(message, content)
-        if error:
-            return await self.client.send_message(message.channel, error)
-        author = members[0].name
+        author = content if error else members[0].name
         key = author.lower()
         if key not in self.db:
             if key == 'glados':

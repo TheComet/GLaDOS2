@@ -5,11 +5,12 @@ import asyncio
 DELETE_EMOJI = "\N{CROSS MARK}"
 
 
-class Del(glados.Module):
+class Emoji(glados.Module):
     def __init__(self, server_instance, full_name):
-        super(Del, self).__init__(server_instance, full_name)
+        super(Emoji, self).__init__(server_instance, full_name)
         asyncio.ensure_future(self.reaction_listener_task())
 
+    @glados.Permissions.spamalot
     @glados.Module.bot_rule("^.*$")
     async def on_message(self, message, match):
         if not message.author == self.client.user:
@@ -37,6 +38,8 @@ class Del(glados.Module):
             except:
                 pass
 
+
+class Del(glados.Module):
     @glados.Module.command('del', '', 'Deletes the most recent bot message')
     async def del_most_recent(self, message, content):
         try:

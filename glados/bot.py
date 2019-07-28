@@ -177,7 +177,10 @@ class ServerInstance(object):
                     cooldown = self.__apply_cooldown(message)
                     if cooldown:
                         user_is_punished = True
-                        await self.client.send_message(message.author, cooldown)
+                        try:
+                            await self.client.send_message(message.author, cooldown)
+                        except:
+                            log(f"User {message.author.name} was punished for using command {callback}")
                     punish_checked = True
                 if user_is_punished:
                     continue
