@@ -100,7 +100,7 @@ class Activity(glados.Module):
 
     @glados.Permissions.spamalot
     @glados.Module.rule("^.*$")
-    async def reprocess_cache(self):
+    async def reprocess_cache(self, message, matches):
         # Check if cache is up to date
         date = datetime.now().strftime('%Y-%m-%d')
         if self.cache is not None and self.cache['date'] == date:
