@@ -98,24 +98,20 @@ class Activity(glados.Module):
         if isfile(self.cache_file):
             self.cache = load_json_compressed(self.cache_file)
 
-    def __cache_is_stale(self):
+    @glados.Permissions.spamalot
+    @glados.Module.rule("^.*$")
+    async def reprocess_cache(self):
+        # Check if cache is up to date
         date = datetime.now().strftime('%Y-%m-%d')
-        if self.cache is None or not self.cache['date'] == date:
-            return True
-        return False
+        if self.cache is not None and self.cache['date'] == date:
+            return ()
 
-    async def __reprocess_cache(self, progress_report_channel):
         # Get list of all channel log files
         files = [join(self.log_dir, f) for f in listdir(self.log_dir) if isfile(join(self.log_dir, f))]
         self.cache = dict()
         self.cache['date'] = datetime.now().strftime('%Y-%m-%d')
         authors = dict()
         total_days = dict()  # Keep track of how many days a user has existed for, so we can calculate averages
-
-        # Let people know we're reprocessing
-        last_month = None
-        last_year = None
-        progress_msg = await self.client.send_message(progress_report_channel, "Data is being reprocessed, stand by...")
 
         # We don't want to process the last log file, because it doesn't contain a full day's worth of info
         #                                  vvvvv
@@ -174,16 +170,8 @@ class Activity(glados.Module):
             except:
                 continue
 
-            # This process does take some time, so yield every month
-            if not last_month == log_stamp.tm_mon:
-                await asyncio.sleep(0)
-                last_month = log_stamp.tm_mon
-
-            # Update progress message whenever the year changes
-            if not last_year == log_stamp.tm_year:
-                await self.client.edit_message(progress_msg, "Data is being reprocessed, stand by ({})...".format(
-                    log_stamp.tm_year))
-                last_year = log_stamp.tm_year
+            # This process does take some time, so yield after processing every file
+            await asyncio.sleep(0)
 
         server_stats = new_author_dict('Server')
 
@@ -223,9 +211,7 @@ class Activity(glados.Module):
         self.cache['server'] = server_stats
         self.cache['authors'] = authors
         save_json_compressed(self.cache_file, self.cache)
-
-        # Delete progress message
-        await self.client.delete_message(progress_msg)
+        return ()
 
     @glados.Module.command('activity', '[user]',
                            'Plots activity statistics for a user')
@@ -261,17 +247,13 @@ class Activity(glados.Module):
             json_response = json.loads(resp.content)
             await self.client.send_message(message.channel, f"View realtime graph @ {json_response['url']}")
         else:
-            await self.client.send_message(message.channel, 
+            await self.client.send_message(message.channel,
                                            f"Error occured in request to discordgrapher @ {resp.status_code} : {resp.content}")
 
     async def plot_activity_for_ids(self, channel, member_ids):
-        if self.__cache_is_stale():
-            await self.__reprocess_cache(channel)
-
         for member_id in member_ids:
             image_file_name = self.__generate_figure(member_id)
             await self.client.send_file(channel, image_file_name)
-
 
     def __generate_figure(self, member_id):
         # Set up figure
