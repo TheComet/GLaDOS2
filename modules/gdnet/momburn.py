@@ -1,5 +1,6 @@
 import glados
 
+
 BURN_EMOJI = "\N{FIRE}"
 
 
@@ -10,4 +11,3 @@ class MomBurn(glados.Module):
             await self.client.add_reaction(message, BURN_EMOJI)
         except:
             pass
-
