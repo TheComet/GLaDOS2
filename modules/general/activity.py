@@ -16,7 +16,7 @@ from glados.tools.json import load_json_compressed, save_json_compressed
 from lzma import LZMAFile
 
 
-class Message(object):
+class Message:
     def __init__(self, raw):
         match = re.match('^\[(.*?)\](.*)$', raw)
         items = match.group(2).split(':')
@@ -31,18 +31,18 @@ class Message(object):
 
 
 def new_author_dict(author_name):
-    author = dict()
-    author['name'] = author_name
-    author['messages_total'] = 0
-    author['messages_last_week'] = 0
-    author['day_cycle_avg'] = [0] * 24
-    author['day_cycle_avg_week'] = [0] * 24
-    author['day_cycle_avg_day'] = [0] * 24
-    author['commands_total'] = 0
-    author['commands_last_week'] = 0
-    author['channels'] = dict()
-    author['messages_per_day'] = dict()
-    return author
+    return {
+        'name': author_name,
+        'messages_total': 0,
+        'messages_last_week': 0,
+        'day_cycle_avg': [0] * 24,
+        'day_cycle_avg_week': [0] * 24,
+        'day_cycle_avg_day': [0] * 24,
+        'commands_total': 0,
+        'commands_last_week': 0,
+        'channels': dict(),
+        'messages_per_day': dict()
+    }
 
 
 # matches words that are bot commands
@@ -243,6 +243,7 @@ class Activity(glados.Module):
         for member_id in member_ids:
             image_file_name = self.__generate_figure(member_id)
             await self.client.send_file(message.channel, image_file_name)
+
 
     def __generate_figure(self, member_id):
         # Set up figure
