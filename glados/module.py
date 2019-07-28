@@ -26,6 +26,10 @@ class Module(object):
         return self.__server_instance.server
 
     @property
+    def webapp(self):
+        return self.__server_instance.webapp
+
+    @property
     def full_name(self):
         """
         :return: The full name of this module. Typically it's something like path.filename.classname

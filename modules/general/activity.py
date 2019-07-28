@@ -102,16 +102,6 @@ class Activity(glados.Module):
         if isfile(self.cache_file):
             self.cache = load_json_compressed(self.cache_file)
 
-        asyncio.ensure_future(self.start_webapp())
-
-    async def start_webapp(self):
-        webapp = Quart(__name__)
-
-        @webapp.route(f"/{self.server.id}")
-        async def root():
-            return "yooo"
-
-        @webapp.route(f"/{self.server.id}/activity/getstats", methods=["GET"])
         async def getstats():
             userId = request.args.get("userId")
             if userId is None:
@@ -127,7 +117,6 @@ class Activity(glados.Module):
 
             return jsonify(user)
 
-        @webapp.route(f"/{self.server.id}/activity/getimg", methods=["GET"])
         async def getimg():
             userId = request.args.get("userId")
             if userId is None:
@@ -140,11 +129,8 @@ class Activity(glados.Module):
 
             return await send_file(image_file_name)
 
-        config = Config()
-        config.access_log_format = "%(h)s %(r)s %(s)s %(b)s %(D)s"
-        config.bind = ["127.0.0.1:8011"]
-
-        await serve(webapp, config)
+        self.webapp.add_url_rule(f"/{self.server.id}/activity/getstats", f"{self.server.id}/activity/getstats", view_func=getstats)
+        self.webapp.add_url_rule(f"/{self.server.id}/activity/getimg", f"{self.server.id}/activity/getimg", view_func=getimg)
 
     @glados.Permissions.spamalot
     @glados.Module.rule("^.*$", ignorecommands=False)

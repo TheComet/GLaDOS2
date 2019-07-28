@@ -8,6 +8,7 @@ import math
 import copy
 import difflib
 import os
+import quart
 from .Log import log
 from .cooldown import Cooldown
 from .tools.path import add_import_paths
@@ -19,10 +20,11 @@ comment_pattern = re.compile('`(.*?)`')
 
 
 class ServerInstance(object):
-    def __init__(self, client, settings, server):
+    def __init__(self, client, settings, server, webapp):
         self.client = client
         self.settings = settings
         self.server = server
+        self.webapp = webapp
         self.callbacks = list()
         self.permissions = None
         self.module_manager = None
@@ -208,6 +210,7 @@ class Bot(object):
         self.class_list = list()  # (fullname, class)
         self.server_instances = dict()
         self.whitelist = dict()
+        self.webapp = quart.Quart(__name__)
 
         self.settings.setdefault('command prefix', {}).setdefault('default', '.')
         self.settings.setdefault('auto join', {
@@ -268,7 +271,7 @@ class Bot(object):
                 return ()
 
             log('Server {} became available'.format(server.name))
-            s = ServerInstance(self.client, self.settings, server)
+            s = ServerInstance(self.client, self.settings, server, self.webapp)
             s.instantiate_modules(self.class_list, self.whitelist)
             self.server_instances[server.id] = s
 
@@ -349,7 +352,6 @@ class Bot(object):
         open('settings.json', 'w').write(self.__as_json(self.settings))
 
     async def login(self):
-
         args = list()
         token = self.settings.setdefault('login', {}).setdefault('token', 'OAuth2 Token')
         email = self.settings['login'].setdefault('email', 'address')
@@ -366,7 +368,7 @@ class Bot(object):
             server = type('Server', (object,), {})
             server.name = 'default'
             server.id = 'default'  # This is also a hack, so we don't create an extra entry in "command prefix"
-            s = ServerInstance(self.client, self.settings, server)
+            s = ServerInstance(self.client, self.settings, server, self.webapp)
             s.instantiate_modules(self.class_list, self.whitelist)
 
             self.__check_if_settings_changed()
@@ -380,9 +382,13 @@ class Bot(object):
     def run(self):
         loop = asyncio.get_event_loop()
         try:
-            loop.run_until_complete(self.login())
-        except:
+            loop.create_task(self.login())
+            self.webapp.run(loop=loop, port=self.settings["webapp"]["port"])
+        except KeyboardInterrupt:
+            print("Logging out...")
             loop.run_until_complete(self.client.logout())
+        except:
             traceback.print_exc()
+            loop.run_until_complete(self.client.logout())
         finally:
             loop.close()
