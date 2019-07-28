@@ -3,6 +3,7 @@ import re
 import time
 import asyncio
 import pylab as plt
+import requests, json
 from os import listdir, makedirs
 from os.path import isfile, join, exists
 from datetime import datetime
@@ -14,7 +15,9 @@ from numpy import *
 from collections import deque
 from glados.tools.json import load_json_compressed, save_json_compressed
 from lzma import LZMAFile
-import requests, json
+from quart import Quart, request, jsonify, send_file
+from hypercorn.asyncio import serve
+from hypercorn.config import Config
 
 
 class Message:
@@ -61,6 +64,7 @@ def get_commands_from_message(msg):
 # {
 #   "authors": {
 #     "author name1": {
+#       "userId": xxx,                 the discord user ID of this user
 #       "messages_total": xxx,         the total number of messages this author has made (including bot commands)
 #       "messages_last_week": xxx,     the number of messages over the last 7 days
 #       "commands_total": xxx,         the total number of messages that contained bot commands
@@ -98,8 +102,52 @@ class Activity(glados.Module):
         if isfile(self.cache_file):
             self.cache = load_json_compressed(self.cache_file)
 
+        asyncio.ensure_future(self.start_webapp())
+
+    async def start_webapp(self):
+        webapp = Quart(__name__)
+
+        @webapp.route("/")
+        async def root():
+            return "yoo"
+
+        @webapp.route("/getstats", methods=["GET"])
+        async def getstats():
+            userId = request.args.get("userId")
+            if userId is None:
+                return jsonify(dict(error="Parameter 'userId' was not specified")), 500
+
+            try:
+                if userId == "server":
+                    user = self.cache["server"]
+                else:
+                    user = self.cache["authors"][userId]
+            except KeyError:
+                return jsonify(dict(error=f"User with ID {userId} doesn't exist")), 500
+
+            return jsonify(user)
+
+        @webapp.route("/getimg", methods=["GET"])
+        async def getimg():
+            userId = request.args.get("userId")
+            if userId is None:
+                return jsonify(dict(error="Parameter 'userId' was not specified")), 500
+
+            try:
+                image_file_name = self.__generate_figure(userId)
+            except KeyError:
+                return jsonify(dict(error=f"User with ID {userId} doesn't exist")), 500
+
+            return await send_file(image_file_name)
+
+        config = Config()
+        config.access_log_format = "%(h)s %(r)s %(s)s %(b)s %(D)s"
+        config.bind = ["127.0.0.1:8888"]
+
+        await serve(webapp, config)
+
     @glados.Permissions.spamalot
-    @glados.Module.rule("^.*$")
+    @glados.Module.rule("^.*$", ignorecommands=False)
     async def reprocess_cache(self, message, matches):
         # Check if cache is up to date
         date = datetime.now().strftime('%Y-%m-%d')
