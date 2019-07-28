@@ -107,11 +107,7 @@ class Activity(glados.Module):
     async def start_webapp(self):
         webapp = Quart(__name__)
 
-        @webapp.route("/")
-        async def root():
-            return "yoo"
-
-        @webapp.route("/getstats", methods=["GET"])
+        @webapp.route(f"/{self.server.id}/getstats", methods=["GET"])
         async def getstats():
             userId = request.args.get("userId")
             if userId is None:
@@ -127,7 +123,7 @@ class Activity(glados.Module):
 
             return jsonify(user)
 
-        @webapp.route("/getimg", methods=["GET"])
+        @webapp.route(f"/{self.server.id}/getimg", methods=["GET"])
         async def getimg():
             userId = request.args.get("userId")
             if userId is None:
