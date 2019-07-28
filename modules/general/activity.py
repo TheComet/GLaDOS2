@@ -142,7 +142,7 @@ class Activity(glados.Module):
 
         config = Config()
         config.access_log_format = "%(h)s %(r)s %(s)s %(b)s %(D)s"
-        config.bind = ["127.0.0.1:8888"]
+        config.bind = ["127.0.0.1:8011"]
 
         await serve(webapp, config)
 
