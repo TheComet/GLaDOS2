@@ -144,6 +144,7 @@ class Activity(glados.Module):
                     # create an entry in the top-level "authors" dict in the cache structure, if not already there
                     if m.author_id not in authors:
                         authors[m.author_id] = new_author_dict(m.author)
+                        authors[m.author_id]['userId'] = m.author_id
                         authors[m.author_id]['day_cycle_acc'] = [0]*24
                         authors[m.author_id]['day_cycle_acc_day'] = deque([[0]*24], maxlen=1)
                         authors[m.author_id]['day_cycle_acc_week'] = deque([[0]*24], maxlen=7)
