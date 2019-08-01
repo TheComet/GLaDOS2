@@ -223,7 +223,12 @@ class AntiSpam(glados.Module):
         users_to_unmute = [id for id, expiry in muted_users.items() if not expiry == 'never' and now > expiry]
 
         for user_id in users_to_unmute:
-            await self.__unmute_user(self.server.get_member(user_id))
+            member = self.server.get_member(user_id)
+            if member is not None:
+                await self.__unmute_user(member)
+            else:
+                self.db['users'].pop(user_id)
+                self.__save_db()
 
     async def __mute_evaded_users(self, message):
         # Flagged as muted, but doesn't have the mute role?
