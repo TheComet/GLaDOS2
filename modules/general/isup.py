@@ -8,34 +8,31 @@ import re
 import socket
 import urllib.request
 
+# https://stackoverflow.com/questions/2532053/validate-a-hostname-string
+def is_valid_hostname(hostname):
+    try:
+        if len(hostname) > 255:
+            return False
+        if hostname[-1] == ".":
+            hostname = hostname[:-1] # strip exactly one dot from the right, if present
+        allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+        return all(allowed.match(x) for x in hostname.split("."))
+    except Exception as exception:
+        return False
 
 class IsUp(glados.Module):
- 
-    # https://stackoverflow.com/questions/2532053/validate-a-hostname-string
-    def is_valid_hostname(self, hostname):
-        try:
-            if len(hostname) > 255:
-                return False
-            if hostname[-1] == ".":
-                hostname = hostname[:-1] # strip exactly one dot from the right, if present
-            allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-            return all(allowed.match(x) for x in hostname.split("."))
-        except Exception as exception:
-            return False
     
     @glados.Module.command('isup', '<website>', 'Checks whether a website is up or not.')
     async def isup(self, message, site):
         """isup.me website status checker"""
 
         if not site:
-            await self.provide_help('isup', message)
-            return
+            return await self.provide_help('isup', message)
 
         if site[:7] != 'http://' and site[:8] != 'https://':
             if '://' in site:
                 protocol = site.split('://')[0] + '://'
-                await self.client.send_message(message.channel, "Try it again without the {}".format(protocol))
-                return
+                return await self.client.send_message(message.channel, "Try it again without the {}".format(protocol))
             else:
                 site = 'https://' + site
 
@@ -45,8 +42,7 @@ class IsUp(glados.Module):
         try:
             response = urllib.request.urlopen(site, timeout=5).getcode()
         except Exception as e:
-            await self.client.send_message(message.channel, site + ' looks down from here. (Exception: {})'.format(str(e)))
-            return
+            return await self.client.send_message(message.channel, site + ' looks down from here. (Exception: {})'.format(str(e)))
 
         site = site + f"looks fine to me (Return code {response})" if response >= 200 and response < 300 else site + f" returned code {response}"
         await self.client.send_message(message.channel, site)
