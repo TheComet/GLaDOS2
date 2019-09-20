@@ -249,25 +249,8 @@ class Activity(glados.Module):
         return ()
 
     @glados.Module.command('activity', '[user]',
-                           'Plots activity statistics for a user')
-    async def plot_activity(self, message, args):
-        if args:
-            members, roles, error = self.parse_members_roles(message, args)
-            if error or len(members) == 0:
-                return await self.client.send_message(message.channel, "Error, unknown user(s)")
-            member_ids = [x.id for x in members]
-        else:
-            member_ids = [message.author.id]
-        await self.plot_activity_for_ids(message.channel, member_ids)
-
-    @glados.Module.command('activityserver', '', 'Plots activity statistics for the entire server')
-    @glados.Module.command('serveractivity', '', 'Plots activity statistics for the entire server')
-    async def plot_server_activity(self, message, args):
-        await self.plot_activity_for_ids(message.channel, ['server'])
-
-    @glados.Module.command('activityd', '[user]',
                            'Plots activity statistics for a user, or total server activity if no user was specified.')
-    async def plot_activityd(self, message, args):
+    async def plot_activity(self, message, args):
         if args:
             members, roles, error = self.parse_members_roles(message, args)
             if error or len(members) == 0:
