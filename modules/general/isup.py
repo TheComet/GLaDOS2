@@ -54,13 +54,11 @@ class IsUp(glados.Module):
     @glados.Module.command('isopen', '<host:port>', 'Checks if a port is open.')
     async def isopen(self, message, hostport):
         if not hostport or len(hostport.split(':')) != 2:
-            await self.provide_help('isopen', message)
-            return
+            return await self.provide_help('isopen', message)
         
         hostname, port = hostport.split(':')
         if not is_valid_hostname(hostname):
-            await self.client.send_message(message.channel, f"{hostname} is not a valid hostname")
-            return
+            return await self.client.send_message(message.channel, f"{hostname} is not a valid hostname")
         
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
