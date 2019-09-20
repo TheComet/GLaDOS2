@@ -5,6 +5,7 @@ import collections
 import enchant
 from lzma import LZMAFile
 from glados import Module, Permissions
+from glados.tools import timeout, TimeoutError
 
 
 class Quotes(Module):
@@ -40,6 +41,7 @@ class Quotes(Module):
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(target.name, quote))
 
     @Module.command('findquote', '<text> [user]', 'Dig up a quote the user once said containing the specified text.')
+    @Module.command('fq', '<text> [user]', 'Short for findquote')
     async def findquote(self, message, args):
         args_parts = args.split(' ')
         if len(args_parts) == 1:
@@ -55,6 +57,28 @@ class Quotes(Module):
                 target = members.pop()
 
         quote = self.__get_random_message_matching(target, search_query) or "No quotes found matching \"{}\"".format(search_query)
+        await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(target.name, quote))
+
+    @Module.command('assquote', '[user]', 'Find a quote the user once said containing the word "ass"')
+    async def assquote(self, message, args):
+        args_parts = args.split(' ')
+        if len(args_parts) == 0:
+            target = message.author
+        else:
+            members, roles, error = self.parse_members_roles(message, args_parts[0])
+            target = message.author if error else members.pop()
+        quote = self.__get_random_message_matching(target, "ass") or "Apparently you never said 'ass'"
+        await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(target.name, quote))
+
+    @Module.command('momquote', '[user]', 'Find a quote the user once said containing the word "mom"')
+    async def momquote(self, message, args):
+        args_parts = args.split(' ')
+        if len(args_parts) == 0:
+            target = message.author
+        else:
+            members, roles, error = self.parse_members_roles(message, args_parts[0])
+            target = message.author if error else members.pop()
+        quote = self.__get_random_message_matching(target, "mom") or "Apparently you never said 'mom'"
         await self.client.send_message(message.channel, '{0} once said: "{1}"'.format(target.name, quote))
 
     @Module.command('quotestats', '[user]',
@@ -181,10 +205,13 @@ class Quotes(Module):
         except:
             return None
 
+    @timeout(10)
     def __get_random_message_matching(self, author, search_query):
         try:
             lines = self.__load_all_messages(author)
             lines = [x for x in lines if re.search(r'\b' + search_query + r'\b', x, re.IGNORECASE)]
-            return random.choice(lines).replace(search_query, '**{}**'.format(search_query))
+            return random.choice(lines).replace("*", "\\*").replace(search_query, '**{}**'.format(search_query))
+        except TimeoutError:
+            print("timed out")
         except:
             return None
