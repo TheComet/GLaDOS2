@@ -16,3 +16,4 @@ dice
 PyNaCl
 youtube_dl
 Quart
+validators==0.14.0
