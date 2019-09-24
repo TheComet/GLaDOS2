@@ -53,9 +53,14 @@ class IsUp(glados.Module):
         if not hostport or len(hostport.split(':')) != 2:
             return await self.provide_help('isopen', message)
         
-        hostname, int(port) = hostport.split(':')
+        hostname, port = hostport.split(':')
         if not is_valid_domain_name(hostname):
             return await self.client.send_message(message.channel, f"{hostname} is not a valid domain name")
+        
+        try:
+            port = int(port)
+        except ValueError as value_error:
+            return await self.client.send_message(message.channel, f"{port} must be a valid integer")
         
         if port < 0 or port > 65535:
             return await self.client.send_message(message.channel, f"{port} is outside of 0-65535 range")
