@@ -8,10 +8,10 @@ import re
 import socket
 import urllib.request
 
-allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+allowed = re.compile("^(?=.{4,255}$)([a-zA-Z0-9][a-zA-Z0-9-]{,61}[a-zA-Z0-9]\.)+[a-zA-Z0-9]{2,5}$", re.IGNORECASE)
 
 # https://stackoverflow.com/questions/2532053/validate-a-hostname-string
-def is_valid_hostname(hostname):
+def is_valid_domain_name(hostname):
     try:
         if len(hostname) > 255:
             return False
@@ -45,7 +45,7 @@ class IsUp(glados.Module):
         except Exception as e:
             return await self.client.send_message(message.channel, site + ' looks down from here. (Exception: {})'.format(str(e)))
 
-        site = site + f"looks fine to me (Return code {response})" if response >= 200 and response < 300 else site + f" returned code {response}"
+        site = site + f" looks fine to me (Return code {response})" if response >= 200 and response < 300 else site + f" returned code {response}"
         await self.client.send_message(message.channel, site)
     
     @glados.Module.command('isopen', '<host:port>', 'Checks if a port is open.')
@@ -53,9 +53,12 @@ class IsUp(glados.Module):
         if not hostport or len(hostport.split(':')) != 2:
             return await self.provide_help('isopen', message)
         
-        hostname, port = hostport.split(':')
-        if not is_valid_hostname(hostname):
-            return await self.client.send_message(message.channel, f"{hostname} is not a valid hostname")
+        hostname, int(port) = hostport.split(':')
+        if not is_valid_domain_name(hostname):
+            return await self.client.send_message(message.channel, f"{hostname} is not a valid domain name")
+        
+        if port < 0 or port > 65535:
+            return await self.client.send_message(message.channel, f"{port} is outside of 0-65535 range")
         
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
