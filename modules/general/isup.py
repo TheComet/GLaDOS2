@@ -6,20 +6,8 @@ from __future__ import unicode_literals, absolute_import, print_function, divisi
 import glados
 import re
 import socket
+import validators
 import urllib.request
-
-allowed = re.compile("^(?=.{4,255}$)([a-zA-Z0-9][a-zA-Z0-9-]{,61}[a-zA-Z0-9]\.)+[a-zA-Z0-9]{2,5}$", re.IGNORECASE)
-
-# https://stackoverflow.com/questions/2532053/validate-a-hostname-string
-def is_valid_domain_name(hostname):
-    try:
-        if len(hostname) > 255:
-            return False
-        if hostname[-1] == ".":
-            hostname = hostname[:-1] # strip exactly one dot from the right, if present
-        return all(allowed.match(x) for x in hostname.split("."))
-    except Exception as exception:
-        return False
 
 class IsUp(glados.Module):
     
@@ -54,7 +42,7 @@ class IsUp(glados.Module):
             return await self.provide_help('isopen', message)
         
         hostname, port = hostport.split(':')
-        if not is_valid_domain_name(hostname):
+        if not validators.domain(hostname):
             return await self.client.send_message(message.channel, f"{hostname} is not a valid domain name")
         
         try:
