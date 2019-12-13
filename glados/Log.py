@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 
 
@@ -12,7 +13,7 @@ def get_timestamp():
     return '[' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '] '
 
 
-__log = open('GLaDOS.log', 'w')
+__log = sys.stderr #open('GLaDOS.log', 'w')
 log('\n==========================================================\n'
     'Log Opened, {}\n'
     '=========================================================='.format(
